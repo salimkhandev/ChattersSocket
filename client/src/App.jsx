@@ -16,7 +16,21 @@ const ChatComponent = () => {
       setMessages((prev) => [...prev, msg]);
       console.log(msg);
       
-    });
+    },
+
+
+         socket.on('typing', (name) => {
+           setName(name)
+           clearTimeout(typingTimeoutRef.current);
+           typingTimeoutRef.current = setTimeout(() => {
+             setName("")
+           }, 1000);
+
+         })
+
+
+
+  );
     
 
     return () => socket.off("chat message");
@@ -28,16 +42,7 @@ const ChatComponent = () => {
   
  
       socket.emit('typing',"Salim");
-      socket.on('typing', (name) => {
-        setName(name)
-        clearTimeout(typingTimeoutRef.current);
-        typingTimeoutRef.current = setTimeout(() => {
-          console.log("clearing typing");
-          
-          setName("") 
-        }, 1000);
-
-      })  
+   
 
   }
 

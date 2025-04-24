@@ -14,26 +14,22 @@ const ChatComponent = () => {
   
     socket.on("chat message", (msg) => {
       setMessages((prev) => [...prev, msg]);
-      console.log(msg);
-      
+      console.log(msg); 
     },
-
-
          socket.on('typing', (name) => {
            setName(name)
            clearTimeout(typingTimeoutRef.current);
            typingTimeoutRef.current = setTimeout(() => {
              setName("")
            }, 1000);
-
          })
-
-
 
   );
     
 
-    return () => socket.off("chat message");
+    return () => {
+      socket.off("chat message");
+      socket.off('typing');}
   }, []);
 
   const setMessageAndTyping = (e) => {

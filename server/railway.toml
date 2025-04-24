@@ -1,10 +1,11 @@
-[build
-]
+[build]
 command = "npm install"
-environment = "production"[deploy
-]
+environment = "production"
+
+[deploy]
 startCommand = "node index.js"
 healthcheckPath = "/"
-restartPolicy = "ON_FAILURE"[env
-]
+restartPolicy = "ON_FAILURE"
+
+[env]
 NODE_ENV = "production"

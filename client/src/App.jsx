@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:3000");
+const socket = io("https://chatterssocket-production.up.railway.app");
 
 const ChatComponent = () => {
   const [message, setMessage] = useState("Hell from frontend");
@@ -11,9 +11,7 @@ const ChatComponent = () => {
 
 
   useEffect(() => {
-    // socket.on('connect',()=>{
-    //   console.log("Connected to server bro");
-    // })
+  
     socket.on("chat message", (msg) => {
       setMessages((prev) => [...prev, msg]);
       console.log(msg);
@@ -34,7 +32,9 @@ const ChatComponent = () => {
         setName(name)
         clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => {
-          setName("") // Stop typing feedback
+          console.log("clearing typing");
+          
+          setName("") 
         }, 1000);
 
       })  

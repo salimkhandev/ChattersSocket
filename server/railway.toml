@@ -1,11 +1,10 @@
-# railway.toml
 [build
 ]
-  command = "npm install"
-  environment = "production"[deploy
+command = "npm install"
+environment = "production"[deploy
 ]
-  startCommand = "node server.js"
-  healthcheckPath = "/"
-  restartPolicy = "ON_FAILURE"[env
+startCommand = "node index.js"
+healthcheckPath = "/"
+restartPolicy = "ON_FAILURE"[env
 ]
-  NODE_ENV = "production"
+NODE_ENV = "production"

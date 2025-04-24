@@ -1,24 +1,37 @@
-// server.js
-const http = require("http").createServer();
-const io = require("socket.io")(http, {
-    cors: { origin: "*" },
+const express = require("express");
+const cors = require("cors");
+const http = require("http");
+const { Server } = require("socket.io");
+
+const app = express();
+const server = http.createServer(app); // ⬅️ Attach Express to HTTP
+const io = new Server(server, {
+    cors: {
+        origin: "*", // Allow all origins for development
+    },
 });
 
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Routes
+app.get("/", (req, res) => {
+    res.json({ message: "Welcome to ChatterSocket!" });
+});
+
+// Socket.IO logic
 io.on("connection", (socket) => {
     console.log("A user connected 😊");
 
-    // let myID=socket.id;
-    // console.log("User ID: ", myID);
     socket.on("chat messages", (msg) => {
-    
         console.log("Message received: ", msg);
-        io.emit("chat message", msg); // send,"ok"); // send to everyone
+        io.emit("chat message", msg); // Broadcast to all clients
     });
 
     socket.on("typing", (isTyping) => {
         console.log("User is typing: ", isTyping);
-        
-        io.emit("typing", isTyping); // send to everyone
+        io.emit("typing", isTyping); // Broadcast to all clients
     });
 
     socket.on("disconnect", () => {
@@ -26,6 +39,8 @@ io.on("connection", (socket) => {
     });
 });
 
-http.listen(3000, () => {
-    console.log("Server listening on port 3000 🚀");
+// Start server
+const PORT = 3000;
+server.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT} 🚀`);
 });

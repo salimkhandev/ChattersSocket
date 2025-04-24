@@ -17,7 +17,7 @@ app.use(express.json());
 
 // Routes
 app.get("/", (req, res) => {
-    res.json({ message: "Welcome to ChatterSocket!" });
+    res.json({ message: "Welcome to ChatterSocket! we are live" });
 });
 
 // Socket.IO logic

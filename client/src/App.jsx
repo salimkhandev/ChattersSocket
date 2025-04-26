@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:3000");
+// const socket = io("http://localhost:3000");
+const socket = io("https://chatterssocket-production.up.railway.app/");
 
 export default function ChatApp() {
   const [username, setUsername] = useState(localStorage.getItem("chat_user") || "");

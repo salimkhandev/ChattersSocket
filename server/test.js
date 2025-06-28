@@ -1,13 +1,8 @@
-// custom data
 const connectedUsers = {
-    alice: true,
-    bob: false,
-    charlie: 'isdof823904823jdeeoi',
-    david: 'wqjqwjqi',
-    emma: 'asasa'
+    user1: true,
+    user2: false,
+    user3: true
 };
 
-// your code
-const onlineUsers = Object.keys(connectedUsers).filter(user => connectedUsers[user]);
-
-console.log(onlineUsers); // Output: ["alice", "charlie", "emma"]
+const onlineUsers = Object.keys(connectedUsers).filter(user => connectedUsers.user===true);
+console.log(onlineUsers); // ["user1", "user3"]

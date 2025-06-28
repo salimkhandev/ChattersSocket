@@ -1,16 +1,24 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState ,useRef} from "react";
 import { io } from "socket.io-client";
 
-// const socket = io("http://localhost:3000");
-const socket = io("https://chatterssocket-production.up.railway.app/");
+const socket = io("http://localhost:3000");
+// const socket = io("https://chatterssocket-production.up.railway.app/");
 
 export default function ChatApp() {
   const [username, setUsername] = useState(localStorage.getItem("chat_user") || "");
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isTyping, setIsTyping] = useState({});
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [selectedReceiver, setSelectedReceiver] = useState("");
+  const chatEndRef = useRef(null);
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  useEffect(() => {
+    scrollToBottom();
+  }, [chat]);
+
 
   useEffect(() => {
     if (username) {
@@ -25,7 +33,11 @@ export default function ChatApp() {
       });
 
       socket.on("typing", (status) => {
-        setIsTyping(status);
+        setIsTyping({message:status.message,
+                     typer:status.typer,
+                     isTyping: status.isTyping
+                    
+        });
       });
 
       socket.on("online users", (users) => {
@@ -62,16 +74,41 @@ export default function ChatApp() {
     });
 
     setMessage("");
-    socket.emit("typing", false);
+    socket.emit("typing", {
+    isTyping: false,
+      sender: username,  
+      receiver:selectedReceiver        // or send username instead if you prefer
+    });
   };
+
+  const typingTimeoutRef = useRef(null);
 
   const handleTyping = (e) => {
     setMessage(e.target.value);
-    socket.emit("typing", true);
-    setTimeout(() => {
-      socket.emit("typing", false);
-    }, 800);
+
+    // Emit isTyping: true immediately
+    socket.emit("typing", {
+      isTyping: true,
+      sender: username,
+      receiver: selectedReceiver,
+    });
+
+    // Clear previous timer
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Set new timer: if no typing happens for 800ms, emit isTyping: false
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("typing", {
+        isTyping: false,
+        sender: username,
+        receiver: selectedReceiver,
+
+      });
+    }, 500);
   };
+
 
   const logout = () => {
     localStorage.removeItem("chat_user");
@@ -143,8 +180,15 @@ export default function ChatApp() {
                 <span>{msg.message}</span>
               </div>
             ))}
-            {isTyping && <div className="text-gray-400 italic">Typing...</div>}
-          </div>
+              {isTyping?.message && isTyping.isTyping === true && isTyping?.typer && (
+                <div className="text-gray-400 italic">{`${isTyping.typer} is ${isTyping.message}...`}</div>
+              )}
+              <div ref={chatEndRef}
+                className=" rounded-lg p-4 h-12 overflow-y-auto bg-gray-50 mb-4"
+
+              /> {/* 👈 This makes it auto-scroll */}
+
+                  </div>
 
           <div className="flex items-center space-x-2">
             <input

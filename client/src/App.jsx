@@ -9,7 +9,9 @@ import {
   Smile,
 } from "lucide-react";
 
-const socket = io("http://localhost:3000");
+// const socket = io("http://localhost:3000");
+const socket = io("https://6f5c0ecc-d764-4d9b-99d7-ed5849f753b0-00-3qdthpdkcdg9n.worf.replit.dev");
+
 
 export default function ChatApp() {
   const [username, setUsername] = useState(localStorage.getItem("chat_user") || "");

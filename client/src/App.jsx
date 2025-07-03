@@ -107,11 +107,11 @@ export default function ChatApp() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center px-4 py-8 relative">
       {isLoggedIn && username && (
-        <div className="absolute top-4 left-4 flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-md border">
+        <div className="absolute  top-4 left-4 flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-md border">
           <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold uppercase">
             {username[0]}
           </div>
-          <span className="text-sm font-medium text-gray-800">
+          <span className="text-sm font-medium text-gray-800 sticky top-0 z-50">
             Welcome, <span className="text-indigo-600">{username}</span>
           </span>
         </div>

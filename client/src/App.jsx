@@ -112,7 +112,7 @@ export default function ChatApp() {
             {username[0]}
           </div>
           <span className="text-sm font-medium text-gray-800 sticky top-0 z-50">
-            Welcome, <span className="text-indigo-600">{username}</span>
+            Welcome, <span className="text-indigo-600 sticky top-0 z-50">{username}</span>
           </span>
         </div>
       )}

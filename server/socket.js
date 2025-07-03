@@ -55,6 +55,11 @@ async function startServer() {
             console.log("Connected users:", allUsers);
 
             if (username in allUsers) {
+                console.log(`User ${username} already logged in ✅`);
+                socket.emit("isLoggedIn", {
+                    success: true,
+                    message: `User ${username} is not allowed to join.`,
+                });
                 // Update the user's socket ID in Redis (as a string)
                 await redisClient.hSet("connectedUsers", username, JSON.stringify({ username: username, socketId: socket.id }));
                 
@@ -83,6 +88,10 @@ async function startServer() {
                 
             } else {
                 console.log(`User ${username} not allowed ❌`);
+                socket.emit("isLoggedIn", {
+                    success: false,
+                    message: `User "${username}" is not allowed to join.`,
+                });
             }   
         });
 
@@ -94,8 +103,11 @@ async function startServer() {
             // Get the receiver's data from Redis
             const receiverData = await redisClient.hGet("connectedUsers", receiver);
             console.log("Receiver data:", receiverData);
+            // same for receiver
+            const senderData = await redisClient.hGet("connectedUsers", sender);
+            console.log("Sender data:", senderData);
 
-            if (receiverData) {
+            if (receiverData ) {
                 try {
                     console.log("Receiver data:", receiverData);
                     const userData = JSON.parse(receiverData);
@@ -103,6 +115,19 @@ async function startServer() {
                         io.to(userData.socketId).emit("chat message", {
                             from: sender,
            
+                            message: msg.message,
+                        });
+                        // also resend to the sender
+                        // io.to(senderData.socketId).emit("chat message", {
+                        //     from: sender,
+                        //     message: msg.message,
+                        // });
+                        const senderData1 = JSON.parse(senderData);
+                        console.log(senderData1.socketId,"Hi im sender❤️");
+                        
+                        // also resend to the sender
+                        io.to(senderData1.socketId).emit("chat message", {
+                            from: sender,
                             message: msg.message,
                         });
                         console.log(`Message sent from ${sender} to ${receiver}`);
@@ -114,6 +139,10 @@ async function startServer() {
                 }
             } else {
                 console.log(`${receiver} not found ❌`);
+                socket.emit("unauthorized", {
+                    success: false,
+                    message: `User ${receiver} is not allowed to join.`,
+                });
             }
         });
 

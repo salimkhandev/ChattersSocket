@@ -10,7 +10,13 @@ import {
 } from "lucide-react";
 
 // const socket = io("http://localhost:3000");
-const socket = io("https://6f5c0ecc-d764-4d9b-99d7-ed5849f753b0-00-3qdthpdkcdg9n.worf.replit.dev");
+
+const socket = io("http://localhost:3000", {
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 2000,
+});
+// const socket = io("https://6f5c0ecc-d764-4d9b-99d7-ed5849f753b0-00-3qdthpdkcdg9n.worf.replit.dev");
 
 
 export default function ChatApp() {
@@ -57,6 +63,7 @@ export default function ChatApp() {
     setUsername(trimmed);
     localStorage.setItem("chat_user", trimmed);
     socket.emit("username", { username: trimmed });
+    socket.connect();
   };
 
   const sendMessage = () => {
@@ -102,6 +109,7 @@ export default function ChatApp() {
     setChat([]);
     setOnlineUsers([]);
     setSelectedReceiver("");
+    socket.disconnect(); 
   };
 
   return (

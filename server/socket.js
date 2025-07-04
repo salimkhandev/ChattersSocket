@@ -187,7 +187,7 @@ async function startServer() {
             // Get all users from Redis
             const allUsers = await redisClient.hGetAll("connectedUsers");
             
-            for (let username in allUsers) {
+            for (let username in allUsers) { 
                 try {
                     const userData = JSON.parse(allUsers[username]);
                     if (userData.socketId === socket.id) {

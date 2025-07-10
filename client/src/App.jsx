@@ -1,5 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
+import GroupChat from "./Components/GroupChat";
+import UserProfileUpload from "./Components/UserProfile";
+// import profilePic from './Components/image.png';
 import { io } from "socket.io-client";
+
 import {
   UserPlus,
   LogOut,
@@ -20,6 +24,8 @@ const socket = io("http://localhost:3000", {
 
 
 export default function ChatApp() {
+  const [isChatLoading, setIsChatLoading] = useState(false);
+
   const [username, setUsername] = useState(localStorage.getItem("chat_user") || "");
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
@@ -29,6 +35,8 @@ export default function ChatApp() {
   const [error, setError] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [fullName, setFullName] = useState("");
+
 
   const emojiList = ["😀", "😂", "😍", "😎", "🥳", "🔥", "👍", "🎉", "😢", "🤔", "👏", "❤️"];
   const chatEndRef = useRef(null);
@@ -40,13 +48,29 @@ export default function ChatApp() {
   useEffect(scrollToBottom, [chat]);
 
   useEffect(() => {
+
+
+
     socket.on("isLoggedIn", ({ success, message }) => {
       setIsLoggedIn(success);
       setError(success ? "" : message);
     });
+    socket.on("chat history", (messages) => {
+      setChat(messages.map((msg) => ({
+        from: msg.sender,
+        message: msg.message,
+        created_at: msg.created_at, // ✅ keep timestamp
+      })));
+      setIsChatLoading(false); // stop loading
+    });
 
     if (username) {
       socket.emit("username", { username });
+      socket.on("all names", ({ names }) => {
+        const user = names.find((n) => n.username === username);
+        if (user) setFullName(user.name); // set just the string
+      });
+
 
       socket.on("chat message", (msg) => setChat((prev) => [...prev, msg]));
       socket.on("private message", (msg) => setChat((prev) => [...prev, msg]));
@@ -109,21 +133,20 @@ export default function ChatApp() {
     setChat([]);
     setOnlineUsers([]);
     setSelectedReceiver("");
-    socket.disconnect(); 
+    socket.disconnect();
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center px-4 py-8 relative">
+      <GroupChat socket={socket} username={username} />
       {isLoggedIn && username && (
-        <div className="absolute top-4 left-4 flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-md border">
-          <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold uppercase">
-            {username[0]}
-          </div>
-          <span className="text-sm font-medium text-gray-800">
-            Welcome, <span className="text-indigo-600">{username}</span>
-          </span>
-        </div>
+        <div className="absolute top-4 left-4">
+      
+
+          <UserProfileUpload username={username} fullName={fullName} socket={socket} />
+             </div>
       )}
+
 
       {!username || !isLoggedIn ? (
         <div className="bg-white shadow-2xl p-8 rounded-xl w-full max-w-sm text-center animate-fadeIn">
@@ -162,20 +185,44 @@ export default function ChatApp() {
               {onlineUsers.length <= 1 && (
                 <p className="text-sm text-gray-400 italic">No one else is online</p>
               )}
-              {onlineUsers
-                .filter((u) => u !== username)
-                .map((user, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => setSelectedReceiver(user)}
-                    className={`cursor-pointer px-4 py-2 rounded-lg transition ${selectedReceiver === user
-                        ? "bg-indigo-100 text-indigo-700 font-semibold"
-                        : "hover:bg-gray-100"
-                      }`}
-                  >
-                    {user}
-                  </div>
-                ))}
+                {onlineUsers
+                  .filter((u) => u.username !== username)
+                  .map((user, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        setSelectedReceiver(user.username);
+                        setIsChatLoading(true);
+                        socket.emit("get chat history", {
+                          sender: username,
+                          receiver: user.username,
+                        });
+
+                      }}
+                      className={`cursor-pointer px-4 py-2 rounded-lg flex items-center gap-3 transition ${selectedReceiver === user.username
+                          ? "bg-indigo-100 text-indigo-700 font-semibold"
+                          : "hover:bg-gray-100"
+                        }`}
+                    >
+                      {user.profilePic && (
+                        <img
+                          src={user.profilePic}
+                          alt="profile"
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      )}
+                      <div>
+                        <span className="block text-sm font-medium text-gray-800">
+                          {user.fName}
+                        </span>
+                        <span className="block text-xs text-indigo-500 font-mono">
+                          @{user.username}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+
+
             </div>
           </aside>
 
@@ -187,24 +234,41 @@ export default function ChatApp() {
               </h1>
 
               <div className="h-[22rem] overflow-y-auto rounded-lg bg-gray-50 p-4 border shadow-inner space-y-4">
-                {chat.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex ${msg.from === username ? "justify-end" : "justify-start"}`}
-                  >
+                {isChatLoading ? (
+                  <p className="text-center text-gray-400 italic">Loading chat...</p>
+                ) : (
+
+                  chat.map((msg, idx) => (
                     <div
-                      className={`px-4 py-2 rounded-xl max-w-xs text-sm shadow-sm ${msg.from === username
-                          ? "bg-green-200 text-gray-900"
-                          : "bg-white text-gray-900 border"
-                        }`}
+                      key={idx}
+                      className={`flex ${msg.from === username ? "justify-end" : "justify-start"}`}
                     >
-                      <p className="text-xs text-gray-500 mb-1">
-                        {msg.from === username ? "You" : msg.from}
-                      </p>
-                      {msg.message}
+                      <div
+                        className={`px-4 py-2 rounded-xl max-w-xs text-sm shadow-sm ${msg.from === username
+                            ? "bg-green-200 text-gray-900"
+                            : "bg-white text-gray-900 border"
+                          }`}
+                      >
+                        <p className="text-xs text-gray-500 mb-1">
+                          {msg.from === username ? "You" : msg.from}
+                        </p>
+                        <div className="flex justify-between items-center gap-2">
+                          <p className="break-words">{msg.message}</p>
+                          {msg.created_at && (
+                            <span className="text-[10px] text-gray-500 whitespace-nowrap ml-2">
+                              {new Date(msg.created_at).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+
+                  )))
+
+                }
                 {isTyping?.isTyping && (
                   <p className="text-sm italic text-gray-400">{isTyping.typer} is typing...</p>
                 )}
@@ -249,8 +313,8 @@ export default function ChatApp() {
                 onClick={sendMessage}
                 disabled={!message.trim() || !selectedReceiver}
                 className={`flex items-center gap-1 px-5 py-2 rounded-lg text-white transition ${message.trim() && selectedReceiver
-                    ? "bg-indigo-600 hover:bg-indigo-700"
-                    : "bg-gray-300 cursor-not-allowed"
+                  ? "bg-indigo-600 hover:bg-indigo-700"
+                  : "bg-gray-300 cursor-not-allowed"
                   }`}
               >
                 <Send className="w-4 h-4" />

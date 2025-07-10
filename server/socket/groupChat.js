@@ -42,6 +42,20 @@ function groupChat(io) {
                 });
             }
 
+            // First, delete all messages in this group
+            const { error: deleteMessagesError } = await supabase
+                .from("group_messages")
+                .delete()
+                .eq("group_name", groupName);
+
+            if (deleteMessagesError) {
+                console.error("❌ Failed to delete group messages:", deleteMessagesError.message);
+                return socket.emit("group delete failed", {
+                    message: "Failed to delete group messages.",
+                });
+            }
+
+
             const { error } = await supabase
                 .from("groups")
                 .delete()
@@ -104,9 +118,17 @@ function groupChat(io) {
             });
 
             console.log(`${username} created and joined group: ${groupName}`);
+            const { data: updatedGroups, error: fetchErr } = await supabase
+                .from("groups")
+                .select("name, created_by");
 
-            // Update all users with the new group list
-            io.emit("groups list", Array.from(groups));
+            if (fetchErr) {
+                console.error("❌ Failed to fetch updated groups:", fetchErr.message);
+                return;
+            }
+
+            // ✅ Send full group data to all clients
+            io.emit("groups list", updatedGroups);
         });
 
 
@@ -131,6 +153,7 @@ function groupChat(io) {
         socket.on("group message", async ({ groupName, from, message }) => {
             groupName = groupName.trim().toLowerCase();
             const sender = from.trim().toLowerCase();
+            const created_at = new Date().toISOString();
 
             if (!groupName || !message) return;
 
@@ -138,6 +161,8 @@ function groupChat(io) {
                 from: sender,
                 groupName,
                 message,
+                created_at, // ✅ include timestamp
+
             });
 
             console.log(`[${groupName}] ${sender}: ${message}`);

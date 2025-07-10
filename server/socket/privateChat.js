@@ -143,9 +143,6 @@ function startServer(io) {
         });
 
 
-
-
-
         socket.on("chat messages", async (msg) => {
             const sender = msg.sender.trim().toLowerCase();
             const receiver = msg.receiver.trim().toLowerCase();
@@ -153,39 +150,45 @@ function startServer(io) {
             const receiverData = await redisClient.hGet("connectedUsers", receiver);
             const senderData = await redisClient.hGet("connectedUsers", sender);
 
-            
+            const created_at = new Date().toISOString(); // ✅ Add this line
+
             if (receiverData) {
                 try {
                     const receiverParsed = JSON.parse(receiverData);
                     const senderParsed = JSON.parse(senderData);
-                    
-                    if (receiverParsed.socketId) {
-                        io.to(receiverParsed.socketId).emit("chat message", {
-                            from: sender,
-                            message: msg.message,
-                        }); 
-                    }
-                    
-                    if (senderParsed.socketId) {
-                        io.to(senderParsed.socketId).emit("chat message", {
-                            from: sender,
-                            message: msg.message,
-                        });
-                    }
-                    
-                    console.log(`Message sent from ${sender} to ${receiver}`);
-                    // Run DB insert in the background (no await)
-                    supabase.from("messages").insert({
-                        sender,
-                        receiver,
+
+                    const messagePayload = {
+                        from: sender,
                         message: msg.message,
-                    }).then(({ error }) => {
-                        if (error) {
-                            console.error("❌ Failed to save message:", error);
-                        } else {
-                            console.log("💾 Message saved to DB");
-                        }
-                    });
+                        created_at, // ✅ Add timestamp to emit
+                    };
+
+                    if (receiverParsed.socketId) {
+                        io.to(receiverParsed.socketId).emit("chat message", messagePayload);
+                    }
+
+                    if (senderParsed.socketId) {
+                        io.to(senderParsed.socketId).emit("chat message", messagePayload);
+                    }
+
+                    console.log(`Message sent from ${sender} to ${receiver}`);
+
+                    // ✅ Save to DB with timestamp
+                    supabase
+                        .from("messages")
+                        .insert({
+                            sender,
+                            receiver,
+                            message: msg.message,
+                            created_at,
+                        })
+                        .then(({ error }) => {
+                            if (error) {
+                                console.error("❌ Failed to save message:", error);
+                            } else {
+                                console.log("💾 Message saved to DB");
+                            }
+                        });
                 } catch (err) {
                     console.log("Error parsing receiver/sender data");
                 }
@@ -195,29 +198,39 @@ function startServer(io) {
                     message: `User ${receiver} is not allowed to join.`,
                 });
             }
-
         });
+
         // ✅ Get chat history between two users
-        socket.on("get chat history", async ({ sender, receiver }) => {
-            sender = sender.trim().toLowerCase();
-            receiver = receiver.trim().toLowerCase();
+socket.on("get chat history", async ({ sender, receiver }) => {
+    sender = sender.trim().toLowerCase();
+    receiver = receiver.trim().toLowerCase();
 
-            const { data, error } = await supabase
-                .from("messages")
-                .select("*")
-                .or(`and(sender.eq.${sender},receiver.eq.${receiver}),and(sender.eq.${receiver},receiver.eq.${sender})`)
-                .order("created_at", { ascending: true });
+    try {
+        // 1. Fetch all messages between the users
+        const { data, error } = await supabase
+            .from("messages")
+            .select("*")
+            .or(`and(sender.eq.${sender},receiver.eq.${receiver}),and(sender.eq.${receiver},receiver.eq.${sender})`)
+            .order("created_at", { ascending: true });
 
-            if (error) {
-                console.error("❌ Error fetching chat history:", error);
-                socket.emit("chat history", []);
-                return;
-            }
+        if (error) throw error;
 
-            // ✅ Emit back to the sender only
-            socket.emit("chat history", data);
-        });
-    
+        // ✅ 2. Update unseen messages (from `sender` → `receiver`)
+        await supabase
+            .from("messages")
+            .update({ seen: true })
+            .eq("sender", sender)       // message was sent by this sender
+            .eq("receiver", receiver)   // to this receiver
+            .eq("seen", false);         // only unseen messages
+
+        // ✅ 3. Emit chat history back
+        socket.emit("chat history", data);
+    } catch (err) {
+        console.error("❌ Error handling chat history:", err.message);
+        socket.emit("chat history", []);
+    }
+});
+
 
 
         socket.on("typing", async (status) => {

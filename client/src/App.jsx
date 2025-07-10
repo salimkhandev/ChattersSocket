@@ -3,6 +3,7 @@ import GroupChat from "./Components/GroupChat";
 import UserProfileUpload from "./Components/UserProfile";
 // import profilePic from './Components/image.png';
 import { io } from "socket.io-client";
+const notificationSound = new Audio("/notification/notification-sound-effect-372475.mp3");
 
 import {
   UserPlus,
@@ -52,6 +53,12 @@ export default function ChatApp() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   useEffect(scrollToBottom, [chat]);
+  document.addEventListener("click", () => {
+    notificationSound.play().then(() => {
+      notificationSound.pause();      // pause immediately
+      notificationSound.currentTime = 0;
+    }).catch(() => { });
+  }, { once: true });
 
   useEffect(() => {
 
@@ -77,7 +84,6 @@ export default function ChatApp() {
         if (user) setFullName(user.name); // set just the string
       });
 
-      const notificationSound = new Audio("/notification/notification-sound-effect-372475.mp3");
 
       socket.on("chat message", (msg) => setChat((prev) => [...prev, msg]));
       socket.on("typing", (status) => setIsTyping(status));

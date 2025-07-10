@@ -77,12 +77,23 @@ export default function ChatApp() {
         if (user) setFullName(user.name); // set just the string
       });
 
+      const notificationSound = new Audio("./notification/notification-sound-effect-372475.mp3");
 
       socket.on("chat message", (msg) => setChat((prev) => [...prev, msg]));
-      socket.on("private message", (msg) => setChat((prev) => [...prev, msg]));
       socket.on("typing", (status) => setIsTyping(status));
       socket.on("online users", setOnlineUsers);
-    }
+
+      // ✅ Add sound for private messages here
+      socket.on("private message", (msg) => {
+        setChat((prev) => [...prev, msg]);
+
+        // Only play sound if the message is from someone else
+        if (msg.from !== username) {
+          notificationSound.play().catch((err) => {
+            console.warn("🔇 Sound blocked by browser:", err);
+          });
+        }
+      });    }
 
     return () => socket.off();
   }, [username]);

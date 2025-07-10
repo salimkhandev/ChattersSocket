@@ -17,10 +17,14 @@ export default function UserProfileUpload({ user,fullName, socket }) {
 
         setLoading(true);
         try {
-            const res = await fetch("http://localhost:3000/upload-profile-pic", {
+            const res = await fetch("https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev/upload-profile-pic", {
                 method: "POST",
                 body: formData,
             });
+            // const res = await fetch("http://localhost:3000/upload-profile-pic", {
+            //     method: "POST",
+            //     body: formData,
+            // });
 
             const data = await res.json();
             if (data.url) {
@@ -40,7 +44,7 @@ export default function UserProfileUpload({ user,fullName, socket }) {
         if (!user.profilePic) return;
         setLoading(true);
         try {
-            const res = await fetch("http://localhost:3000/delete-profile-pic", {
+            const res = await fetch("http://:3000/delete-profile-pic", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username: user.username }),

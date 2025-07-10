@@ -17,12 +17,19 @@ export default function UserProfileUpload({ username, fullName, socket }) {
 
     const fetchProfilePic = async () => {
         try {
-            const res = await fetch(`http://localhost:3000/get-profile-pic/${username}`);
+            const res = await fetch(`https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev/get-profile-pic/${username}`);
             const data = await res.json();
             setProfilePic(data?.profilePicUrl || null);
         } catch (err) {
             console.error("Error fetching profile picture:", err);
         }
+        // try {
+        //     const res = await fetch(`http://localhost:3000/get-profile-pic/${username}`);
+        //     const data = await res.json();
+        //     setProfilePic(data?.profilePicUrl || null);
+        // } catch (err) {
+        //     console.error("Error fetching profile picture:", err);
+        // }
     };
 
     useEffect(() => {
@@ -42,11 +49,16 @@ export default function UserProfileUpload({ username, fullName, socket }) {
         }
 
         try {
-            const res = await fetch("http://localhost:3000/update-fullname", {
+            const res = await fetch("https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev/update-fullname", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, fullName: newFullName }),
             });
+            // const res = await fetch("http://localhost:3000/update-fullname", {
+            //     method: "POST",
+            //     headers: { "Content-Type": "application/json" },
+            //     body: JSON.stringify({ username, fullName: newFullName }),
+            // });
 
             const data = await res.json();
             if (data.success && data.fullName) {
@@ -93,10 +105,14 @@ export default function UserProfileUpload({ username, fullName, socket }) {
             formData.append("file", compressedFile); // ⬅️ Use compressed image
             formData.append("username", username);
 
-            const res = await fetch("http://localhost:3000/upload-profile-pic", {
+            const res = await fetch("https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev//upload-profile-pic", {
                 method: "POST",
                 body: formData,
             });
+            // const res = await fetch("http://localhost:3000/upload-profile-pic", {
+            //     method: "POST",
+            //     body: formData,
+            // });
 
             const data = await res.json();
             if (data.profilePicUrl) {
@@ -122,11 +138,16 @@ export default function UserProfileUpload({ username, fullName, socket }) {
         setUploadError('');
 
         try {
-            const res = await fetch("http://localhost:3000/delete-profile-pic", {
+            const res = await fetch("https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev/delete-profile-pic", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username }),
             });
+            // const res = await fetch("http://localhost:3000/delete-profile-pic", {
+            //     method: "POST",
+            //     headers: { "Content-Type": "application/json" },
+            //     body: JSON.stringify({ username }),
+            // });
 
             const data = await res.json();
             if (data.success) {

@@ -95,11 +95,11 @@ export default function ChatApp() {
 console.log('this is the message 😄',msg);
 
         // Only play sound if the message is from someone else
-        if (msg.from !== username) {
+        // if (msg.from !== username) {
           notificationSound.play().catch((err) => {
             console.warn("🔇 Sound blocked by browser:", err);
           });
-        }
+        // }
       });    }
 
     return () => socket.off();

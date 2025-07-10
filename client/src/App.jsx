@@ -53,12 +53,12 @@ export default function ChatApp() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   useEffect(scrollToBottom, [chat]);
-  document.addEventListener("click", () => {
-    notificationSound.play().then(() => {
-      notificationSound.pause();      // pause immediately
-      notificationSound.currentTime = 0;
-    }).catch(() => { });
-  }, { once: true });
+  // document.addEventListener("click", () => {
+  //   notificationSound.play().then(() => {
+  //     notificationSound.pause();      // pause immediately
+  //     notificationSound.currentTime = 0;
+  //   }).catch(() => { });
+  // }, { once: true });
 
   useEffect(() => {
 
@@ -85,7 +85,13 @@ export default function ChatApp() {
       });
 
 
-      socket.on("chat message", (msg) => setChat((prev) => [...prev, msg]));
+      socket.on("chat message", (msg) => {
+        if (msg.from !== username) {
+          notificationSound.play().catch((err) => {
+            console.warn("🔇 Sound blocked by browser:", err);
+          });
+        }
+        setChat((prev) => [...prev, msg])});
       socket.on("typing", (status) => setIsTyping(status));
       socket.on("online users", setOnlineUsers);
 
@@ -95,12 +101,8 @@ export default function ChatApp() {
 console.log('this is the message 😄',msg);
 
         // Only play sound if the message is from someone else
-        // if (msg.from !== username) {
-          notificationSound.play().catch((err) => {
-            console.warn("🔇 Sound blocked by browser:", err);
-          });
-        // }
-      });    }
+
+      })}
 
     return () => socket.off();
   }, [username]);

@@ -233,7 +233,7 @@ socket.on("get chat history", async ({ sender, receiver }) => {
 
 
 
-        socket.on("typing", async (status) => {
+socket.on("typing", async (status) => {
             const sender = status.sender?.trim().toLowerCase();
             const receiver = status.receiver?.trim().toLowerCase();
 

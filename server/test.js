@@ -1,3 +1,3 @@
-const url = "https://supabase.io/storage/v1/object/public/profile-pics/user123.png";
-const parts = url.split("/storage/v1/object/public/profile-pics/");
-console.log(parts);
+let object = '{ "name": "Salim Khan", "age": "322" }'
+let parsed = JSON.parse(object)
+console.log(parsed);

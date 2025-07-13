@@ -49,7 +49,7 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
         }
 
         try {
-            const res = await fetch("https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev/update-fullname", {
+            const res = await fetch("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev//update-fullname", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, fullName: newFullName }),
@@ -106,7 +106,7 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
             formData.append("file", compressedFile); // ⬅️ Use compressed image
             formData.append("username", username);
 
-            const res = await fetch("https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev/upload-profile-pic", {
+            const res = await fetch("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/upload-profile-pic", {
                 method: "POST",
                 body: formData,
             });
@@ -139,7 +139,7 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
         setUploadError('');
 
         try {
-            const res = await fetch("https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev/delete-profile-pic", {
+            const res = await fetch("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev//delete-profile-pic", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username }),

@@ -53,26 +53,27 @@ function startServer(io) {
     io.on("connection", (socket) => {
         // console.log("A user connected 😊", socket.id);
 
-        (async () => {
-            const { data, error } = await supabase.from("users").select("name,username");
 
-            if (error) {
-                console.error("❌ Failed to fetch user names:", error.message);
-                socket.emit("all names", { names: [] });
-                return;
-            }
-
-            const names = data.map(user => ({
-                name: user.name,
-                username: user.username,
-            }));
-
-            socket.emit("all names", { names });
-        })();
         socket.on("username", async ({ username }) => {
             username = username.trim().toLowerCase();
+            (async () => {
+                const { data, error } = await supabase.from("users").select("name,username");
 
+                if (error) {
+                    console.error("❌ Failed to fetch user names:", error.message);
+                    socket.emit("all names", { names: [] });
+                    return;
+                }
+
+                const names = data.map(user => ({
+                    name: user.name,
+                    username: user.username,
+                }));
+
+                socket.emit("all names", { names });
+            })();
             const allUsers = await redisClient.hGetAll("connectedUsers");
+            // filter on the based of given username ie which is from the client side
             const redisData = allUsers[username] && JSON.parse(allUsers[username]);
 
             // ✅ Fetch name and profile_pic from Supabase
@@ -106,8 +107,38 @@ function startServer(io) {
 
                 // ✅ Update local cache
                 allUsers[username] = JSON.stringify(updatedUser);
-
+                
+                
                 // ✅ Build online users list
+                // const onlineUsers = Object.keys(allUsers)
+                //     .map((user) => {
+                //         try {
+                //             const u = JSON.parse(allUsers[user]);
+                //             return u.socketId ? {
+                //                 username: u.username,
+                //                 fName: u.fName,
+                //                 profilePic: u.profilePic || null,  // pass it to frontend
+                //             } : null;
+                //         } catch {
+                //             return null;
+                //         }
+                //     })
+                //     .filter(Boolean);
+                //     const { data, error } = await supabase.rpc('get_unseen_message_counts');
+    
+                //     if (error) {
+                //         console.error("Error fetching unseen message counts:", error.message);
+                //     } else {
+                //         socket.emit("unseen-message-counts", data);
+                //         console.log('unseen message count',data);
+                        
+                //     }
+
+                //     console.log('online users are ',onlineUsers);
+                //     io.emit("online users", onlineUsers);
+
+
+                
                 const onlineUsers = Object.keys(allUsers)
                     .map((user) => {
                         try {
@@ -115,7 +146,7 @@ function startServer(io) {
                             return u.socketId ? {
                                 username: u.username,
                                 fName: u.fName,
-                                profilePic: u.profilePic || null,  // pass it to frontend
+                                profilePic: u.profilePic || null
                             } : null;
                         } catch {
                             return null;
@@ -123,25 +154,55 @@ function startServer(io) {
                     })
                     .filter(Boolean);
 
-                io.emit("online users", onlineUsers);
+                const { data: unseenMessages, error } = await supabase.rpc('get_unseen_message_counts');
+
+                if (error) {
+                    console.error("Error fetching unseen message counts:", error.message);
+                } else {
+                    console.log('✅ unseen message count', unseenMessages);
+                    socket.emit("unseen-message-counts", unseenMessages);
+
+                    // Now merge unseenMessages into each online user
+                    const enrichedOnlineUsers = onlineUsers.map(user => {
+                        const sentMessages = unseenMessages.filter(
+                            msg => msg.sender === user.username
+                        );
+
+                        return {
+                            username: user.username,
+                            fName: user.fName,
+                            profilePic: user.profilePic,
+                            sentUnseenMessages: sentMessages.length > 0
+                                ? sentMessages
+                                : [{ unseen_count: 0, receiver: null }]
+                        };
+                    });
+
+                    console.log("✅ enriched online users", enrichedOnlineUsers);
+                    io.emit("online users", enrichedOnlineUsers); // include unseen in online user payload
+                }
+
+
 
                 socket.emit("isLoggedIn", {
                     success: true,
                     message: `User ${username} is allowed to join.`,
                 });
 
-                io.emit("private message", {
-                    from: "server",
-                    message: `${username} has joined the chat.`,
-                });
+                // io.emit("private message", {
+                //     from: "server",
+                //     message: `${username} has joined the chat.`,
+                // });
             } else {
                 socket.emit("isLoggedIn", {
                     success: false,
                     message: `User "${username}" is not allowed to join.`,
                 });
+                
             }
-        });
-
+            
+                       
+                    });
 
         socket.on("chat messages", async (msg) => {
             const sender = msg.sender.trim().toLowerCase();
@@ -189,9 +250,13 @@ function startServer(io) {
                                 console.log("💾 Message saved to DB");
                             }
                         });
+
+                        
                 } catch (err) {
                     console.log("Error parsing receiver/sender data");
                 }
+
+
             } else {
                 socket.emit("unauthorized", {
                     success: false,
@@ -201,37 +266,64 @@ function startServer(io) {
         });
 
         // ✅ Get chat history between two users
-socket.on("get chat history", async ({ sender, receiver }) => {
-    sender = sender.trim().toLowerCase();
-    receiver = receiver.trim().toLowerCase();
+        socket.on("get chat history", async ({ sender, receiver }) => {
+            sender = sender.trim().toLowerCase();
+            receiver = receiver.trim().toLowerCase();
 
-    try {
-        // 1. Fetch all messages between the users
-        const { data, error } = await supabase
-            .from("messages")
-            .select("*")
-            .or(`and(sender.eq.${sender},receiver.eq.${receiver}),and(sender.eq.${receiver},receiver.eq.${sender})`)
-            .order("created_at", { ascending: true });
+            try {
+                const { data, error } = await supabase
+                    .from("messages")
+                    .select("*")
+                    .or(`and(sender.eq.${sender},receiver.eq.${receiver}),and(sender.eq.${receiver},receiver.eq.${sender})`)
+                    .order("created_at", { ascending: true });
 
-        if (error) throw error;
+                if (error) throw error;
 
-        // ✅ 2. Update unseen messages (from `sender` → `receiver`)
-        await supabase
-            .from("messages")
-            .update({ seen: true })
-            .eq("sender", sender)       // message was sent by this sender
-            .eq("receiver", receiver)   // to this receiver
-            .eq("seen", false);         // only unseen messages
-
-        // ✅ 3. Emit chat history back
-        socket.emit("chat history", data);
-    } catch (err) {
-        console.error("❌ Error handling chat history:", err.message);
-        socket.emit("chat history", []);
-    }
-});
+                socket.emit("chat history", data);
+            } catch (err) {
+                console.error("❌ Error fetching chat history:", err.message);
+                socket.emit("chat history", []);
+            }
+        });
 
 
+
+        socket.on("mark messages seen", async ({ sender, receiver }) => {
+            sender = sender.trim().toLowerCase();
+            receiver = receiver.trim().toLowerCase();
+
+            try {
+                // 1. Mark messages as seen
+                await supabase
+                    .from("messages")
+                    .update({ seen: true })
+                    .eq("sender", sender)      // messages *from* the selected user
+                    .eq("receiver", receiver)  // messages *to* the current user (receiver)
+                    .eq("seen", false);        // only unseen
+
+                // 2. Fetch updated chat history (only if you want to reflect the changes immediately)
+                const { data: updatedChat, error } = await supabase
+                    .from("messages")
+                    .select("*")
+                    .or(`and(sender.eq.${sender},receiver.eq.${receiver}),and(sender.eq.${receiver},receiver.eq.${sender})`)
+                    .order("created_at", { ascending: true });
+
+                if (error) throw error;
+
+                // 3. Send updated chat history to the receiver
+                socket.emit("chat history", updatedChat);
+
+                // 4. (Optional) You can also notify the sender that messages were seen
+                // If you're managing a map of username -> socket.id
+                // io.to(senderSocketId).emit("messages seen", { by: receiver });
+
+            } catch (err) {
+                console.error("❌ Error updating seen messages:", err.message);
+                socket.emit("chat history", []); // fallback
+            }
+        });
+
+        
 
 socket.on("typing", async (status) => {
             const sender = status.sender?.trim().toLowerCase();

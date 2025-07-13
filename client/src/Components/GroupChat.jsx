@@ -157,49 +157,60 @@ const GroupChat = ({ socket, username }) => {
                 </div>
 
                 <div className="flex-1">
-                    <h3 className="font-semibold text-gray-700 mb-2">Messages in: {selectedGroup || "None"}</h3>
-                    {isGroupChatLoading ? (
-                        <p className="text-center text-gray-400 italic">Loading group messages...</p>
-                    ) : (
-                        messages.map((msg, index) => (
-                            <div key={index} className="mb-1">
-                                <div className="flex justify-between text-sm text-gray-600">
-                                    <strong>{msg.from === username ? "You" : msg.from}</strong>
-                                    {msg.created_at && (
-                                        <span className="text-xs text-gray-400 ml-2">
-                                            {new Date(msg.created_at).toLocaleTimeString([], {
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                            })}
-                                        </span>
-                                    )}
-                                </div>
-                                <div>{msg.message}</div>
+                    {selectedGroup && (
+                        <>
+                            <div className="flex justify-between items-center mb-2">
+                                <h3 className="font-semibold text-gray-700">
+                                    Messages in: {selectedGroup}
+                                </h3>
+                                <button
+                                    onClick={() => setSelectedGroup("")}
+                                    className="text-sm bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200 transition"
+                                >
+                                     Close
+                                </button>
                             </div>
-                        ))
-                    )
-                    
-                    
-                    }
 
+                            {isGroupChatLoading ? (
+                                <p className="text-center text-gray-400 italic">Loading group messages...</p>
+                            ) : (
+                                messages.map((msg, index) => (
+                                    <div key={index} className="mb-1">
+                                        <div className="flex justify-between text-sm text-gray-600">
+                                            <strong>{msg.from === username ? "You" : msg.from}</strong>
+                                            {msg.created_at && (
+                                                <span className="text-xs text-gray-400 ml-2">
+                                                    {new Date(msg.created_at).toLocaleTimeString([], {
+                                                        hour: "2-digit",
+                                                        minute: "2-digit",
+                                                    })}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div>{msg.message}</div>
+                                    </div>
+                                ))
+                            )}
 
-                    <div className="flex space-x-2">
-                        <input
-                            type="text"
-                            placeholder="Type a message..."
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            className="flex-1 p-2 border rounded"
-                        />
-                        <button
-                            onClick={handleSend}
-                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                            disabled={!selectedGroup}
-                        >
-                            Send
-                        </button>
-                    </div>
-                </div>
+                            <div className="flex space-x-2 mt-4">
+                                <input
+                                    type="text"
+                                    placeholder="Type a message..."
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value)}
+                                    className="flex-1 p-2 border rounded"
+                                />
+                                <button
+                                    onClick={handleSend}
+                                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                >
+                                    Send
+                                </button>
+                            </div>
+                        </>
+                    )}
+
+</div>
             </div>
         </div>
     );

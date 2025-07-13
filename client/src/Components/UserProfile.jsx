@@ -3,7 +3,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { User, Camera, Trash2, Edit3, Check, X, Settings } from "lucide-react";
 import imageCompression from "browser-image-compression";
 
-export default function UserProfileUpload({ username, fullName, socket }) {
+export default function UserProfileUpload({ nameLoaded, username, setFullName,fullName, socket }) {
     const fileInputRef = useRef(null);
     const [loading, setLoading] = useState(false);
     const [profilePic, setProfilePic] = useState(null);
@@ -16,20 +16,20 @@ export default function UserProfileUpload({ username, fullName, socket }) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const fetchProfilePic = async () => {
-        try {
-            const res = await fetch(`https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev/get-profile-pic/${username}`);
-            const data = await res.json();
-            setProfilePic(data?.profilePicUrl || null);
-        } catch (err) {
-            console.error("Error fetching profile picture:", err);
-        }
         // try {
-        //     const res = await fetch(`http://localhost:3000/get-profile-pic/${username}`);
+        //     const res = await fetch(`https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev/get-profile-pic/${username}`);
         //     const data = await res.json();
         //     setProfilePic(data?.profilePicUrl || null);
         // } catch (err) {
         //     console.error("Error fetching profile picture:", err);
         // }
+        try {
+            const res = await fetch(`http://localhost:3000/get-profile-pic/${username}`);
+            const data = await res.json();
+            setProfilePic(data?.profilePicUrl || null);
+        } catch (err) {
+            console.error("Error fetching profile picture:", err);
+        }
     };
 
     useEffect(() => {
@@ -49,22 +49,23 @@ export default function UserProfileUpload({ username, fullName, socket }) {
         }
 
         try {
-            const res = await fetch("https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev/update-fullname", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, fullName: newFullName }),
-            });
-            // const res = await fetch("http://localhost:3000/update-fullname", {
+            // const res = await fetch("https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev/update-fullname", {
             //     method: "POST",
             //     headers: { "Content-Type": "application/json" },
             //     body: JSON.stringify({ username, fullName: newFullName }),
             // });
+            const res = await fetch("http://localhost:3000/update-fullname", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, fullName: newFullName }),
+            });
 
             const data = await res.json();
             if (data.success && data.fullName) {
                 setCurrentFullName(data.fullName);  // update UI display name
                 setNewFullName(data.fullName);      // sync input with updated value
                 setIsEditingName(false);
+                setFullName(data.fullName)
                 setNameError('');
             }
  else {
@@ -105,14 +106,14 @@ export default function UserProfileUpload({ username, fullName, socket }) {
             formData.append("file", compressedFile); // ⬅️ Use compressed image
             formData.append("username", username);
 
-            const res = await fetch("https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev//upload-profile-pic", {
-                method: "POST",
-                body: formData,
-            });
-            // const res = await fetch("http://localhost:3000/upload-profile-pic", {
+            // const res = await fetch("https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev//upload-profile-pic", {
             //     method: "POST",
             //     body: formData,
             // });
+            const res = await fetch("http://localhost:3000/upload-profile-pic", {
+                method: "POST",
+                body: formData,
+            });
 
             const data = await res.json();
             if (data.profilePicUrl) {
@@ -138,16 +139,16 @@ export default function UserProfileUpload({ username, fullName, socket }) {
         setUploadError('');
 
         try {
-            const res = await fetch("https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev/delete-profile-pic", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username }),
-            });
-            // const res = await fetch("http://localhost:3000/delete-profile-pic", {
+            // const res = await fetch("https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev/delete-profile-pic", {
             //     method: "POST",
             //     headers: { "Content-Type": "application/json" },
             //     body: JSON.stringify({ username }),
             // });
+            const res = await fetch("http://localhost:3000/delete-profile-pic", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username }),
+            });
 
             const data = await res.json();
             if (data.success) {
@@ -214,9 +215,11 @@ export default function UserProfileUpload({ username, fullName, socket }) {
             {/* Profile Info */}
             <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-gray-900 truncate">
-                    {currentFullName || 'No name set'}
-
+                    {nameLoaded === false
+                        ? "Loading...": currentFullName
+}
                 </h3>
+
                 <p className="text-sm text-gray-500 truncate">@{username}</p>
             </div>
 
@@ -375,7 +378,7 @@ export default function UserProfileUpload({ username, fullName, socket }) {
                     {/* Upload Info */}
                     <div className="bg-gray-50 px-4 py-3 rounded-lg">
                         <p className="text-xs text-gray-600">
-                            Supported formats: JPG, PNG, GIF • Max size: 5MB
+                            Supported formats: JPG, PNG, GIF
                         </p>
                     </div>
                 </div>

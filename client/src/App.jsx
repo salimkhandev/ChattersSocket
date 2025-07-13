@@ -20,17 +20,17 @@ import {
 
 // const socket = io("http://localhost:3000");
 
-// const socket = io("https://8b81f6f7-2710-45c7-9f7a-d10faa8f99b3-00-1biywnnfgs4xq.riker.replit.dev/", {
-//   reconnection: true,
-//   reconnectionAttempts: Infinity,
-//   reconnectionDelay: 2000,
-// });
-
-const socket = io("http://localhost:3000", {
+const socket = io("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/", {
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 2000,
 });
+
+// const socket = io("http://localhost:3000", {
+//   reconnection: true,
+//   reconnectionAttempts: Infinity,
+//   reconnectionDelay: 2000,
+// });
 // const socket = io("https://6f5c0ecc-d764-4d9b-99d7-ed5849f753b0-00-3qdthpdkcdg9n.worf.replit.dev");
 
 

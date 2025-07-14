@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 import GroupChat from "./Components/GroupChat";
-import { Toaster } from "react-hot-toast";
-import toast from "react-hot-toast";
 
 
 
@@ -10,27 +9,27 @@ import UserProfileUpload from "./Components/UserProfile";
 import { io } from "socket.io-client";
 
 import {
-  UserPlus,
   LogOut,
-  Send,
-  Users,
   MessageSquareMore,
+  Send,
   Smile,
+  UserPlus,
+  Users,
 } from "lucide-react";
 
 // const socket = io("http://localhost:3000");
 
-const socket = io("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/", {
-  reconnection: true,
-  reconnectionAttempts: Infinity,
-  reconnectionDelay: 2000,
-});
-
-// const socket = io("http://localhost:3000", {
+// const socket = io("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/", {
 //   reconnection: true,
 //   reconnectionAttempts: Infinity,
 //   reconnectionDelay: 2000,
 // });
+
+const socket = io("http://localhost:3000", {
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 2000,
+});
 // const socket = io("https://6f5c0ecc-d764-4d9b-99d7-ed5849f753b0-00-3qdthpdkcdg9n.worf.replit.dev");
 
 
@@ -48,6 +47,7 @@ export default function ChatApp() {
   const [isLoggedIn, setIsLoggedIn] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [fullName, setFullName] = useState("");
+  const [isChattingWindowOpen, setIsChattingWindowOpen] = useState(false);
 
   const emojiList = ["😀", "😂", "😍", "😎", "🥳", "🔥", "👍", "🎉", "😢", "🤔", "👏", "❤️"];
   const chatEndRef = useRef(null);
@@ -91,6 +91,22 @@ export default function ChatApp() {
   };
 }, [selectedReceiver, username]);
 
+  useEffect(() => {
+    const handleTyping = (status) => {
+      // Only show typing if the typer is the one you're chatting with
+      if (status.isTyping) {
+        setIsTyping(status);
+      } else {
+        setIsTyping({ isTyping: false });
+      }
+    };
+
+    socket.on("typing", handleTyping);
+
+    return () => {
+      socket.off("typing", handleTyping); // cleanup to avoid duplicate listeners
+    };
+  }, [selectedReceiver]);
 
   useEffect(() => {
     
@@ -130,8 +146,37 @@ export default function ChatApp() {
             console.warn("🔇 Sound blocked by browser:", err);
           });
         }
-        setChat((prev) => [...prev, msg])});
-      socket.on("typing", (status) => setIsTyping(status));
+
+        if (msg.from === selectedReceiver ) {
+          setChat((prev) => [...prev, msg])
+          console.log("MSG FROM:", msg.from, "SELECTED:", selectedReceiver, "USERNAME:", username);
+} else{
+
+  
+  
+  
+          if (
+            msg.from !== username && !selectedReceiver
+          ) {
+            toast.success(`New message from @${msg.from}`, {
+              icon: "💬",
+              duration: 3000,
+              style: {
+                background: "#333",
+                color: "#fff",
+              },
+            });
+
+          }
+        }
+
+          
+});
+
+
+
+
+
       socket.on("online users", setOnlineUsers);
 
       // ✅ Add sound for private messages here
@@ -167,7 +212,7 @@ export default function ChatApp() {
     }
 
     return () => socket.off();
-  }, [username]);
+  }, [username,selectedReceiver]);
 
   const handleLogin = (input) => {
     const trimmed = input.trim().toLowerCase();
@@ -257,6 +302,7 @@ socket.emit('username',{username})
         </div>
       ) : (
         <div className="w-full max-w-6xl h-[36rem] bg-white rounded-xl shadow-xl flex flex-col md:flex-row overflow-hidden animate-fadeIn">
+          <Toaster position="top-right" reverseOrder={false} />
           <aside className="w-full md:w-1/3 bg-white border-r p-5 flex flex-col gap-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold text-indigo-600 flex items-center gap-2">
@@ -287,6 +333,7 @@ socket.emit('username',{username})
                         key={idx}
                         onClick={() => {
                           setSelectedReceiver(user.username);
+                          setIsChattingWindowOpen(true)
                           setIsChatLoading(true);
                           socket.emit("get chat history", {
                             sender: username,
@@ -314,7 +361,14 @@ socket.emit('username',{username})
                         {/* Name and username */}
                         <div className="flex-1">
                           <p className="text-sm font-medium leading-4">{user.fName}</p>
-                          <p className="text-xs text-gray-500">@{user.username}</p>
+                          {isTyping.typer === user.username && !isChattingWindowOpen  ? (
+                            <p className="text-[11px] text-purple-500 animate-pulse mt-0.5">
+                              typing...
+                            </p>) : (
+
+                            <p className="text-xs text-gray-500">@{user.username}</p>
+                          )
+                          }
                         </div>
 
                         {/* Unread badge */}
@@ -335,15 +389,28 @@ socket.emit('username',{username})
               selectedReceiver&& (
 
        <main className="flex-1 p-6 flex flex-col justify-between relative ">
+        
             <div>
-                  <Toaster position="top-right" reverseOrder={false} />
-              <h1 className="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
-                <MessageSquareMore className="w-5 h-5 text-purple-600" />
-                Chat with <span className="text-indigo-600">{selectedReceiver || "..."}</span>
-                
-              </h1>
+                    <div className="flex items-center justify-between mb-4">
+                      <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <MessageSquareMore className="w-5 h-5 text-purple-600" />
+                        Chat with <span className="text-indigo-600">@{selectedReceiver || "..."}</span>
+                      </h1>
+                      <button
+                        onClick={() => {
+                          setSelectedReceiver("");
+                          setChat([]);
+                          setShowEmojiPicker(false);
+                          setIsChattingWindowOpen(false)
+                        }}
+                        className="text-sm text-red-500 hover:text-red-600 px-3 py-1 rounded-lg bg-red-100 hover:bg-red-200 transition"
+                      >
+                        Close Chat
+                      </button>
+                    </div>
 
               <div className="h-[22rem] overflow-y-auto rounded-lg bg-gray-50 p-4 border shadow-inner space-y-4">
+                
                 {isChatLoading ? (
                   <p className="text-center text-gray-400 italic">Loading chat...</p>
                 ) : (
@@ -359,6 +426,7 @@ socket.emit('username',{username})
                             : "bg-white text-gray-900 border"
                           }`}
                       >
+                        
                         <p className="text-xs text-gray-500 mb-1">
                           <p className="text-xs text-gray-500 mb-1">
                             {msg.from === username ? "You" : msg.from}{" "}
@@ -388,7 +456,7 @@ socket.emit('username',{username})
                   )))
 
                 }
-                {isTyping?.isTyping && (
+                      {isTyping.typer === selectedReceiver  &&   (
                   <p className="text-sm italic text-gray-400">{isTyping.typer} is typing...</p>
                 )}
                 <div ref={chatEndRef} />

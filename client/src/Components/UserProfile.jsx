@@ -16,20 +16,20 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const fetchProfilePic = async () => {
-        try {
-            const res = await fetch(`https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/get-profile-pic/${username}`);
-            const data = await res.json();
-            setProfilePic(data?.profilePicUrl || null);
-        } catch (err) {
-            console.error("Error fetching profile picture:", err);
-        }
         // try {
-        //     const res = await fetch(`http://localhost:3000/get-profile-pic/${username}`);
+        //     const res = await fetch(`https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/get-profile-pic/${username}`);
         //     const data = await res.json();
         //     setProfilePic(data?.profilePicUrl || null);
         // } catch (err) {
         //     console.error("Error fetching profile picture:", err);
         // }
+        try {
+            const res = await fetch(`http://localhost:3000/get-profile-pic/${username}`);
+            const data = await res.json();
+            setProfilePic(data?.profilePicUrl || null);
+        } catch (err) {
+            console.error("Error fetching profile picture:", err);
+        }
     };
 
     useEffect(() => {
@@ -49,16 +49,16 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
         }
 
         try {
-            const res = await fetch("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev//update-fullname", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, fullName: newFullName }),
-            });
-            // const res = await fetch("http://localhost:3000/update-fullname", {
+            // const res = await fetch("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev//update-fullname", {
             //     method: "POST",
             //     headers: { "Content-Type": "application/json" },
             //     body: JSON.stringify({ username, fullName: newFullName }),
             // });
+            const res = await fetch("http://localhost:3000/update-fullname", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, fullName: newFullName }),
+            });
 
             const data = await res.json();
             if (data.success && data.fullName) {
@@ -106,14 +106,14 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
             formData.append("file", compressedFile); // ⬅️ Use compressed image
             formData.append("username", username);
 
-            const res = await fetch("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/upload-profile-pic", {
-                method: "POST",
-                body: formData,
-            });
-            // const res = await fetch("http://localhost:3000/upload-profile-pic", {
+            // const res = await fetch("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/upload-profile-pic", {
             //     method: "POST",
             //     body: formData,
             // });
+            const res = await fetch("http://localhost:3000/upload-profile-pic", {
+                method: "POST",
+                body: formData,
+            });
 
             const data = await res.json();
             if (data.profilePicUrl) {
@@ -139,16 +139,16 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
         setUploadError('');
 
         try {
-            const res = await fetch("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev//delete-profile-pic", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username }),
-            });
-            // const res = await fetch("http://localhost:3000/delete-profile-pic", {
+            // const res = await fetch("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev//delete-profile-pic", {
             //     method: "POST",
             //     headers: { "Content-Type": "application/json" },
             //     body: JSON.stringify({ username }),
             // });
+            const res = await fetch("http://localhost:3000/delete-profile-pic", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username }),
+            });
 
             const data = await res.json();
             if (data.success) {

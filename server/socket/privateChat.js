@@ -72,6 +72,8 @@ function startServer(io) {
 
                 socket.emit("all names", { names });
             })();
+
+
             const allUsers = await redisClient.hGetAll("connectedUsers");
             // filter on the based of given username ie which is from the client side
             const redisData = allUsers[username] && JSON.parse(allUsers[username]);
@@ -220,6 +222,7 @@ function startServer(io) {
 
                     const messagePayload = {
                         from: sender,
+                        to:receiver,
                         message: msg.message,
                         created_at, // ✅ Add timestamp to emit
                     };
@@ -347,47 +350,94 @@ socket.on("typing", async (status) => {
             }
         });
 
-      socket.on("disconnect", async () => {
-    const allUsers = await redisClient.hGetAll("connectedUsers");
+        socket.on("disconnect", async () => {
+            const allUsers = await redisClient.hGetAll("connectedUsers");
 
-    for (const username in allUsers) {
-        try {
-            const userData = JSON.parse(allUsers[username]);
+            // Find the disconnected username by socketId
+            const username = Object.keys(allUsers).find((key) => {
+                try {
+                    const data = JSON.parse(allUsers[key]);
+                    return data.socketId === socket.id;
+                } catch {
+                    return false;
+                }
+            });
 
-            if (userData.socketId === socket.id) {
-                // Preserve fName when updating socketId to null
-                const { fName } = userData;
+            if (!username) return;
 
-                await redisClient.hSet(
-                    "connectedUsers",
+            // 🔄 Fetch Redis data for this user
+            const redisData = allUsers[username] && JSON.parse(allUsers[username]);
+
+            // 🔄 Fetch user info from Supabase
+            const { data: userRecord, error } = await supabase
+                .from("users")
+                .select("name, profile_pic")
+                .eq("username", username)
+                .single();
+
+            if (error || !userRecord) {
+                console.error(`❌ Supabase user not found: ${username}`);
+                return;
+            }
+
+            const currentFName = userRecord.name?.trim();
+            const profilePic = userRecord.profile_pic || null;
+
+            if (redisData) {
+                const updatedUser = {
                     username,
-                    JSON.stringify({ username, fName, socketId: null })
-                );
+                    fName: currentFName,
+                    profilePic,
+                    socketId: null, // ❌ mark as disconnected
+                };
 
+                // ✅ Update Redis entry
+                await redisClient.hSet("connectedUsers", username, JSON.stringify(updatedUser));
+
+                // ✅ Refresh all users
                 const updatedUsers = await redisClient.hGetAll("connectedUsers");
 
                 const onlineUsers = Object.keys(updatedUsers)
                     .map((user) => {
                         try {
-                            const data = JSON.parse(updatedUsers[user]);
-                            if (data.socketId) {
-                                return {
-                                    username: data.username,
-                                    fName: data.fName,
-                                };
-                            }
+                            const u = JSON.parse(updatedUsers[user]);
+                            return u.socketId
+                                ? {
+                                    username: u.username,
+                                    fName: u.fName,
+                                    profilePic: u.profilePic || null,
+                                }
+                                : null;
                         } catch {
                             return null;
                         }
                     })
-                    .filter(Boolean); // remove nulls
+                    .filter(Boolean);
 
-                io.emit("online users", onlineUsers);
-                break;
+                // ✅ Fetch unseen messages from Supabase
+                const { data: unseenMessages, error: unseenErr } = await supabase.rpc("get_unseen_message_counts");
+
+                if (unseenErr) {
+                    console.error("Error fetching unseen message counts:", unseenErr.message);
+                    io.emit("online users", onlineUsers); // fallback
+                    return;
+                }
+
+                // ✅ Merge unseen counts with online users
+                const enrichedOnlineUsers = onlineUsers.map((user) => {
+                    const userUnseen = unseenMessages.filter((msg) => msg.sender === user.username);
+                    return {
+                        ...user,
+                        sentUnseenMessages:
+                            userUnseen.length > 0 ? userUnseen : [{ unseen_count: 0, receiver: null }],
+                    };
+                });
+
+                // ✅ Emit updated list
+                io.emit("online users", enrichedOnlineUsers);
             }
-        } catch {}
-    }
-});
+        });
+
 
     });
 }

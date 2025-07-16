@@ -48,8 +48,8 @@ export default function ChatApp() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [fullName, setFullName] = useState("");
   const [isChattingWindowOpen, setIsChattingWindowOpen] = useState(false);
-  // const [localDeleted, setLocalDeleted] = useState({});
-  // const [localDeletedEveryone, setLocalDeletedEveryone] = useState({});
+// const [localDeleted, setLocalDeleted] = useState({});
+// const [localDeletedEveryone, setLocalDeletedEveryone] = useState({});
 
 
   const emojiList = ["😀", "😂", "😍", "😎", "🥳", "🔥", "👍", "🎉", "😢", "🤔", "👏", "❤️"];
@@ -121,73 +121,73 @@ export default function ChatApp() {
       socket.off("typing", handleTyping); // cleanup to avoid duplicate listeners
     };
   }, [selectedReceiver]);
-  const sendUsernameEvent = () => {
-    if (username) {
-      socket.emit("username", { username });
-      socket.on("all names", ({ names }) => {
-        console.log("✅ Username updated:", username);
-        const user = names.find((n) => n.username === username);
-        setFullName(user?.name?.trim() || "");
-        setNameLoaded(true);
-      });
+const sendUsernameEvent=()=>{
+  if (username) {
+    socket.emit("username", { username });
+    socket.on("all names", ({ names }) => {
+      console.log("✅ Username updated:", username);
+      const user = names.find((n) => n.username === username);
+      setFullName(user?.name?.trim() || "");
+      setNameLoaded(true);
+    });
 
 
 
-      socket.on("chat message", (msg) => {
-        if (msg.from !== username) {
-          const notificationSound = new Audio("/notification/notification-sound.mp3");
-          notificationSound.volume = 0.3
-          notificationSound.play().catch((err) => {
-            console.warn("🔇 Sound blocked by browser:", err);
-          });
-        }
+    socket.on("chat message", (msg) => {
+      if (msg.from !== username) {
+        const notificationSound = new Audio("/notification/notification-sound.mp3");
+        notificationSound.volume = 0.3
+        notificationSound.play().catch((err) => {
+          console.warn("🔇 Sound blocked by browser:", err);
+        });
+      }
 
 
-        if (msg.from === selectedReceiver || msg.from === username) {
-          setChat((prevMessages) => {
-            const mergedMap = new Map();
+      if (msg.from === selectedReceiver || msg.from===username) {
+        setChat((prevMessages) => {
+          const mergedMap = new Map();
 
-            [...prevMessages, msg].forEach((m) => {
-              const existing = mergedMap.get(m.id);
-              if (!existing || new Date(m.created_at) > new Date(existing.created_at)) {
-                mergedMap.set(m.id, m);
-              }
-            });
-
-            return Array.from(mergedMap.values()).sort(
-              (a, b) => new Date(a.created_at) - new Date(b.created_at)
-            );
+          [...prevMessages, msg].forEach((m) => {
+            const existing = mergedMap.get(m.id);
+            if (!existing || new Date(m.created_at) > new Date(existing.created_at)) {
+              mergedMap.set(m.id, m);
+            }
           });
 
-          console.log("MSG FROM:", msg.from, "SELECTED:", selectedReceiver, "USERNAME:", username);
-        } else {
+          return Array.from(mergedMap.values()).sort(
+            (a, b) => new Date(a.created_at) - new Date(b.created_at)
+          );
+        });
+
+        console.log("MSG FROM:", msg.from, "SELECTED:", selectedReceiver, "USERNAME:", username);
+      } else {
 
 
 
 
-          if (
-            msg.from !== username && !selectedReceiver
-          ) {
-            toast.success(`New message from @${msg.from}`, {
-              icon: "💬",
-              duration: 3000,
-              style: {
-                background: "#333",
-                color: "#fff",
-              },
-            });
+        if (
+          msg.from !== username && !selectedReceiver
+        ) {
+          toast.success(`New message from @${msg.from}`, {
+            icon: "💬",
+            duration: 3000,
+            style: {
+              background: "#333",
+              color: "#fff",
+            },
+          });
 
 
-          }
         }
+      }
 
 
-      });
+    });
 
-      socket.on("online users", setOnlineUsers);
+    socket.on("online users", setOnlineUsers);
 
-    }
   }
+}
 
   useEffect(() => {
     setNameLoaded(true);
@@ -223,7 +223,7 @@ export default function ChatApp() {
 
 
 
-    // ✅ Handle login response
+  // ✅ Handle login response
     const handleLogin = ({ success, message }) => {
       setIsLoggedIn(success);
       setError(success ? "" : message);
@@ -391,7 +391,7 @@ export default function ChatApp() {
                       onClick={() => {
                         setSelectedReceiver(user.username);
                         setIsChattingWindowOpen(true)
-
+                   
                         setIsChatLoading(true);
                         getMessagesHistory({ sender: username, receiver: user.username });
                       }}
@@ -514,7 +514,7 @@ export default function ChatApp() {
                               ) : msg.is_deleted_for_everyone ? (
                                 <span className="italic text-gray-400">This message was deleted for everyone</span>
                               ) : (
-                                <p className="break-words">{msg.message}</p>
+                                    <p className="break-words">{msg.message}</p>
                               )}
                                 {msg.from === username && msg.deleted_for !== username && !msg.is_deleted_for_everyone && (
                                   <div className="relative inline-block text-left ml-2">
@@ -571,9 +571,9 @@ export default function ChatApp() {
                                   </div>
                                 )}
 
-
-
-                              </p>
+                        
+                              
+</p>
                               {msg.created_at && (
                                 <span className="text-[10px] text-gray-500 whitespace-nowrap ml-2">
                                   {new Date(msg.created_at).toLocaleTimeString([], {

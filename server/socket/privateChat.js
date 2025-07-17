@@ -394,7 +394,7 @@ function startServer(io) {
                 // 3. Send updated chat history
                 socket.emit("chat history", updatedChat);
                 updatedChat.forEach((msg) => {
-  console.log(`Message ID: ${msg.id}, Seen At: ${msg.seen_at}`);
+//   console.log(`Message ID: ${msg.id}, Seen At: ${msg.seen_at}`);
 });
 
                 

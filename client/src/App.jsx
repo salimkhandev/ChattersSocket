@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import GroupChat from "./Components/GroupChat";
 
 
@@ -10,6 +10,7 @@ import { io } from "socket.io-client";
 
 import {
   LogOut,
+  MessageCircle,
   MessageSquareMore,
   MoreHorizontal,
   Send,
@@ -54,6 +55,7 @@ export default function ChatApp() {
   // const [localDeleted, setLocalDeleted] = useState({});
   // const [localDeletedEveryone, setLocalDeletedEveryone] = useState({});
 
+  const [activeTab, setActiveTab] = useState("people"); // or "groups"
 
   const emojiList = ["😀", "😂", "😍", "😎", "🥳", "🔥", "👍", "🎉", "😢", "🤔", "👏", "❤️"];
   const chatEndRef = useRef(null);
@@ -355,17 +357,7 @@ export default function ChatApp() {
   }, [selectedReceiver]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center px-4 py-8 relative">
-      <GroupChat socket={socket} username={username} />
-      {isLoggedIn && username && (
-        <div className="absolute top-4 left-4">
-
-
-          <UserProfileUpload nameLoaded={nameLoaded} username={username} fullName={fullName} setFullName={setFullName} socket={socket} />
-        </div>
-      )}
-
-
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 relative">
       {!username || !isLoggedIn ? (
         <div className="bg-white shadow-2xl p-8 rounded-xl w-full max-w-sm text-center animate-fadeIn">
           <UserPlus className="w-12 h-12 text-indigo-600 mx-auto mb-4" />
@@ -384,379 +376,440 @@ export default function ChatApp() {
           {error && <p className="text-red-500 mt-3 text-sm animate-pulse">{error}</p>}
         </div>
       ) : (
-        <div className="w-full max-w-6xl h-[36rem] bg-white rounded-xl shadow-xl flex flex-col md:flex-row overflow-hidden animate-fadeIn">
-          <Toaster position="top-right" reverseOrder={false} />
-          <aside className="w-full md:w-1/3 bg-white border-r p-5 flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-indigo-600 flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Online Users
-              </h2>
+        <div className="w-full max-w-6xl bg-white rounded-xl shadow-xl flex flex-col overflow-hidden h-[calc(100vh-2rem)]">
+          {/* Top Navigation Bar */}
+          <div className="bg-white border-b p-4 flex items-center justify-between shrink-0 z-20">
+            <UserProfileUpload nameLoaded={nameLoaded} username={username} fullName={fullName} setFullName={setFullName} socket={socket} />
+            
+            {/* Center Toggle Buttons */}
+            <div className="flex bg-gray-100 p-0.5 rounded-full relative">
+              <div 
+                className={`absolute inset-0.5 bg-blue-600 rounded-full transition-transform duration-200 ease-in-out ${
+                  activeTab === "people" ? 'w-[50%] left-0' : 'w-[50%] translate-x-full'
+                }`}
+              />
               <button
-                onClick={logout}
-                className="text-red-500 hover:underline text-sm flex items-center gap-1"
+                onClick={() => setActiveTab("people")}
+                className={`w-[50%] px-6 py-1.5 rounded-full font-medium transition-colors duration-200 ease-in-out flex items-center justify-center gap-2 relative z-10 ${
+                  activeTab === "people"
+                    ? "text-white"
+                    : "text-gray-700"
+                }`}
               >
-                <LogOut className="w-4 h-4" />
-                Logout
+                <Users className="w-4 h-4" />
+                People
+              </button>
+              <button
+                onClick={() => setActiveTab("groups")}
+                className={`w-[50%] px-6 py-1.5 rounded-full font-medium transition-colors duration-200 ease-in-out flex items-center justify-center gap-2 relative z-10 ${
+                  activeTab === "groups"
+                    ? "text-white"
+                    : "text-gray-700"
+                }`}
+              >
+                <MessageCircle className="w-4 h-4" />
+                Groups
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto mt-2 space-y-2">
-              {onlineUsers.length <= 1 && (
-                <p className="text-sm text-gray-400 italic">No one else is online</p>
-              )}
-              {onlineUsers
-                .filter((u) => u.username !== username)
-                .sort((a, b) => a.username.localeCompare(b.username)) // 👈 Alphabetical order
-                .map((user, idx) => {
-                  const unseen = user.sentUnseenMessages?.find(
-                    (m) => m.receiver === username
-                  )?.unseen_count;
 
-                  return (
-                    <div
-                      key={idx}
-                      onClick={() => {
-                        setSelectedReceiver(user.username);
-                        setIsChattingWindowOpen(true)
+            <button
+              onClick={logout}
+              className="text-red-500 hover:text-red-600 text-sm flex items-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
 
-                        setIsChatLoading(true);
-                        getMessagesHistory({ sender: username, receiver: user.username });
-                      }}
-                      className={`group cursor-pointer p-3 rounded-lg flex items-center gap-4 transition-all ${selectedReceiver === user.username
-                        ? "bg-indigo-100 text-indigo-700 font-semibold shadow-sm"
-                        : "hover:bg-gray-100"
-                        }`}
-                    >
-                      {/* Avatar or fallback */}
-                      {user.profilePic ? (
-                        <img
-                          src={user.profilePic}
-                          alt="profile"
-                          className="w-10 h-10 rounded-full object-cover border shadow-sm"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 bg-indigo-200 text-indigo-800 font-bold flex items-center justify-center rounded-full shadow-sm">
-                          {user.fName?.[0]?.toUpperCase() || "?"}
-                        </div>
-                      )}
-
-                      {/* Name and username */}
-                      <div className="flex-1">
-                        <p className="text-sm font-medium leading-4">{user.fName}</p>
-                        {isTyping.typer === user.username && !isChattingWindowOpen ? (
-                          <p className="text-[11px] text-purple-500 animate-pulse mt-0.5">
-                            typing...
-                          </p>) : (
-
-                          <p className="text-xs text-gray-500">@{user.username}</p>
-                        )
-                        }
-                      </div>
-
-                      {/* Unread badge */}
-                      {unseen > 0 && selectedReceiver !== user.username && (
-                        <div className="bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow">
-                          {unseen}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-
-
-
-            </div>
-          </aside>
-          {
-            selectedReceiver && (
-
-              <main className="flex-1 p-6 flex flex-col justify-between relative ">
-
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                      <MessageSquareMore className="w-5 h-5 text-purple-600" />
-                      Chat with{" "}
-                      <span className="text-indigo-600">
-                        {onlineUsers.find(u => u.username === selectedReceiver)?.fName || selectedReceiver}
-                      </span>
-                    </h1>
+          {/* Content Area */}
+          <div className="flex-1 relative overflow-hidden">
+            {/* People Tab */}
+            <div className={`absolute inset-0 w-full h-full transition-all duration-300 ease-in-out transform ${
+              activeTab === "people" 
+                ? "translate-x-0 opacity-100 z-10" 
+                : "-translate-x-full opacity-0 pointer-events-none z-0"
+            }`}>
+              <div className="w-full h-full flex">
+                {/* People content */}
+                <aside className="w-80 bg-white border-r p-5 flex flex-col">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-lg font-semibold text-indigo-600 flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      
+                      Online Users
+                    </h2>
                     <button
-                      onClick={closeChat}
-                      className="p-2 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
-                      title="Close chat"
+                      onClick={logout}
+                      className="text-red-500 hover:underline text-sm flex items-center gap-1"
                     >
-                      <X className="w-5 h-5" />
+                      <LogOut className="w-4 h-4" />
+                      Logout
                     </button>
                   </div>
+                  <div className="flex-1 overflow-y-auto mt-2 space-y-2">
+                    {onlineUsers.length <= 1 && (
+                      <p className="text-sm text-gray-400 italic">No one else is online</p>
+                    )}
+                    {onlineUsers
+                      .filter((u) => u.username !== username)
+                      .sort((a, b) => a.username.localeCompare(b.username)) // 👈 Alphabetical order
+                      .map((user, idx) => {
+                        const unseen = user.sentUnseenMessages?.find(
+                          (m) => m.receiver === username
+                        )?.unseen_count;
 
-                  <div className="h-[22rem] overflow-y-auto rounded-lg bg-gray-50 p-4 border shadow-inner space-y-4">
-
-                    {isChatLoading ? (
-                      <p className="text-center text-gray-400 italic">Loading chat...</p>
-                    ) : (
-
-                      chat.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`flex ${msg.from === username ? "justify-end" : "justify-start"}`}
-                        >
+                        return (
                           <div
-                            className={`px-4 py-2 rounded-xl max-w-xs text-sm shadow-sm ${msg.from === username
-                              ? "bg-green-200 text-gray-900"
-                              : "bg-white text-gray-900 border"
+                            key={idx}
+                            onClick={() => {
+                              setSelectedReceiver(user.username);
+                              setIsChattingWindowOpen(true)
+
+                              setIsChatLoading(true);
+                              getMessagesHistory({ sender: username, receiver: user.username });
+                            }}
+                            className={`group cursor-pointer p-3 rounded-lg flex items-center gap-4 transition-all ${selectedReceiver === user.username
+                              ? "bg-indigo-100 text-indigo-700 font-semibold shadow-sm"
+                              : "hover:bg-gray-100"
                               }`}
                           >
+                            {/* Avatar or fallback */}
+                            {user.profilePic ? (
+                              <img
+                                src={user.profilePic}
+                                alt="profile"
+                                className="w-10 h-10 rounded-full object-cover border shadow-sm"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-indigo-200 text-indigo-800 font-bold flex items-center justify-center rounded-full shadow-sm">
+                                {user.fName?.[0]?.toUpperCase() || "?"}
+                              </div>
+                            )}
 
-                            <p className="text-xs text-gray-500 mb-1">
-                              {msg.from === username ? "You" : msg.from}{" "}
-                              {msg.from === username ? (
-                                msg.seen ? (
-                                  <div className="relative group inline-block">
-                                    {!msg.is_deleted_for_everyone && !msg.deleted_for?.split(",").map(s => s.trim()).includes(username) && (
-                                      <span className="text-[10px] text-blue-600 ml-2">Seen</span>
-                                    )}
-                                    {msg.seen_at && !msg.deleted_for?.split(",").map(s => s.trim()).includes(username) && !msg.is_deleted_for_everyone && (
-                                      <span className="absolute bottom-full mb-1 left-0 text-[10px] text-gray-500 bg-white px-1 w-max rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                        {new Date(msg.seen_at).toLocaleString("en-US", {
-                                          timeZone: "Asia/Karachi",
-                                          month: "short",
-                                          day: "2-digit",
+                            {/* Name and username */}
+                            <div className="flex-1">
+                              <p className="text-sm font-medium leading-4">{user.fName}</p>
+                              {isTyping.typer === user.username && !isChattingWindowOpen ? (
+                                <p className="text-[11px] text-purple-500 animate-pulse mt-0.5">
+                                  typing...
+                                </p>) : (
+
+                                <p className="text-xs text-gray-500">@{user.username}</p>
+                              )
+                              }
+                            </div>
+
+                            {/* Unread badge */}
+                            {unseen > 0 && selectedReceiver !== user.username && (
+                              <div className="bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow">
+                                {unseen}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+
+
+                  </div>
+                </aside>
+                {selectedReceiver && (
+                  <main className="flex-1 flex flex-col">
+                    <div className="flex flex-col h-full">
+                      <div className="flex items-center justify-between mb-4">
+                        <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                          <MessageSquareMore className="w-5 h-5 text-purple-600" />
+                          Chat with{" "}
+                          <span className="text-indigo-600">
+                            {onlineUsers.find(u => u.username === selectedReceiver)?.fName || selectedReceiver}
+                          </span>
+                        </h1>
+                        <button
+                          onClick={closeChat}
+                          className="p-2 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                          title="Close chat"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto rounded-lg bg-gray-50 p-4 border shadow-inner space-y-4">
+                        {isChatLoading ? (
+                          <p className="text-center text-gray-400 italic">Loading chat...</p>
+                        ) : (
+                          chat.map((msg) => (
+                            <div
+                              key={msg.id}
+                              className={`flex ${msg.from === username ? "justify-end" : "justify-start"}`}
+                            >
+                              <div
+                                className={`px-4 py-2 rounded-xl max-w-xs text-sm shadow-sm ${msg.from === username
+                                  ? "bg-green-200 text-gray-900"
+                                  : "bg-white text-gray-900 border"
+                                }`}
+                              >
+                                {/* Message content */}
+                                <p className="text-xs text-gray-500 mb-1">
+                                  {msg.from === username ? "You" : msg.from}{" "}
+                                  {msg.from === username ? (
+                                    msg.seen ? (
+                                      <div className="relative group inline-block">
+                                        {!msg.is_deleted_for_everyone && !msg.deleted_for?.split(",").map(s => s.trim()).includes(username) && (
+                                          <span className="text-[10px] text-blue-600 ml-2">Seen</span>
+                                        )}
+                                        {msg.seen_at && !msg.deleted_for?.split(",").map(s => s.trim()).includes(username) && !msg.is_deleted_for_everyone && (
+                                          <span className="absolute bottom-full mb-1 left-0 text-[10px] text-gray-500 bg-white px-1 w-max rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                            {new Date(msg.seen_at).toLocaleString("en-US", {
+                                              timeZone: "Asia/Karachi",
+                                              month: "short",
+                                              day: "2-digit",
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                              hour12: true,
+                                            })}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-[10px] text-gray-400 ml-2">Unseen</span>
+                                    )
+                                  ) : null}
+                                </p>
+
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="break-words flex-1">
+                                    {msg.deleted_for?.split(",").map(s => s.trim()).includes(username)
+                                      ? (
+                                        <span className="italic text-gray-400">Deleted for you</span>
+                                      ) : msg.is_deleted_for_everyone ? (
+                                        <span className="italic text-gray-400">This message was deleted for everyone</span>
+                                      ) : (
+                                        msg.message
+                                      )}
+                                  </p>
+
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    {msg.created_at && (
+                                      <span className="text-[10px] text-gray-500 whitespace-nowrap">
+                                        {new Date(msg.created_at).toLocaleTimeString([], {
                                           hour: "2-digit",
                                           minute: "2-digit",
-                                          hour12: true,
                                         })}
                                       </span>
                                     )}
-                                  </div>
-                                ) : (
-                                  <span className="text-[10px] text-gray-400 ml-2">Unseen</span>
-                                )
-                              ) : null}
-                            </p>
 
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="break-words flex-1">
-                                {msg.deleted_for?.split(",").map(s => s.trim()).includes(username)
-                                  ? (
-                                    <span className="italic text-gray-400">Deleted for you</span>
-                                  ) : msg.is_deleted_for_everyone ? (
-                                    <span className="italic text-gray-400">This message was deleted for everyone</span>
-                                  ) : (
-                                    msg.message
-                                  )}
-                              </p>
+                                    {/* Message Options */}
+                                    {msg.from === username && !msg.deleted_for?.split(",").map(s => s.trim()).includes(username) && !msg.is_deleted_for_everyone ? (
+                                      <div className="relative inline-block">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setChat((prev) =>
+                                              prev.map((m) =>
+                                                m.id === msg.id
+                                                  ? { ...m, showOptions: !m.showOptions }
+                                                  : { ...m, showOptions: false }
+                                              )
+                                            );
+                                          }}
+                                          className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                                          title="Message options"
+                                          aria-label="Message options"
+                                        >
+                                          <MoreHorizontal className="w-4 h-4" />
+                                        </button>
 
-                              <div className="flex items-center gap-2 shrink-0">
-                                {msg.created_at && (
-                                  <span className="text-[10px] text-gray-500 whitespace-nowrap">
-                                    {new Date(msg.created_at).toLocaleTimeString([], {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                  </span>
-                                )}
+                                        {msg.showOptions && (
+                                          <>
+                                            {/* Click outside overlay */}
+                                            <div
+                                              className="fixed inset-0 z-10"
+                                              onClick={() => setChat(prev =>
+                                                prev.map(m => ({ ...m, showOptions: false }))
+                                              )}
+                                            />
 
-                                {/* Message Options */}
-                                {msg.from === username && !msg.deleted_for?.split(",").map(s => s.trim()).includes(username) && !msg.is_deleted_for_everyone ? (
-                                  <div className="relative inline-block">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setChat((prev) =>
-                                          prev.map((m) =>
-                                            m.id === msg.id
-                                              ? { ...m, showOptions: !m.showOptions }
-                                              : { ...m, showOptions: false }
-                                          )
-                                        );
-                                      }}
-                                      className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                                      title="Message options"
-                                      aria-label="Message options"
-                                    >
-                                      <MoreHorizontal className="w-4 h-4" />
-                                    </button>
+                                            {/* Dropdown menu */}
+                                            <div className="absolute right-0 mt-1 z-20 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200">
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setChat((prev) =>
+                                                    prev.map((m) =>
+                                                      m.id === msg.id
+                                                        ? { ...m, deleted_for: username, showOptions: false }
+                                                        : m
+                                                    )
+                                                  );
+                                                  socket.emit("delete for me", {
+                                                    username,
+                                                    messageId: msg.id,
+                                                  });
+                                                }}
+                                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
+                                              >
+                                                <Trash2 className="w-4 h-4" />
+                                                Delete for me
+                                              </button>
 
-                                    {msg.showOptions && (
-                                      <>
-                                        {/* Click outside overlay */}
-                                        <div
-                                          className="fixed inset-0 z-10"
-                                          onClick={() => setChat(prev =>
-                                            prev.map(m => ({ ...m, showOptions: false }))
-                                          )}
-                                        />
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setChat((prev) =>
+                                                    prev.map((m) =>
+                                                      m.id === msg.id
+                                                        ? { ...m, is_deleted_for_everyone: true, showOptions: false }
+                                                        : m
+                                                    )
+                                                  );
+                                                  socket.emit("delete for everyone", {
+                                                    username,
+                                                    messageId: msg.id,
+                                                  });
+                                                }}
+                                                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 border-t border-gray-100"
+                                              >
+                                                <Trash2 className="w-4 h-4" />
+                                                <span>Delete for everyone</span>
+                                              </button>
+                                            </div>
+                                          </>
+                                        )}
+                                      </div>
+                                    ) : msg.from !== username && !msg.deleted_for?.split(",").map(s => s.trim()).includes(username) && !msg.is_deleted_for_everyone && (
+                                      <div className="relative inline-block">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setChat((prev) =>
+                                              prev.map((m) =>
+                                                m.id === msg.id
+                                                  ? { ...m, showOptions: !m.showOptions }
+                                                  : { ...m, showOptions: false }
+                                              )
+                                            );
+                                          }}
+                                          className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                                          title="Message options"
+                                          aria-label="Message options"
+                                        >
+                                          <MoreHorizontal className="w-4 h-4" />
+                                        </button>
 
-                                        {/* Dropdown menu */}
-                                        <div className="absolute right-0 mt-1 z-20 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200">
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setChat((prev) =>
-                                                prev.map((m) =>
-                                                  m.id === msg.id
-                                                    ? { ...m, deleted_for: username, showOptions: false }
-                                                    : m
-                                                )
-                                              );
-                                              socket.emit("delete for me", {
-                                                username,
-                                                messageId: msg.id,
-                                              });
-                                            }}
-                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
-                                          >
-                                            <Trash2 className="w-4 h-4" />
-                                            Delete for me
-                                          </button>
+                                        {msg.showOptions && (
+                                          <>
+                                            {/* Click outside overlay */}
+                                            <div
+                                              className="fixed inset-0 z-10"
+                                              onClick={() => setChat(prev =>
+                                                prev.map(m => ({ ...m, showOptions: false }))
+                                              )}
+                                            />
 
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setChat((prev) =>
-                                                prev.map((m) =>
-                                                  m.id === msg.id
-                                                    ? { ...m, is_deleted_for_everyone: true, showOptions: false }
-                                                    : m
-                                                )
-                                              );
-                                              socket.emit("delete for everyone", {
-                                                username,
-                                                messageId: msg.id,
-                                              });
-                                            }}
-                                            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 border-t border-gray-100"
-                                          >
-                                            <Trash2 className="w-4 h-4" />
-                                            <span>Delete for everyone</span>
-                                          </button>
-                                        </div>
-                                      </>
+                                            {/* Dropdown menu */}
+                                            <div className="absolute left-0 mt-1 z-20 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200">
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setChat((prev) =>
+                                                    prev.map((m) =>
+                                                      m.id === msg.id
+                                                        ? { ...m, deleted_for: username, showOptions: false }
+                                                        : m
+                                                    )
+                                                  );
+                                                  socket.emit("delete for me", {
+                                                    username,
+                                                    messageId: msg.id,
+                                                  });
+                                                }}
+                                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
+                                              >
+                                                <Trash2 className="w-4 h-4" />
+                                                Delete for me
+                                              </button>
+                                            </div>
+                                          </>
+                                        )}
+                                      </div>
                                     )}
                                   </div>
-                                ) : msg.from !== username && !msg.deleted_for?.split(",").map(s => s.trim()).includes(username) && !msg.is_deleted_for_everyone && (
-                                  <div className="relative inline-block">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setChat((prev) =>
-                                          prev.map((m) =>
-                                            m.id === msg.id
-                                              ? { ...m, showOptions: !m.showOptions }
-                                              : { ...m, showOptions: false }
-                                          )
-                                        );
-                                      }}
-                                      className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                                      title="Message options"
-                                      aria-label="Message options"
-                                    >
-                                      <MoreHorizontal className="w-4 h-4" />
-                                    </button>
+                                </div>
 
-                                    {msg.showOptions && (
-                                      <>
-                                        {/* Click outside overlay */}
-                                        <div
-                                          className="fixed inset-0 z-10"
-                                          onClick={() => setChat(prev =>
-                                            prev.map(m => ({ ...m, showOptions: false }))
-                                          )}
-                                        />
-
-                                        {/* Dropdown menu */}
-                                        <div className="absolute left-0 mt-1 z-20 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200">
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setChat((prev) =>
-                                                prev.map((m) =>
-                                                  m.id === msg.id
-                                                    ? { ...m, deleted_for: username, showOptions: false }
-                                                    : m
-                                                )
-                                              );
-                                              socket.emit("delete for me", {
-                                                username,
-                                                messageId: msg.id,
-                                              });
-                                            }}
-                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
-                                          >
-                                            <Trash2 className="w-4 h-4" />
-                                            Delete for me
-                                          </button>
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
-                                )}
                               </div>
                             </div>
 
+                          )))
+
+                        }
+                        {isTyping.typer === selectedReceiver && (
+                          <p className="text-sm italic text-gray-400">{isTyping.typer} is typing...</p>
+                        )}
+                        <div ref={chatEndRef} />
+                      </div>
+
+                      <div className="mt-4 bg-white rounded-lg border shadow-sm relative">
+                        {showEmojiPicker && (
+                          <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-300 rounded-xl shadow-lg p-3 grid grid-cols-6 gap-2 z-50">
+                            {emojiList.map((emoji, idx) => (
+                              <button
+                                key={idx}
+                                className="text-xl hover:scale-125 transition-transform"
+                                onClick={() => {
+                                  setMessage((prev) => prev + emoji);
+                                  setShowEmojiPicker(false);
+                                }}
+                              >
+                                {emoji}
+                              </button>
+                            ))}
                           </div>
+                        )}
+                        <div className="p-3 flex items-center gap-2">
+                          <input
+                            className="flex-1 px-4 py-2 text-base focus:outline-none"
+                            placeholder="Type a message..."
+                            value={message}
+                            onChange={handleTyping}
+                            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowEmojiPicker((prev) => !prev)}
+                            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            title="Insert Emoji"
+                          >
+                            <Smile className="w-5 h-5 text-gray-500" />
+                          </button>
+                          <button
+                            onClick={sendMessage}
+                            disabled={!message.trim() || !selectedReceiver}
+                            className={`flex items-center gap-1 px-4 py-2 rounded-lg text-white transition ${
+                              message.trim() && selectedReceiver
+                                ? "bg-indigo-600 hover:bg-indigo-700"
+                                : "bg-gray-300 cursor-not-allowed"
+                            }`}
+                          >
+                            <Send className="w-4 h-4" />
+                            Send
+                          </button>
                         </div>
-
-                      )))
-
-                    }
-                    {isTyping.typer === selectedReceiver && (
-                      <p className="text-sm italic text-gray-400">{isTyping.typer} is typing...</p>
-                    )}
-                    <div ref={chatEndRef} />
-                  </div>
-                </div>
-
-                {showEmojiPicker && (
-                  <div className="absolute bottom-24 right-6 bg-white border border-gray-300 rounded-xl shadow-lg p-3 grid grid-cols-6 gap-2 z-50">
-                    {emojiList.map((emoji, idx) => (
-                      <button
-                        key={idx}
-                        className="text-xl hover:scale-125 transition-transform"
-                        onClick={() => {
-                          setMessage((prev) => prev + emoji);
-                          setShowEmojiPicker(false);
-                        }}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
+                      </div>
+                    </div>
+                  </main>
                 )}
+              </div>
+            </div>
 
-                <div className="mt-4 flex items-center gap-2 relative">
-                  <input
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                    placeholder="Type a message..."
-                    value={message}
-                    onChange={handleTyping}
-                    onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowEmojiPicker((prev) => !prev)}
-                    className="text-xl px-2 hover:scale-110 transition-transform"
-                    title="Insert Emoji"
-                  >
-                    <Smile className="w-5 h-5 text-gray-500" />
-                  </button>
-                  <button
-                    onClick={sendMessage}
-                    disabled={!message.trim() || !selectedReceiver}
-                    className={`flex items-center gap-1 px-5 py-2 rounded-lg text-white transition ${message.trim() && selectedReceiver
-                      ? "bg-indigo-600 hover:bg-indigo-700"
-                      : "bg-gray-300 cursor-not-allowed"
-                      }`}
-                  >
-                    <Send className="w-4 h-4" />
-                    Send
-                  </button>
-                </div>
-              </main>
-            )
-          }
-
+            {/* Groups Tab */}
+            <div className={`absolute inset-0 w-full h-full flex transition-all duration-300 ease-in-out transform ${
+              activeTab === "groups" 
+                ? "translate-x-0 opacity-100 z-10" 
+                : "translate-x-full opacity-0 pointer-events-none z-0"
+            }`}>
+              <GroupChat socket={socket} username={username} />
+            </div>
+          </div>
         </div>
       )}
     </div>

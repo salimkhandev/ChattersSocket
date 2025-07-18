@@ -19,7 +19,7 @@ function groupChat(io) {
         });
 
         socket.on("delete group", async ({ groupName, username }) => {
-            groupName = groupName.trim().toLowerCase();
+            groupName = groupName.trim()
 
             if (!groupName || !username) return;
 
@@ -93,7 +93,7 @@ function groupChat(io) {
 
         // ✅ Create and join group
         socket.on("create group", async ({ groupName, username }) => {
-            groupName = groupName.trim().toLowerCase();
+            groupName = groupName.trim();
             if (!groupName) return;
 
             // Add group to memory
@@ -134,7 +134,7 @@ function groupChat(io) {
 
         // ✅ Join existing group
         socket.on("join group", ({ groupName, username }) => {
-            groupName = groupName.trim().toLowerCase();
+            groupName = groupName.trim()
 
             if (!groupName) return;
 
@@ -151,7 +151,7 @@ function groupChat(io) {
 
 
         socket.on("group message", async ({ groupName, from, message }) => {
-            groupName = groupName.trim().toLowerCase();
+            groupName = groupName.trim();
             const sender = from.trim().toLowerCase();
             const created_at = new Date().toISOString();
 
@@ -181,7 +181,7 @@ function groupChat(io) {
             }
         });
         socket.on("get group history", async ({ groupName }) => {
-    groupName = groupName.trim().toLowerCase();
+    groupName = groupName.trim()
 
     const { data, error } = await supabase
         .from("group_messages")

@@ -129,77 +129,67 @@ export default function ChatApp() {
     return () => {
       socket.off("typing", handleTyping); // cleanup to avoid duplicate listeners
     };
-  }, [selectedReceiver]);
-  const sendUsernameEvent = () => {
-    if (username) {
-      socket.emit("username", { username });
-      socket.on("all names", ({ names }) => {
-        console.log("✅ Username updated:", username);
-        const user = names.find((n) => n.username === username);
-        setFullName(user?.name?.trim() || "");
-        setNameLoaded(true);
-      });
-
-
-
-      socket.on("chat message", (msg) => {
-        if (msg.from !== username) {
-          const notificationSound = new Audio("/notification/notification-sound.mp3");
-          notificationSound.volume = 0.3
-          notificationSound.play().catch((err) => {
-            console.warn("🔇 Sound blocked by browser:", err);
-          });
-        }
-
-
-        if (msg.from === selectedReceiver || msg.from === username) {
-          setChat((prevMessages) => {
-            const mergedMap = new Map();
-
-            [...prevMessages, msg].forEach((m) => {
-              const existing = mergedMap.get(m.id);
-              if (!existing || new Date(m.created_at) > new Date(existing.created_at)) {
-                mergedMap.set(m.id, m);
-              }
-            });
-
-            return Array.from(mergedMap.values()).sort(
-              (a, b) => new Date(a.created_at) - new Date(b.created_at)
-            );
-          });
-
-          console.log("MSG FROM:", msg.from, "SELECTED:", selectedReceiver, "USERNAME:", username);
-        } else {
-
-
-
-
-          if (
-            msg.from !== username && !selectedReceiver
-          ) {
-            toast.success(`New message from @${msg.from}`, {
-              icon: "💬",
-              duration: 3000,
-              style: {
-                background: "#333",
-                color: "#fff",
-              },
-            });
-
-
-          }
-        }
-
-
-      });
-
-      socket.on("online users", setOnlineUsers);
-
-    }
-  }
+  }, [selectedReceiver, chat]);
 
   useEffect(() => {
     setNameLoaded(true);
+    
+    const sendUsernameEvent = () => {
+      if (username) {
+        socket.emit("username", { username });
+        socket.on("all names", ({ names }) => {
+          console.log("✅ Username updated:", username);
+          const user = names.find((n) => n.username === username);
+          setFullName(user?.name?.trim() || "");
+          setNameLoaded(true);
+        });
+
+        socket.on("chat message", (msg) => {
+          if (msg.from !== username) {
+            const notificationSound = new Audio("/notification/notification-sound.mp3");
+            notificationSound.volume = 0.3
+            notificationSound.play().catch((err) => {
+              console.warn("🔇 Sound blocked by browser:", err);
+            });
+          }
+
+          if (msg.from === selectedReceiver || msg.from === username) {
+            setChat((prevMessages) => {
+              const mergedMap = new Map();
+
+              [...prevMessages, msg].forEach((m) => {
+                const existing = mergedMap.get(m.id);
+                if (!existing || new Date(m.created_at) > new Date(existing.created_at)) {
+                  mergedMap.set(m.id, m);
+                }
+              });
+
+              return Array.from(mergedMap.values()).sort(
+                (a, b) => new Date(a.created_at) - new Date(b.created_at)
+              );
+            });
+
+            console.log("MSG FROM:", msg.from, "SELECTED:", selectedReceiver, "USERNAME:", username);
+          } else {
+            if (
+              msg.from !== username && !selectedReceiver
+            ) {
+              toast.success(`New message from @${msg.from}`, {
+                icon: "💬",
+                duration: 3000,
+                style: {
+                  background: "#333",
+                  color: "#fff",
+                },
+              });
+            }
+          }
+        });
+
+        socket.on("online users", setOnlineUsers);
+      }
+    };
+    
     const mergeAndDeduplicate = (arr1, arr2) => {
       const mergedMap = new Map();
 
@@ -230,8 +220,6 @@ export default function ChatApp() {
       );
     };
 
-
-
     // ✅ Handle login response
     const handleLogin = ({ success, message }) => {
       setIsLoggedIn(success);
@@ -253,17 +241,14 @@ export default function ChatApp() {
         is_deleted_for_everyone: msg.is_deleted_for_everyone,
       }));
 
-
       setChat((prevMessages) => {
         console.log("prevMessages", prevMessages);
         console.log("formattedMessages", formattedMessages);
         return mergeAndDeduplicate(prevMessages, formattedMessages);
-
       });
 
       setIsChatLoading(false);
     };
-
 
     // 🔌 Register listeners
     socket.on("isLoggedIn", handleLogin);

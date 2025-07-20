@@ -1,14 +1,16 @@
 'use client';
-import React, { useRef, useState, useEffect } from "react";
-import { User, Camera, Trash2, Edit3, Check, X, Settings } from "lucide-react";
 import imageCompression from "browser-image-compression";
+import { Camera, Check, Edit3, LogIn, Settings, Trash2, User, X } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+// user react.memoe bellow
 
-export default function UserProfileUpload({ nameLoaded, username, setFullName,fullName, socket }) {
+export default function UserProfileUpload({ nameLoaded, username, socket }) {
     const fileInputRef = useRef(null);
-    const [loading, setLoading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [profilePic, setProfilePic] = useState(null);
-    const [currentFullName, setCurrentFullName] = useState(fullName); // actual display name
-    const [newFullName, setNewFullName] = useState(fullName); // temp input name
+    const [currentFullName, setCurrentFullName] = useState(''); 
+    const [newFullName, setNewFullName] = useState(''); 
 
     const [isEditingName, setIsEditingName] = useState(false);
     const [nameError, setNameError] = useState('');
@@ -23,6 +25,8 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
         // } catch (err) {
         //     console.error("Error fetching profile picture:", err);
         // }
+
+
         try {
             const res = await fetch(`http://localhost:3000/get-profile-pic/${username}`);
             const data = await res.json();
@@ -31,8 +35,38 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
             console.error("Error fetching profile picture:", err);
         }
     };
+    const fetchFullName = async (username) => {
+        try {
+            const res = await fetch(`http://localhost:3000/get-users-fullName/${username}`);
+
+            if (!res.ok) {
+                throw new Error("Failed to fetch full name");
+            }
+
+            const data = await res.json();
+
+            // Do something with fullName
+            return data.fullName;
+        } catch (err) {
+            console.error("❌ Error fetching full name:", err.message);
+            return null;
+        }
+    };
 
     useEffect(() => {
+        if (username) {
+            fetchFullName(username).then((name) => {
+                if (name){ setNewFullName(name) 
+                     setCurrentFullName(name);
+                    }
+            });
+        }
+    }, [username]);
+
+
+    useEffect(() => {
+
+        
         fetchProfilePic();
     }, [username]);
 
@@ -65,7 +99,7 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
                 setCurrentFullName(data.fullName);  // update UI display name
                 setNewFullName(data.fullName);      // sync input with updated value
                 setIsEditingName(false);
-                setFullName(data.fullName)
+                // setFullName(data.fullName)
                 setNameError('');
             }
  else {
@@ -95,7 +129,7 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
             initialQuality: 0.8,          // High initial quality
         };
 
-        setLoading(true);
+        setIsUploading(true);
         setUploadError("");
 
         try {
@@ -129,13 +163,13 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
             console.error("Upload failed:", err);
             setUploadError("Upload failed. Please try again.");
         } finally {
-            setLoading(false);
+            setIsUploading(false);
         }
     };
 
 
     const handleDelete = async () => {
-        setLoading(true);
+        setIsDeleting(true);
         setUploadError('');
 
         try {
@@ -164,9 +198,12 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
             console.error("Delete failed:", err);
             setUploadError('Delete failed. Please try again.');
         } finally {
-            setLoading(false);
+            setIsDeleting(false);
         }
     };
+// sugget me to log
+
+
 
     const cancelNameEdit = () => {
         setNewFullName(currentFullName);
@@ -216,7 +253,7 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
             <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-gray-900 truncate">
                     {nameLoaded === false
-                        ? "Loading...": currentFullName
+                        ? "Loading..." : currentFullName
 }
                 </h3>
 
@@ -269,7 +306,7 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
                             {/* Upload overlay */}
                             <button
                                 onClick={() => fileInputRef.current.click()}
-                                disabled={loading}
+                                disabled={isUploading || isDeleting}
                                 className="absolute inset-0 w-32 h-32 rounded-full bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 disabled:cursor-not-allowed"
                             >
                                 <Camera className="w-8 h-8 text-white" />
@@ -280,21 +317,21 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
                         <div className="flex flex-col sm:flex-row gap-2 w-full">
                             <button
                                 onClick={() => fileInputRef.current.click()}
-                                disabled={loading}
+                                disabled={isUploading || isDeleting}
                                 className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2"
                             >
                                 <Camera className="w-4 h-4" />
-                                {loading ? "Uploading..." : "Change Photo"}
+                                {isUploading ? "Uploading..." : "Change Photo"}
                             </button>
 
                             {profilePic && (
                                 <button
                                     onClick={handleDelete}
-                                    disabled={loading}
+                                    disabled={isDeleting || isUploading}
                                     className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-400 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2"
                                 >
                                     <Trash2 className="w-4 h-4" />
-                                    {loading ? "Deleting..." : "Delete"}
+                                    {isDeleting ? "Deleting..." : "Delete"}
                                 </button>
                             )}
                         </div>
@@ -347,7 +384,7 @@ export default function UserProfileUpload({ nameLoaded, username, setFullName,fu
                         ) : (
                             <div className="flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg">
                                 <span className="text-gray-900 font-medium">
-                                    {fullName || 'No name set'}
+                                    {currentFullName || 'No name set'}
                                 </span>
                                 <button
                                     onClick={() => setIsEditingName(true)}

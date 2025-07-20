@@ -2,9 +2,9 @@
 const express = require("express");
 const multer = require("multer");
 const  supabase  = require("../config/supabaseClient");
+const router = express.Router();
 const { v4: uuidv4 } = require("uuid");
 
-const router = express.Router();
 
 // Multer setup to handle image file upload
 const storage = multer.memoryStorage();
@@ -39,6 +39,7 @@ router.get("/get-profile-pic/:username", async (req, res) => {
 
   if (!username) {
     return res.status(400).json({ error: "Username is required" });
+    
   }
 
   const { data, error } = await supabase
@@ -128,7 +129,33 @@ router.post("/upload-profile-pic", upload.single("file"), async (req, res) => {
   res.json({ success: true, profilePicUrl: publicURL });
 });
 
-// Delete Profile Picture
+router.get("/get-users-fullName/:username", async (req, res) => {
+  const { username } = req.params;
+
+  if (!username) {
+    return res.status(400).json({ error: "Username is required in URL params." });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("name")
+      .eq("username", username)
+      .single();
+
+    if (error) {
+      console.error("❌ Supabase error:", error.message);
+      return res.status(500).json({ error: "Failed to fetch user full name." });
+    }
+
+    res.status(200).json({ fullName: data.name });
+  } catch (err) {
+    console.error("❌ Server error:", err.message);
+    res.status(500).json({ error: "Internal server error." });
+  }
+});
+
+
 // Delete Profile Picture (fetch path from DB using username)
 router.post("/delete-profile-pic", async (req, res) => {
   const { username } = req.body;

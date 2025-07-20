@@ -18,7 +18,6 @@ async function getAllUsers() {
             console.error("Error getting public URL:", error.message);
             return null;
         }
-console.log(data.publicUrl);
 
         return data.publicUrl;
     })()
@@ -46,9 +45,7 @@ console.log(data.publicUrl);
 
 function startServer(io) {
     getAllUsers().then((fetched) => {
-        if (fetched) {
-            console.log("Fetched users: true");
-        }
+
     });
 
     io.on("connection", (socket) => {

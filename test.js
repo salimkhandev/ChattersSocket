@@ -6,3 +6,4 @@ const usernames = deleted_for.split(",").map(name => name.trim());
 
 
 console.log(usernames.includes(username)); // true
+console.log(usernames.includes(username)); // true

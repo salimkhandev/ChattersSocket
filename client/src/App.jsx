@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import GroupChat from "./Components/GroupChat";
 
@@ -58,8 +58,14 @@ export default function ChatApp() {
   const [activeTab, setActiveTab] = useState("people"); // or "groups"
 
   const emojiList = ["😀", "😂", "😍", "😎", "🥳", "🔥", "👍", "🎉", "😢", "🤔", "👏", "❤️"];
+  
+  // Optimize repeated deleted message checks
+  const isMessageDeletedForUser = useCallback((msg) => {
+    return msg.deleted_for?.split(",").map(s => s.trim()).includes(username);
+  }, [username]);
   const chatEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const typingThrottleRef = useRef(null);
   const prevChatRef = useRef([]);
 
 
@@ -103,7 +109,19 @@ export default function ChatApp() {
     };
   }, [selectedReceiver, username]);
 
-
+  // Cleanup typing timers when receiver changes
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      if (typingThrottleRef.current) {
+        clearTimeout(typingThrottleRef.current);
+        typingThrottleRef.current = null;
+      }
+    };
+  }, [selectedReceiver]);
 
   const getMessagesHistory = ({ sender, receiver }) => {
     socket.emit("get chat history", {
@@ -309,22 +327,39 @@ export default function ChatApp() {
     });
   };
 
-  const handleTyping = (e) => {
+  const handleTyping = useCallback((e) => {
+    // Update message state immediately for responsive UI
     setMessage(e.target.value);
-    socket.emit("typing", {
-      isTyping: true,
-      sender: username,
-      receiver: selectedReceiver,
-    });
+    
+    // Throttle typing indicator emissions to reduce network overhead
+    if (!typingThrottleRef.current) {
+      // Only emit typing event if not already typing
+      if (!isTyping[selectedReceiver]) {
+        socket.emit("typing", {
+          isTyping: true,
+          sender: username,
+          receiver: selectedReceiver,
+        });
+      }
+      
+      // Throttle further emissions for 300ms
+      typingThrottleRef.current = setTimeout(() => {
+        typingThrottleRef.current = null;
+      }, 300);
+    }
+    
+    // Debounce the stop typing indicator
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    
+    // Set timeout to stop typing indicator
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit("typing", {
         isTyping: false,
         sender: username,
         receiver: selectedReceiver,
       });
-    }, 500);
-  };
+    }, 1000); // Increased to 1 second for better UX
+  }, [username, selectedReceiver, isTyping]);
 
   const logout = () => {
     localStorage.removeItem("chat_user");
@@ -554,10 +589,10 @@ export default function ChatApp() {
                                   {msg.from === username ? (
                                     msg.seen ? (
                                       <div className="relative group inline-block">
-                                        {!msg.is_deleted_for_everyone && !msg.deleted_for?.split(",").map(s => s.trim()).includes(username) && (
+                                        {!msg.is_deleted_for_everyone && !isMessageDeletedForUser(msg) && (
                                           <span className="text-[10px] text-blue-600 ml-2">Seen</span>
                                         )}
-                                        {msg.seen_at && !msg.deleted_for?.split(",").map(s => s.trim()).includes(username) && !msg.is_deleted_for_everyone && (
+                                        {msg.seen_at && !isMessageDeletedForUser(msg) && !msg.is_deleted_for_everyone && (
                                           <span className="absolute bottom-full mb-1 left-0 text-[10px] text-gray-500 bg-white px-1 w-max rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                             {new Date(msg.seen_at).toLocaleString("en-US", {
                                               timeZone: "Asia/Karachi",
@@ -578,7 +613,7 @@ export default function ChatApp() {
 
                                 <div className="flex items-start justify-between gap-2">
                                   <p className="break-words flex-1">
-                                    {msg.deleted_for?.split(",").map(s => s.trim()).includes(username)
+                                    {isMessageDeletedForUser(msg)
                                       ? (
                                         <span className="italic text-gray-400">Deleted for you</span>
                                       ) : msg.is_deleted_for_everyone ? (
@@ -599,7 +634,7 @@ export default function ChatApp() {
                                     )}
 
                                     {/* Message Options */}
-                                    {msg.from === username && !msg.deleted_for?.split(",").map(s => s.trim()).includes(username) && !msg.is_deleted_for_everyone ? (
+                                    {msg.from === username && !isMessageDeletedForUser(msg) && !msg.is_deleted_for_everyone ? (
                                       <div className="relative inline-block">
                                         <button
                                           onClick={(e) => {
@@ -676,7 +711,7 @@ export default function ChatApp() {
                                           </>
                                         )}
                                       </div>
-                                    ) : msg.from !== username && !msg.deleted_for?.split(",").map(s => s.trim()).includes(username) && !msg.is_deleted_for_everyone && (
+                                    ) : msg.from !== username && !isMessageDeletedForUser(msg) && !msg.is_deleted_for_everyone && (
                                       <div className="relative inline-block">
                                         <button
                                           onClick={(e) => {

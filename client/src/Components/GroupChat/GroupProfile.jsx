@@ -2,8 +2,11 @@
 import imageCompression from "browser-image-compression";
 import { Camera, Check, Edit3, Smile, Send, Trash2, Users, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
+import { useUser } from "../../context/UserContext";
 
-function GroupProfile({ groupID, groupName, setGroupName, socket, username, created_by }) {
+function GroupProfile({ groupID, groupName, setGroupName, socket, created_by }) {
+    const { username, } = useUser();
+
     const fileInputRef = useRef(null);
     const [isUploading, setIsUploading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);

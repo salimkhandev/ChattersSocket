@@ -2,11 +2,14 @@ import { MoreHorizontal, MoreVertical, Plus, Send, Smile, Trash2, Users, X } fro
 import React, { useEffect, useRef, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import GroupProfile from './GroupProfile';
+import { useUser } from "../../context/UserContext";
+
 import ChatInput from "./ChatInput";
-const GroupChat = ({ socket, username }) => {
+const GroupChat = ({ socket }) => {
+    const { username, profilePic } = useUser();
+
     const [groupName, setGroupName] = useState("");
     const [selectedGroup, setSelectedGroup] = useState("");
-    const [message, setMessage] = useState("");
     const [messages, setMessages] = useState([]);
     const [isGroupChatLoading, setIsGroupChatLoading] = useState(false);
     const [showCreateGroup, setShowCreateGroup] = useState(false);
@@ -19,9 +22,12 @@ const GroupChat = ({ socket, username }) => {
     const messagesEndRef = useRef(null);
     const prevChatRef = useRef([]);
 
+// using useMemo to memoize ie remember the result of a funciton to store some vaulue and only recalculate untill the dependencies change
 
+    // const senderfullname = React.useMemo(() => getSenderFullname(username), [getSenderFullname, username]);
 
     useEffect(() => {
+
 
         const prev = prevChatRef.current;
         const isSame =
@@ -129,6 +135,10 @@ const GroupChat = ({ socket, username }) => {
                             from: msg.sender,
                             message: msg.message,
                             groupName: msg.group_name,
+                            updated: msg.updated,
+                            updated_at: msg.updated_at,
+                            senderfullname: msg.senderfullname,
+                            sender_profile_pic:msg.sender_profile_pic,
                             created_at: msg.created_at,
                             deleted_for: msg.deleted_for || [],
                             is_deleted_for_everyone: msg.is_deleted_for_everyone,
@@ -160,34 +170,9 @@ const GroupChat = ({ socket, username }) => {
         setIsGroupChatLoading(true);
         setMessages([]); // clear old messages
         socket.emit("join group", { groupName: group, username });
-        socket.emit("get group history", { groupName: group });
+        socket.emit("get group history", { groupName: group,sender:username });
     };
-
-    // const fetchGroupHistory = ( group) => {
-    //     console.table('im called')
-    //     console.log('im called')
-        
-    //     socket.emit("get group history", { groupName: group });
-    // };
-
-    // const handleSend = () => {
-    //     if (!message.trim() || !selectedGroup) return;
-    //     socket.emit("group message", {
-    //         groupName: selectedGroup,
-    //         from: username,
-    //         message,
-    //     });
-    //     setMessage("");
-    // };
-
-    // const handleKeyDown = (e) => {
-    //     if (e.key === 'Enter' && !e.shiftKey) {
-    //         e.preventDefault();
-    //         handleSend();
-    //     }
-    // };
-
-    // Close dropdown when clicking outside
+// close clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (!event.target.closest('.group-menu')) {
@@ -298,6 +283,7 @@ const GroupChat = ({ socket, username }) => {
 
                                         {group.created_by != username &&
                                             <p className="text-sm text-gray-500 truncate">
+                                                {/* admin: {group.created_by} */}
                                                 admin: {group.created_by}
                                             </p>}
 
@@ -365,19 +351,43 @@ const GroupChat = ({ socket, username }) => {
                                     <p className="text-gray-500">Loading messages...</p>
                                 </div>
                             ) : (
-                                messages.map((msg, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={`flex mb-4 ${msg.from === username ? 'justify-end' : 'justify-start'}`}
+                                messages.map((msg, idx) => {
+
+                                    // const isCurrentUser = msg.from === username;
+                                    const prevMessage = idx > 0 ? messages[idx - 1] : null;
+
+                                    const showProfilePic =
+                                        // !isCurrentUser &&
+                                        (
+                                            idx === 0 ||
+                                            !prevMessage ||
+                                            prevMessage.from !== msg.from
+                                         );
+
+
+                               return  <div
+                                    key={idx}
+                                    className={`flex mb-4  ${msg.from === username ? 'justify-end' : 'justify-start'}`}
                                     >
+                                   {(   
+                                       showProfilePic ? (
+                                           <img
+                                               src={msg.sender_profile_pic}
+                                               alt="profile"
+                                               className="w-8 h-8 rounded-full mt-1"
+                                           />
+                                       ) : (
+                                           <div className="w-8" /> // empty space for alignment
+                                       )
+                                   )}
                                         <div
                                             className={`px-4 py-2 rounded-lg max-w-[70%] ${msg.from === username
                                                     ? 'bg-blue-500 text-white'
                                                     : 'bg-white border text-gray-800'
                                                 }`}
                                         >
-                                            <div className="text-xs opacity-75 mb-1">{msg.from===username ? 'You' : msg.from}</div>
-                                            <p className="break-words flex-1">
+                                            <div className="text-xs opacity-75 mb-1">{msg.from === username ? 'You' : msg.senderfullname}</div>
+                                            <p className="break-words whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>
                                                 {msg.deleted_for?.includes(username) ? (
                                                     <span className="italic text-gray-400">Deleted for you</span>
                                                 ) : msg.is_deleted_for_everyone ? (
@@ -386,8 +396,20 @@ const GroupChat = ({ socket, username }) => {
                                                     msg.message
                                                 )}
                                             </p>
+                                       <p>
+                                           {msg.updated && msg.from !== username && <span className="italic text-gray-400">edited at {new Date(msg.updated_at).toLocaleString("en-US", {
+                                               timeZone: "Asia/Karachi",
+                                               month: "short",
+                                               day: "2-digit",
+                                               hour: "2-digit",
+                                               minute: "2-digit",
+                                               hour12: true,
+                                           })}</span>
+                                           }
+                                       </p>
 
                                             {msg.from === username && !msg.deleted_for.includes(username)
+
                                                 && !msg.is_deleted_for_everyone && (
                                                     <div className="relative inline-block">
                                                         <button
@@ -401,7 +423,7 @@ const GroupChat = ({ socket, username }) => {
                                                                     )
                                                                 );
                                                             }}
-                                                            className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                                                            className="text-green-200 hover:text-green-900 p-1 rounded-full hover:bg-blue-200 transition-colors"
                                                             title="Message options"
                                                             aria-label="Message options"
                                                         >
@@ -419,7 +441,34 @@ const GroupChat = ({ socket, username }) => {
                                                                 />
 
                                                                 {/* Dropdown menu */}
-                                                                <div className="absolute right-0 mt-1 z-20 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200">
+                                                                <div className="absolute right-0 mt-[-8px] z-20 w-44 bg-white rounded-md shadow-lg py-1 border border-gray-200">
+                                                           <button
+                                                               onClick={(e) => {
+                                                                   e.stopPropagation();
+
+                                                                   const newMessage = prompt("Edit your message:", msg.message);
+                                                                   if (!newMessage || newMessage.trim() === msg.message) return;
+
+                                                                   // Optimistically update the message in UI
+                                                                   setMessages((prev) =>
+                                                                       prev.map((m) =>
+                                                                           m.id === msg.id
+                                                                               ? { ...m, message: newMessage, updated: true, showOptions: false }
+                                                                               : m
+                                                                       )
+                                                                   );
+
+                                                                   // Emit socket event to update on backend & other users
+                                                                   socket.emit("edit group message", {
+                                                                       messageId: msg.id,
+                                                                       newMessage: newMessage.trim(),
+                                                                       groupName:selectedGroup
+                                                                   });
+                                                               }}
+                                                               className="block w-full text-left px-4 py-1 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
+                                                           >
+                                                               ✏️ Edit
+                                                           </button>
                                                                     <button
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
@@ -438,7 +487,7 @@ const GroupChat = ({ socket, username }) => {
                                                                         }}
                                                                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
                                                                     >
-                                                                        <Trash2 className="w-4 h-4" />
+                                                                        <Trash2 className="w-3 h-3" />
                                                                         Delete for me
                                                                     </button>
 
@@ -462,7 +511,7 @@ const GroupChat = ({ socket, username }) => {
                                                                         }}
                                                                         className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 border-t border-gray-100"
                                                                     >
-                                                                        <Trash2 className="w-4 h-4" />
+                                                                        <Trash2 className="w-3 h-3" />
                                                                         <span>Delete for everyone</span>
                                                                     </button>
                                                                 </div>
@@ -470,6 +519,9 @@ const GroupChat = ({ socket, username }) => {
                                                         )}
                                                     </div>
                                                 )}
+                                           <>
+                                                <span className="text-xs opacity-75 mt-1">{new Date(msg.created_at).toLocaleTimeString()}</span>
+
                                             {msg.from !== username && !msg.deleted_for?.includes(username) && !msg.is_deleted_for_everyone && (
                                                 <div className="relative inline-block">
                                                     <button
@@ -477,17 +529,17 @@ const GroupChat = ({ socket, username }) => {
                                                             e.stopPropagation();
                                                             setMessages((prev) =>
                                                                 prev.map((m) =>
-                                                                    m.id === msg.id
+                                                                    m.id === msg.id 
                                                                         ? { ...m, showOptions: !m.showOptions }
                                                                         : { ...m, showOptions: false }
-                                                                )
-                                                            );
+                                                                    )
+                                                                );
                                                         }}
-                                                        className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                                                            className="text-gray-400  opacity-75 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
                                                         title="Message options"
                                                         aria-label="Message options"
                                                     >
-                                                        <MoreHorizontal className="w-4 h-4" />
+                                                        <MoreHorizontal className="w-4  h-4" />
                                                     </button>
 
                                                     {msg.showOptions && (
@@ -512,12 +564,12 @@ const GroupChat = ({ socket, username }) => {
                                                                                 m.id === msg.id
                                                                                     ? { ...m, deleted_for: username, showOptions: false }
                                                                                     : m
-                                                                            )
-                                                                        );
-                                                                        socket.emit("delete for me group message", {
-                                                                            username,
-                                                                            messageId: msg.id,
-                                                                        });
+                                                                                )
+                                                                            );
+                                                                            socket.emit("delete for me group message", {
+                                                                                username,
+                                                                                messageId: msg.id,
+                                                                            });
                                                                     }}
                                                                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
                                                                 >
@@ -528,19 +580,17 @@ const GroupChat = ({ socket, username }) => {
                                                         </>
                                                     )}
                                                 </div>
+                                               
+                                               
                                             )}
+                                            </>
 
-
-                                            {msg.created_at && (
-                                                <div className="text-xs opacity-75 mt-1">
-                                                    {new Date(msg.created_at).toLocaleTimeString()}
-                                                </div>
-                                            )}
+                                          
                                         </div>
-                                    </div>
-                                ))
+                                   </div>
+})
                             )}
-                            <div ref={messagesEndRef} />
+                            <div className="p-5" ref={messagesEndRef} />
                         </div>
 
                         {/* Input Area */}

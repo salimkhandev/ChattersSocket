@@ -2,10 +2,10 @@
 
 import React from "react";
 import OnlineUserItem from "./OnlineUserItem";
+import { useUser } from "../../context/UserContext";
 
 const OnlineUserList = ({
     onlineUsers,
-    username,
     selectedReceiver,
     setSelectedReceiver,
     setIsChattingWindowOpen,
@@ -14,6 +14,8 @@ const OnlineUserList = ({
     isTyping,
     isChattingWindowOpen,
 }) => {
+    const { username} = useUser();
+
     const filteredUsers = onlineUsers
         .filter((u) => u.username !== username)
         .sort((a, b) => a.username.localeCompare(b.username));
@@ -27,7 +29,6 @@ const OnlineUserList = ({
                 <OnlineUserItem
                     key={idx}
                     user={user}
-                    username={username}
                     selectedReceiver={selectedReceiver}
                     setSelectedReceiver={setSelectedReceiver}
                     setIsChattingWindowOpen={setIsChattingWindowOpen}

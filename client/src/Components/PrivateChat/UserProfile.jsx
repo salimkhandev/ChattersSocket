@@ -2,13 +2,15 @@
 import imageCompression from "browser-image-compression";
 import { Camera, Check, Edit3, LogIn, Settings, Trash2, User, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
+import { useUser } from "../../context/UserContext";
 // user react.memoe bellow
 
-export default function UserProfileUpload({ nameLoaded, username, socket }) {
+export default function UserProfileUpload({ nameLoaded, socket }) {
+    const { username, profilePic, setProfilePic } = useUser();
+
     const fileInputRef = useRef(null);
     const [isUploading, setIsUploading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [profilePic, setProfilePic] = useState(null);
     const [currentFullName, setCurrentFullName] = useState(''); 
     const [newFullName, setNewFullName] = useState(''); 
 
@@ -17,24 +19,7 @@ export default function UserProfileUpload({ nameLoaded, username, socket }) {
     const [uploadError, setUploadError] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-    const fetchProfilePic = async () => {
-        // try {
-        //     const res = await fetch(`https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/get-profile-pic/${username}`);
-        //     const data = await res.json();
-        //     setProfilePic(data?.profilePicUrl || null);
-        // } catch (err) {
-        //     console.error("Error fetching profile picture:", err);
-        // }
-
-
-        try {
-            const res = await fetch(`http://localhost:3000/get-profile-pic/${username}`);
-            const data = await res.json();
-            setProfilePic(data?.profilePicUrl || null);
-        } catch (err) {
-            console.error("Error fetching profile picture:", err);
-        }
-    };
+  
     const fetchFullName = async (username) => {
         try {
             const res = await fetch(`http://localhost:3000/get-users-fullName/${username}`);
@@ -64,11 +49,7 @@ export default function UserProfileUpload({ nameLoaded, username, socket }) {
     }, [username]);
 
 
-    useEffect(() => {
-
-        
-        fetchProfilePic();
-    }, [username]);
+  
 
     const handleNameUpdate = async () => {
         if (!newFullName.trim()) {

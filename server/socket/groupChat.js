@@ -1,5 +1,6 @@
 const groups = new Set(); // Store unique group names in memory
 const supabase = require("../config/supabaseClient");
+const redisClient = require("../config/redisConfig");
 function groupChat(io) {
     io.on("connection", (socket) => {
         console.log("New user connected:", socket.id);
@@ -7,7 +8,7 @@ function groupChat(io) {
         socket.on("get groups", async () => {
             const { data, error } = await supabase
                 .from("groups")
-     .select("*");
+                .select("*");
 
             if (error) {
                 console.error("❌ Failed to fetch groups from DB:", error.message);
@@ -74,7 +75,7 @@ function groupChat(io) {
                 socket.emit("group delete success", {
                     groupName,
                 });
-                
+
                 const { data: updatedGroups, error: fetchErr } = await supabase
                     .from("groups")
                     .select("*");
@@ -202,45 +203,37 @@ function groupChat(io) {
 
             io.to(groupName).emit("group history", data);
         }
+        socket.on("edit group message", async ({ messageId, newMessage, groupName }) => {
+            function getPakistanISOString() {
+                const now = new Date();
+                const offsetMs = 5 * 60 * 60 * 1000; // +5 hours in milliseconds
+                const pakistanDate = new Date(now.getTime() + offsetMs);
+                return pakistanDate.toISOString().replace('Z', '+05:00');
+            }
 
-        // DELETE FOR EVERYONE
-        // socket.on("delete for everyone group message", async ({ username, messageId }) => {
-        //     console.log("delete for everyone group message", username, messageId);
-        //     try {
-        //         // Get the message to verify sender
-        //         const { data: message, error } = await supabase
-        //             .from("group_messages")
-        //             .select("sender")
-        //             .eq("id", messageId)
-        //             .single();
+            try {
+                const { error: updateError } = await supabase
+                    .from("group_messages")
+                    .update({
+                        message: newMessage,
+                        updated: true,
+                        updated_at: getPakistanISOString(),
+                    })
+                    .eq("id", messageId);
 
-        //         if (error || !message) {
-        //             console.error("Message not found:", error);
-        //             return;
-        //         }
+                if (updateError) {
+                    console.error("Failed to update group message:", updateError);
+                } else {
+                    // ✅ Emit fresh group chat history to all in the group
+                    await sendGroupHistory(io, socket, groupName);
+                }
 
-        //         // Only allow sender to delete for everyone
-        //         if (message.sender !== username) {
-        //             console.warn("Unauthorized delete attempt by", username);
-        //             return;
-        //         }
+            } catch (err) {
+                console.error("Edit exception:", err.message);
+            }
+        });
 
-        //         // Update is_deleted_for_everyone = true
-        //         const { error: updateError } = await supabase
-        //             .from("group_messages")
-        //             .update({ is_deleted_for_everyone: true })
-        //             .eq("id", messageId);
 
-        //         if (updateError) {
-        //             console.error("Failed to delete for everyone:", updateError);
-        //         } else {
-        //             // Notify both sender and receiver (if needed)
-        //             io.emit("message deleted for everyone", { messageId });
-        //         }
-        //     } catch (err) {
-        //         console.error("Error in delete for everyone:", err);
-        //     }
-        // });
         socket.on("delete for everyone group message", async ({ username, messageId, groupName }) => {
             try {
                 groupName = groupName.trim();
@@ -282,9 +275,23 @@ function groupChat(io) {
 
         socket.on("group message", async ({ groupName, from, message }) => {
             try {
-                groupName = groupName.trim();
+
+
                 const sender = from.trim().toLowerCase();
                 const created_at = new Date().toISOString();
+                const { data: userData, error: userError } = await supabase
+                    .from("users")
+                    .select("name, profile_pic")
+                    .eq("username", sender)
+                    .single();
+
+                if (userError || !userData) {
+                    console.error("❌ Failed to fetch user data from DB:", userError?.message);
+                    return;
+                }
+
+                const senderfullname = userData.name;
+                const sender_profile_pic = userData.profile_pic;
 
                 if (!groupName || !message) return;
 
@@ -296,6 +303,7 @@ function groupChat(io) {
                         sender,
                         message,
                         created_at, // ensure we insert the same timestamp
+                        // senderfullname: senderfullname,
                     })
                     .select()
                     .single(); // this returns the inserted row directly
@@ -311,6 +319,8 @@ function groupChat(io) {
                 const responseObject = {
                     id: insertData.id,
                     from: sender,
+                    senderfullname: senderfullname,
+                    sender_profile_pic: sender_profile_pic,
                     groupName,
                     message: insertData.message,
                     created_at: insertData.created_at,
@@ -320,7 +330,7 @@ function groupChat(io) {
 
                 // 3. Emit message to group only after DB save
                 io.to(groupName).emit("group message", responseObject);
-                console.log("responseObject",responseObject);
+                console.log("responseObject", responseObject);
                 console.log(`[${groupName}] ${sender}: ${message}`);
 
             } catch (err) {
@@ -328,26 +338,25 @@ function groupChat(io) {
             }
         });
 
-    socket.on("get group history", async ({ groupName }) => {
-    groupName = groupName.trim()
+        socket.on("get group history", async ({ groupName }) => {
+            groupName = groupName.trim()
 
-    console.table({groupName})
-    
-    const { data, error } = await supabase
-        .from("group_messages")
-        .select("*")
-        .eq("group_name", groupName)
-        .order("created_at", { ascending: true });
+            const { data, error } = await supabase
+                .from("group_messages")
+                .select("*")
+                .eq("group_name", groupName)
+                .order("created_at", { ascending: true });
 
-    if (error) {
-        console.error("❌ Error fetching group history:", error);
-        socket.emit("group history", []);
-        return;
-    }
+            if (error) {
+                console.error("❌ Error fetching group history:", error);
+                socket.emit("group history", []);
+                return;
+            }
 
-        // console.table({data})
-    socket.emit("group history", data);
-});
+            // console.log('get group history🚚',{data})
+            socket.emit("group history", data);
+        });
+
 
 
     });

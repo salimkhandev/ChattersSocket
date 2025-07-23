@@ -50,7 +50,40 @@ function startServer(io) {
 
     io.on("connection", (socket) => {
         // console.log("A user connected 😊", socket.id);
-        
+        socket.on("edit message", async ({ messageId, newMessage }) => {
+            function getPakistanISOString() {
+                const now = new Date();
+                const offsetMs = 5 * 60 * 60 * 1000; // +5 hours in milliseconds
+                const pakistanDate = new Date(now.getTime() + offsetMs);
+                return pakistanDate.toISOString().replace('Z', '+05:00');
+            }
+            const seenAt = getPakistanISOString();
+            try {
+                const { data, error } = await supabase
+                    .from("messages")
+                    .update({
+                        message: newMessage,
+                        updated: true,
+                        updated_at: getPakistanISOString(),
+                    })
+                    .eq("id", messageId)
+                    .select("*");
+
+                if (error) {
+                    console.error("Edit error:", error);
+                    return;
+                }
+
+                // const updatedMessage = data[0];
+
+                // emit to same group room
+                // io.to(updatedMessage.groupName).emit("message edited", updatedMessage);
+
+            } catch (err) {
+                console.error("Edit exception:", err.message);
+            }
+        });
+
         socket.on("delete for me", async ({ username, messageId }) => {
             try {
                 const { data: message, error: fetchError } = await supabase
@@ -89,7 +122,7 @@ function startServer(io) {
                 if (updateError) {
                     console.error("Failed to update deleted_for:", updateError);
                 } else {
-                    socket.emit("message deleted for me", { messageId });
+                    // socket.emit("message deleted for me", { messageId });
                 }
             } catch (err) {
                 console.error("Error in delete for me:", err);
@@ -129,7 +162,7 @@ function startServer(io) {
                     console.error("Failed to delete for everyone:", updateError);
                 } else {
                     // Notify both sender and receiver (if needed)
-                    io.emit("message deleted for everyone", { messageId });
+                    // io.emit("message deleted for everyone", { messageId });
                 }
             } catch (err) {
                 console.error("Error in delete for everyone:", err);
@@ -262,16 +295,35 @@ function startServer(io) {
             const senderData = await redisClient.hGet("connectedUsers", sender);
 
             const created_at = new Date().toISOString(); // ✅ Add this line
+            
+            const { data, error } = await supabase
+                .from("users")
+                .select("profile_pic")
+                .eq("username", sender)
+                .single(); // use `.single()` if you expect exactly one result
 
+            if (error) {
+                console.error("❌ Failed to fetch profile picture:", error.message);
+            } else {
+                console.log("✅ Profile picture URL:", data.profile_pic);
+            }
             if (receiverData) {
                 try {
                     const receiverParsed = JSON.parse(receiverData);
+                    
                     const senderParsed = JSON.parse(senderData);
+                    const senderfullname =senderParsed.fName
+                    // console.log(fName);
+                    
+                    
                     const messageId = uuidv4(); // ✅ generate unique ID
-
+                
                     const messagePayload = {
                         from: sender,
                         to: receiver,
+                        senderfullname:senderfullname,
+                        // message: msg.message,
+                        sender_profile_pic: data.profile_pic,
                         message: msg.message,
                         created_at,
                         id: messageId,
@@ -303,6 +355,7 @@ function startServer(io) {
                             receiver,
                             message: msg.message,
                             created_at,
+                            senderfullname,
                             id:messageId
                         })
                         .then(({ error }) => {
@@ -390,9 +443,7 @@ function startServer(io) {
 
                 // 3. Send updated chat history
                 socket.emit("chat history", updatedChat);
-                updatedChat.forEach((msg) => {
-//   console.log(`Message ID: ${msg.id}, Seen At: ${msg.seen_at}`);
-});
+   
 
                 
             } catch (err) {

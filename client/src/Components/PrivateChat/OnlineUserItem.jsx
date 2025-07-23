@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
+import { useUser } from "../../context/UserContext";
 
 const OnlineUserItem = ({
     user,
-    username,
     selectedReceiver,
     setSelectedReceiver,
     setIsChattingWindowOpen,
@@ -13,6 +13,8 @@ const OnlineUserItem = ({
     isTyping,
     isChattingWindowOpen,
 }) => {
+    const { username} = useUser();
+
     const unseen = user.sentUnseenMessages?.find(
         (m) => m.receiver === username
     )?.unseen_count;

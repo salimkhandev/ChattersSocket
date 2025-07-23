@@ -6,8 +6,7 @@ import ChatMessages from './Components/PrivateChat/ChatMessages';
 import MessageInput from "./Components/PrivateChat/MessageInput";
 import OnlineUserList from './Components/PrivateChat/OnlineUserList';
 import ToggleTabs from "./Components/PrivateChat/ToggleTabs";
-
-
+import { useUser } from "./context/UserContext";
 
 import UserProfileUpload from "./Components/PrivateChat/UserProfile";
 // import profilePic from './Components/image.png';
@@ -40,30 +39,37 @@ export default function ChatApp() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [nameLoaded, setNameLoaded] = useState(false);  // track when name is ready
 
-  const [username, setUsername] = useState(localStorage.getItem("chat_user") || "");
+  // const [username, setUsername] = useState(localStorage.getItem("chat_user") || "");
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
   const [isTyping, setIsTyping] = useState({});
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [selectedReceiver, setSelectedReceiver] = useState("");
-  // const [error, setError] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(null);
-  // const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  // const [fullName, setFullName] = useState("");
   const [isChattingWindowOpen, setIsChattingWindowOpen] = useState(false);
-  // const [localDeleted, setLocalDeleted] = useState({});
-  // const [localDeletedEveryone, setLocalDeletedEveryone] = useState({});
-
   const [activeTab, setActiveTab] = useState("people"); // or "groups"
-
-  // const emojiList = ["😀", "😂", "😍", "😎", "🥳", "🔥", "👍", "🎉", "😢", "🤔", "👏", "❤️"];
   const chatEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const prevChatRef = useRef([]);
+  const { username, setUsername } = useUser();
+
+  // const getSenderFullname = (username) => {
+  //   const found = chat.find((msg) => msg.from === username);
+  //   return found ? found.senderfullname : username;
+  // };
 
 
+  // useEffect(() => {
+
+  //   console.log({chat});
+    
+  //   console.log('the fullname is ',getSenderFullname(username)); 
+    
+  // }, [selectedReceiver,chat]);
 
   useEffect(() => {
+ 
+
 
     const prev = prevChatRef.current;
     const isSame =
@@ -74,11 +80,11 @@ export default function ChatApp() {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
 
-    // update previous chat after comparison
     prevChatRef.current = chat;
   }, [chat]);
 
   useEffect(() => {
+    
     if (!username || !selectedReceiver) return;
 
     const markSeen = () => {
@@ -90,10 +96,11 @@ export default function ChatApp() {
       }
     };
 
+    
+
     const interval = setInterval(markSeen, 2000);
     document.addEventListener("visibilitychange", markSeen);
 
-    // Call immediately if tab is visible
     markSeen();
 
     return () => {
@@ -115,7 +122,6 @@ export default function ChatApp() {
 
     const handleTyping = (status) => {
 
-      // Only show typing if the typer is the one you're chatting with
       if (status.isTyping) {
         setIsTyping(status);
       } else {
@@ -126,20 +132,11 @@ export default function ChatApp() {
     socket.on("typing", handleTyping);
 
     return () => {
-      socket.off("typing", handleTyping); // cleanup to avoid duplicate listeners
     };
   }, [selectedReceiver]);
   const sendUsernameEvent = () => {
     if (username) {
       socket.emit("username", { username });
-      // socket.on("all names", ({ names }) => {
-      //   console.log("✅ Username updated:", { names });
-      //   const user = names.find((n) => n.username === username);
-      //   console.log({ user });
-
-      //   setFullName(user?.name?.trim() || "");
-      //   setNameLoaded(true);
-      // });
 
 
 
@@ -208,6 +205,9 @@ export default function ChatApp() {
 
         const msgTime = new Date(msg.seen_at || msg.created_at);
         const existingTime = existing ? new Date(existing.seen_at || existing.created_at) : 0;
+        
+                const messageWasEdited =
+                  msg.updated_at && (!existing?.updated_at || msg.updated_at !== existing.updated_at);
 
         const seenAtChanged =
           msg.seen_at && (!existing?.seen_at || msg.seen_at !== existing.seen_at);
@@ -219,7 +219,8 @@ export default function ChatApp() {
           !existing ||
           msgTime > existingTime ||
           seenAtChanged ||
-          deletedForEveryoneChanged // ✅ NEW CONDITION
+          deletedForEveryoneChanged ||
+          messageWasEdited 
         ) {
           mergedMap.set(msg.id, msg);
         }
@@ -243,11 +244,14 @@ export default function ChatApp() {
       const formattedMessages = messagesFromDB.map((msg) => ({
         from: msg.sender,
         to: msg.receiver,
-        // message: "im from db",
+        senderfullname: msg.senderfullname,
+        sender_profile_pic: msg.sender_profile_pic,
         message: msg.message,
         created_at: msg.created_at,
         seen: msg.seen,
-        seen_at: msg.seen_at, // ✅ Include this
+        seen_at: msg.seen_at, 
+        updated_at: msg.updated_at, 
+        updated: msg.updated, 
         id: msg.id,
         deleted_for: msg.deleted_for,
         is_deleted_for_everyone: msg.is_deleted_for_everyone,
@@ -280,16 +284,6 @@ export default function ChatApp() {
     };
   }, [username, selectedReceiver]);
 
-  //   const handleLogin = (input) => {
-  //   const trimmed = input.trim().toLowerCase();
-  //   if (!trimmed) return alert("❌ Please enter a username");
-  //   setUsername(trimmed);
-  //   localStorage.setItem("chat_user", trimmed);
-  //   socket.emit("username", { username: trimmed });
-  //   console.log('this is the username😡', username);
-  //   socket.connect();
-
-  // };
 
   const sendMessage = () => {
     if (!message.trim() || !selectedReceiver) {
@@ -324,7 +318,7 @@ export default function ChatApp() {
         sender: username,
         receiver: selectedReceiver,
       });
-    }, 500);
+    }, 1000);
   };
 
   const logout = () => {
@@ -360,7 +354,7 @@ export default function ChatApp() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 relative">
       {!username || !isLoggedIn ? (
-        <LoginForm isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} setUsername={setUsername} username={username} />
+        <LoginForm isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
       ) : (
 
 
@@ -398,7 +392,6 @@ export default function ChatApp() {
                   <div className="flex-1 overflow-y-auto mt-2 space-y-2">
                     <OnlineUserList
                       onlineUsers={onlineUsers}
-                      username={username}
                       selectedReceiver={selectedReceiver}
                       setSelectedReceiver={setSelectedReceiver}
                       setIsChattingWindowOpen={setIsChattingWindowOpen}
@@ -434,7 +427,6 @@ export default function ChatApp() {
                         <ChatMessages
                           isChatLoading={isChatLoading}
                           chat={chat}
-                          username={username}
                           socket={socket}
                           setChat={setChat}
                         />
@@ -442,7 +434,7 @@ export default function ChatApp() {
                         {isTyping.typer === selectedReceiver && (
                           <p className="text-sm italic text-gray-400">{isTyping.typer} is typing...</p>
                         )}
-                        <div ref={chatEndRef} />
+                        <div className="pb-8" ref={chatEndRef} />
                       </div>
                       <MessageInput
                         message={message}
@@ -463,7 +455,13 @@ export default function ChatApp() {
               ? "translate-x-0 opacity-100 z-10"
               : "translate-x-full opacity-0 pointer-events-none z-0"
               }`}>
-              <GroupChat socket={socket} username={username} />
+              {/* <GroupChat socket={socket} senderFullName={(user)=>chat.find(user.username=username then return the full name of the username)} username={username} /> */}
+                <GroupChat
+                  socket={socket}
+                  // getSenderFullname={getSenderFullname}
+              
+                />
+
             </div>
           </div>
         </div>

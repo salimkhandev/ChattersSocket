@@ -22,7 +22,7 @@ const ChatInput = React.memo(({ onSend }) => {
     };
 
     return (
-        <div className="p-4 bg-white border-t">
+        <div className="p-6 bg-white border-t border-gray-200">
             <div className="flex items-center gap-2 relative">
                 <input
                     type="text"
@@ -30,7 +30,7 @@ const ChatInput = React.memo(({ onSend }) => {
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Type a message..."
-                    className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:border-gray-300"
+                    className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:border-gray-300"
                 />
                 <div className="relative">
                     <button

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { io } from "socket.io-client";
 import { UserPlus, Loader2 } from 'lucide-react'
+import { useUser } from '../../context/UserContext';
 // const socket = io("http://localhost:3000");
 
 // const socket = io("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/", {
@@ -14,7 +15,9 @@ const socket = io("http://localhost:3000", {
     reconnectionAttempts: Infinity,
     reconnectionDelay: 2000,
 });
-function LoginForm({setUsername, username,setIsLoggedIn,isLoggedIn}) {
+function LoginForm({setIsLoggedIn,isLoggedIn}) {
+    const { username, setUsername } = useUser();
+
     const [error, setError] = useState("");
     // loader
     const [isLoading, setIsLoading] = useState(false);

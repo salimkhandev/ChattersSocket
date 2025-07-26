@@ -1,5 +1,8 @@
-import React, { useState } from "react";
-import { Smile, Send } from "lucide-react";
+'use client';
+import React, { useState, useRef } from "react";
+import { Smile, Send, Mic, StopCircle } from "lucide-react";
+import VoiceRecorder from "./VoiceMessgae/VoiceRecorder"; // <-- Adjust the path if needed
+
 
 const emojiList = ["😀", "😂", "😍", "😎", "👍", "🙏", "🎉", "💯", "❤️", "🔥", "🤔", "🙌"];
 
@@ -9,12 +12,29 @@ const MessageInput = ({
     sendMessage,
     handleTyping,
     selectedReceiver,
+    socket,
+    sender,
 }) => {
+    const [showStopIcon, setShowStopIcon] = useState(false);
+    const [showRecordIcon, setShowRecordIcon] = useState(true);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const recorderRef = useRef();
 
+    const handleStart = () => {
+        recorderRef.current?.startRecording(); 
+        setShowStopIcon(true)
+        setShowRecordIcon(false)
+        // ✅ calls inside child
+    };
+    const handleStop = () => {
+        recorderRef.current?.stopRecording();
+        setShowRecordIcon(false)
+        setShowStopIcon(false)
+    };
     return (
-
         <div className="mt-4 bg-white rounded-lg border shadow-sm relative">
+            {/* Emoji Picker */}
             {showEmojiPicker && (
                 <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-300 rounded-xl shadow-lg p-3 grid grid-cols-6 gap-2 z-50">
                     {emojiList.map((emoji, idx) => (
@@ -24,34 +44,78 @@ const MessageInput = ({
                             onClick={() => {
                                 setMessage((prev) => prev + emoji);
                                 setShowEmojiPicker(false);
+
                             }}
                         >
                             {emoji}
-
+                            
                         </button>
                     ))}
-
                 </div>
             )}
+
+            {/* Input & Buttons */}
             <div className="p-3 flex items-center gap-2">
-                <input
+            {  !isRecording &&  <input
                     className="flex-1 px-4 py-2 text-base focus:outline-none"
                     placeholder="Type a message..."
                     value={message}
                     onChange={handleTyping}
                     onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                />
-                <button
+                />}
+                {isRecording && (
+                    <div className="px-4 pb-3 flex-1 px-12 py-2 text-base focus:outline-none">
+                        <VoiceRecorder
+                            socket={socket}
+                            sender={sender}
+                            setIsRecording={setIsRecording}
+                            receiver={selectedReceiver}
+                            ref={recorderRef}
+                            onDone={() => setIsRecording(false)}
+                        />
+                    </div>
+                )}
+                {/* Emoji Button */}
+             { !isRecording &&  <button
                     type="button"
                     onClick={() => setShowEmojiPicker((prev) => !prev)}
                     className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                     title="Insert Emoji"
                 >
                     <Smile className="w-5 h-5 text-gray-500" />
+                </button>}
+
+                {/* Voice Button (Toggle Recorder UI) */}
+                {/* Mic Button (Start Recording) */}
+                {!isRecording || showRecordIcon ? (
+                    <button
+                        onClick={() => {
+                            setIsRecording(true);
+                            setTimeout(() => handleStart(), 0);
+                        }}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        title="Start Recording"
+                    >
+                        <Mic className="w-5 h-5 text-gray-500" />
+                    </button>
+                ):null}
+
+                {/* Stop Button (Stop Recording) */}
+                {isRecording && showStopIcon && (
+                    <button
+                        onClick={() => {
+                            setTimeout(() => handleStop(), 0);
+                        }}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        title="Stop Recording"
+                    >
+                        <StopCircle className="w-5 h-5 text-red-500" />
+                    </button>
+                )}
 
 
-                </button>
-                < button
+                {/* Send Button */}
+               { !isRecording  && <button
                     onClick={sendMessage}
                     disabled={!message.trim() || !selectedReceiver}
                     className={`flex items-center gap-1 px-4 py-2 rounded-lg text-white transition ${message.trim() && selectedReceiver
@@ -61,8 +125,21 @@ const MessageInput = ({
                 >
                     <Send className="w-4 h-4" />
                     Send
-                </button>
+                </button>}
             </div>
+
+            {/* Voice Recorder Panel */}
+            {/* {isRecording && (
+                <div className="px-4 pb-3">
+                    <VoiceRecorder
+                        socket={socket}
+                        sender={sender}
+                        receiver={selectedReceiver}
+                        ref={recorderRef}
+                        onDone={() => setIsRecording(false)}
+                    />
+                </div>
+            )} */}
         </div>
     );
 };

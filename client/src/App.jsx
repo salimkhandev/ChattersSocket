@@ -67,9 +67,8 @@ export default function ChatApp() {
     
   // }, [selectedReceiver,chat]);
 
-  useEffect(() => {
- 
 
+  useEffect(() => {
 
     const prev = prevChatRef.current;
     const isSame =
@@ -248,6 +247,8 @@ export default function ChatApp() {
         sender_profile_pic: msg.sender_profile_pic,
         message: msg.message,
         created_at: msg.created_at,
+        audio_url: msg.audio_url,
+        is_voice: msg.is_voice,
         seen: msg.seen,
         seen_at: msg.seen_at, 
         updated_at: msg.updated_at, 
@@ -412,6 +413,7 @@ export default function ChatApp() {
                           <span className="text-indigo-600">
                             {onlineUsers.find(u => u.username === selectedReceiver)?.fName || selectedReceiver}
                           </span>
+                        
                         </h1>
                         <button
                           onClick={closeChat}
@@ -442,6 +444,8 @@ export default function ChatApp() {
                         sendMessage={sendMessage}
                         handleTyping={handleTyping}
                         selectedReceiver={selectedReceiver}
+                          sender={username}                // ✅ Added
+                          socket={socket}  
                       />
 
                     </div>

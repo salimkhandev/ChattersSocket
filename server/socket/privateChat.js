@@ -131,10 +131,49 @@ function startServer(io) {
 
 
 
-        // DELETE FOR EVERYONE
-        socket.on("delete for everyone", async ({ username, messageId }) => {
+        // // DELETE FOR EVERYONE
+        // socket.on("delete for everyone", async ({ username, messageId }) => {
+        //     try {
+        //         // Get the message to verify sender
+        //         const { data: message, error } = await supabase
+        //             .from("messages")
+        //             .select("sender")
+        //             .eq("id", messageId)
+        //             .single();
+
+        //         if (error || !message) {
+        //             console.error("Message not found:", error);
+        //             return;
+        //         }
+
+        //         // Only allow sender to delete for everyone
+        //         if (message.sender !== username) {
+        //             console.warn("Unauthorized delete attempt by", username);
+        //             return;
+        //         }
+
+        //         // Update is_deleted_for_everyone = true
+        //         const { error: updateError } = await supabase
+        //             .from("messages")
+        //             .update({ is_deleted_for_everyone: true })
+        //             .eq("id", messageId);
+
+        //         if (updateError) {
+        //             console.error("Failed to delete for everyone:", updateError);
+        //         } else {
+        //             // Notify both sender and receiver (if needed)
+        //             // io.emit("message deleted for everyone", { messageId });
+        //         }
+        //     } catch (err) {
+        //         console.error("Error in delete for everyone:", err);
+        //     }
+        // });
+
+        const cloudinary = require("cloudinary").v2; // Make sure Cloudinary is configured
+
+        socket.on("delete for everyone", async ({ username, messageId, audio_url }) => {
             try {
-                // Get the message to verify sender
+                // Step 1: Update DB instantly for fast feedback
                 const { data: message, error } = await supabase
                     .from("messages")
                     .select("sender")
@@ -146,28 +185,50 @@ function startServer(io) {
                     return;
                 }
 
-                // Only allow sender to delete for everyone
                 if (message.sender !== username) {
                     console.warn("Unauthorized delete attempt by", username);
                     return;
                 }
 
-                // Update is_deleted_for_everyone = true
                 const { error: updateError } = await supabase
                     .from("messages")
                     .update({ is_deleted_for_everyone: true })
                     .eq("id", messageId);
 
                 if (updateError) {
-                    console.error("Failed to delete for everyone:", updateError);
-                } else {
-                    // Notify both sender and receiver (if needed)
-                    // io.emit("message deleted for everyone", { messageId });
+                    console.error("Failed to update is_deleted_for_everyone:", updateError);
+                    return;
                 }
+
+                // Notify frontends (optional)
+                // io.emit("message deleted for everyone", { messageId });
+
+                // Step 2: Async delete from Cloudinary if audio_url exists
+                if (audio_url) {
+                    const match = audio_url.match(/upload\/(?:v\d+\/)?(.+)\.webm/);
+                    const publicId = match?.[1];
+
+                    if (publicId) {
+                        cloudinary.uploader.destroy(publicId, {
+                            resource_type: "video",
+                            invalidate: true
+                        }, (error, result) => {
+                            if (error) {
+                                console.error("Cloudinary deletion error:", error);
+                            } else {
+                                console.log("Deleted from Cloudinary:", result);
+                            }
+                        });
+                    } else {
+                        console.warn("Could not extract publicId from audio_url");
+                    }
+                }
+
             } catch (err) {
                 console.error("Error in delete for everyone:", err);
             }
         });
+
 
         socket.on("username", async ({ username }) => {
             username = username.trim().toLowerCase();
@@ -322,7 +383,8 @@ function startServer(io) {
                         from: sender,
                         to: receiver,
                         senderfullname:senderfullname,
-                        // message: msg.message,
+                        audio_url: msg.audio_url || null,
+                        is_voice: msg.is_voice,
                         sender_profile_pic: data.profile_pic,
                         message: msg.message,
                         created_at,
@@ -332,6 +394,7 @@ function startServer(io) {
                         seen_at: null 
                     };
                     
+console.log({messagePayload});
 
 
                     if (receiverParsed.socketId) {
@@ -351,12 +414,14 @@ function startServer(io) {
                     supabase
                         .from("messages")
                         .insert({
+                            id:messageId,
                             sender,
                             receiver,
                             message: msg.message,
                             created_at,
                             senderfullname,
-                            id:messageId
+                            audio_url: msg.audio_url || null,
+                            is_voice: msg.is_voice,
                         })
                         .then(({ error }) => {
                             if (error) {

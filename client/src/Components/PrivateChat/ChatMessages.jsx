@@ -1,7 +1,7 @@
 import {memo} from 'react'
 import { MoreHorizontal, Trash2 } from 'lucide-react'; // If you're using Lucide icons
 import { useUser } from '../../context/UserContext';
-
+import VoiceMessagePlayer from './VoiceMessgae/VoiceMessagePlayer';
 function ChatMessages({ isChatLoading, chat, socket, setChat }) {
     const { username} = useUser();
 
@@ -11,8 +11,6 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
               <p className="text-center text-gray-400 italic">Loading chat...</p>
           ) : (
               chat.map((msg,idx) => {
-
-             
 
                   const prevMessage = idx > 0 ? chat[idx - 1] : null;
 
@@ -85,8 +83,12 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                           <span className="italic text-gray-400">Deleted for you</span>
                                       ) : msg.is_deleted_for_everyone ? (
                                           <span className="italic text-gray-400">This message was deleted for everyone</span>
-                                      ) : (
-                                          msg.message
+                                      ) : msg.is_voice && msg.audio_url ? (
+                                                 <VoiceMessagePlayer audioUrl={msg.audio_url} />
+
+                                      ):(
+                                                     <p className="break-words">{msg.message}</p>
+                                                    //  <p className="break-words">LocalVoice</p>
                                       )}
                               </p>
                               <p>
@@ -206,6 +208,8 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                                               socket.emit("delete for everyone", {
                                                                   username,
                                                                   messageId: msg.id,
+                                                                  audio_url: msg.audio_url || null,
+
                                                               });
                                                           }}
                                                           className="block w-full text-left px-4 py-1 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 border-t border-gray-100"

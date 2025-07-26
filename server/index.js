@@ -3,6 +3,7 @@ const cors = require("cors");
 const profileRoutes = require('./Routes/profile');
 const groupProfilePics = require('./Routes/group-profile-pics');
 const userLogin = require('./Routes/userLogin');
+const uploadAudio = require('./Routes/uploadAudio');
 
 
 const http = require("http");
@@ -15,6 +16,7 @@ app.get("/", (req, res) => {
     res.json({ message: "Welcome to ChatterSocket! we are live" });
 });
 app.use('/', profileRoutes);
+app.use('/', uploadAudio);
 app.use('/', groupProfilePics);
 app.use('/', userLogin);
 

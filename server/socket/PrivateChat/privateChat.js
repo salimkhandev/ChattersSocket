@@ -1,6 +1,8 @@
 // privateChat.js
-const supabase = require("../config/supabaseClient");
-const redisClient = require("../config/redisConfig");
+const supabase = require("../../config/supabaseClient");
+const redisClient = require("../../config/redisConfig");
+const {sendUpdatedChatHistory }= require( './sendUpdatedChatHistory');
+
 const { v4: uuidv4 } = require('uuid');
 
 async function getAllUsers() {
@@ -50,7 +52,7 @@ function startServer(io) {
 
     io.on("connection", (socket) => {
         // console.log("A user connected 😊", socket.id);
-        socket.on("edit message", async ({ messageId, newMessage }) => {
+        socket.on("edit message", async ({ messageId, newMessage ,sender , receiver}) => {
             function getPakistanISOString() {
                 const now = new Date();
                 const offsetMs = 5 * 60 * 60 * 1000; // +5 hours in milliseconds
@@ -78,6 +80,7 @@ function startServer(io) {
 
                 // emit to same group room
                 // io.to(updatedMessage.groupName).emit("message edited", updatedMessage);
+                await sendUpdatedChatHistory(io, redisClient, supabase, sender, receiver);
 
             } catch (err) {
                 console.error("Edit exception:", err.message);
@@ -171,7 +174,7 @@ function startServer(io) {
 
         const cloudinary = require("cloudinary").v2; // Make sure Cloudinary is configured
 
-        socket.on("delete for everyone", async ({ username, messageId, audio_url }) => {
+        socket.on("delete for everyone", async ({ sender,receiver, messageId, audio_url, media_url}) => {
             try {
                 // Step 1: Update DB instantly for fast feedback
                 const { data: message, error } = await supabase
@@ -185,8 +188,8 @@ function startServer(io) {
                     return;
                 }
 
-                if (message.sender !== username) {
-                    console.warn("Unauthorized delete attempt by", username);
+                if (message.sender !== sender) {
+                    console.warn("Unauthorized delete attempt by", sender);
                     return;
                 }
 
@@ -223,6 +226,47 @@ function startServer(io) {
                         console.warn("Could not extract publicId from audio_url");
                     }
                 }
+                if (media_url) {
+                    const parts = media_url.split('/upload/');
+                    if (parts.length < 2) {
+                        console.warn("Invalid Cloudinary URL");
+                        return;
+                    }
+
+                    let afterUpload = parts[1]; // e.g., "v123456/folder/filename.webm"
+                    afterUpload = afterUpload.replace(/^v\d+\//, '');
+
+                    const filenameWithExt = afterUpload.split('/').pop(); // "filename.webm"
+                    const [publicId, ext] = filenameWithExt.split('.'); // ext = "webm", publicId = "filename"
+
+                    // Determine resource type
+                    let resourceType = "raw"; // default fallback
+                    if (ext === "webm" || ext === "mp4") {
+                        resourceType = "video";
+                    } else if (["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext)) {
+                        resourceType = "image";
+                    } else if (["pdf", "doc", "docx", "txt", "csv"].includes(ext)) {
+                        resourceType = "raw";
+                    }
+
+                    if (publicId) {
+                        cloudinary.uploader.destroy(publicId, {
+                            resource_type: resourceType,
+                            invalidate: true
+                        }, (error, result) => {
+                            if (error) {
+                                console.error("Cloudinary deletion error:", error);
+                            } else {
+                                console.log("Deleted from Cloudinary:", result);
+                            }
+                        });
+                    } else {
+                        console.warn("Could not extract publicId from media_url");
+                    }
+                }
+
+                await sendUpdatedChatHistory(io, redisClient, supabase, sender, receiver);
+
 
             } catch (err) {
                 console.error("Error in delete for everyone:", err);
@@ -351,7 +395,12 @@ function startServer(io) {
         socket.on("chat messages", async (msg) => {
             const sender = msg.sender.trim().toLowerCase();
             const receiver = msg.receiver.trim().toLowerCase();
+            const format = msg.format;
+            const media_url = msg.media_url;
 
+            // console.log({msg});
+            
+            
             const receiverData = await redisClient.hGet("connectedUsers", receiver);
             const senderData = await redisClient.hGet("connectedUsers", sender);
 
@@ -384,14 +433,17 @@ function startServer(io) {
                         to: receiver,
                         senderfullname:senderfullname,
                         audio_url: msg.audio_url || null,
-                        is_voice: msg.is_voice,
+                        format: msg.format || null,
+                        media_url: msg.media_url || null,
+                        is_voice: msg.is_voice || null,
                         sender_profile_pic: data.profile_pic,
                         message: msg.message,
                         created_at,
                         id: messageId,
                         deleted_for: "",
                         is_deleted_for_everyone: false,
-                        seen_at: null 
+                        seen_at: null,
+                        seen:false
                     };
                     
 console.log({messagePayload});
@@ -399,13 +451,13 @@ console.log({messagePayload});
 
                     if (receiverParsed.socketId) {
                         io.to(receiverParsed.socketId).emit("chat message", messagePayload);
-                        console.log('to receiver',messagePayload);
+                        // console.log('to receiver',messagePayload);
                         
                     }
                     
                     if (senderParsed.socketId) {
                         io.to(senderParsed.socketId).emit("chat message", messagePayload);
-                        console.log('to sender',messagePayload);
+                        // console.log('to sender',messagePayload);
                     }
 
                     console.log(`Message sent from ${sender} to ${receiver}`);
@@ -421,7 +473,10 @@ console.log({messagePayload});
                             created_at,
                             senderfullname,
                             audio_url: msg.audio_url || null,
+                            format: msg.format || null,
+                            media_url: msg.media_url || null,
                             is_voice: msg.is_voice,
+                            seen:false
                         })
                         .then(({ error }) => {
                             if (error) {
@@ -474,9 +529,8 @@ console.log({messagePayload});
         socket.on("mark messages seen", async ({ sender, receiver }) => {
             sender = sender.trim().toLowerCase();
             receiver = receiver.trim().toLowerCase();
-     
+   
             
-
             try {
                 
                 function getPakistanISOString() {
@@ -496,24 +550,46 @@ console.log({messagePayload});
                     .eq("sender", sender)
                     .eq("receiver", receiver)
                     .eq("seen", false); // only unseen
+                    
+                //     // 2. Fetch updated chat history
+                //     const { data: updatedChat, error } = await supabase
+                //     .from("messages")
+                //     .select("*")
+                //     .or(`and(sender.eq.${sender},receiver.eq.${receiver}),and(sender.eq.${receiver},receiver.eq.${sender})`)
+                //     .order("created_at", { ascending: true });
 
-                // 2. Fetch updated chat history
-                const { data: updatedChat, error } = await supabase
-                    .from("messages")
-                    .select("*")
-                    .or(`and(sender.eq.${sender},receiver.eq.${receiver}),and(sender.eq.${receiver},receiver.eq.${sender})`)
-                    .order("created_at", { ascending: true });
+                //     if (error) throw error;
+                    
+                //     // 3. Send updated chat history
+                // const receiverDataRaw = await redisClient.hGet("connectedUsers", receiver);
+                // const senderDataRaw = await redisClient.hGet("connectedUsers", sender);
 
-                if (error) throw error;
+                // const receiverParsed = receiverDataRaw ? JSON.parse(receiverDataRaw) : null;
+                // const senderParsed = senderDataRaw ? JSON.parse(senderDataRaw) : null;
 
-                // 3. Send updated chat history
-                socket.emit("chat history", updatedChat);
+                // // 4. Emit updated chat to both users
+                // if (senderParsed?.socketId) {
+                //     io.to(senderParsed.socketId).emit("chat history", updatedChat);
+                //     console.log('sender',updatedChat);
+                // }
+
+                // if (receiverParsed?.socketId) {
+                //     io.to(receiverParsed.socketId).emit("chat history", updatedChat);
+                //     console.log('Receiver',updatedChat);
+                    
+                // }
+                    // socket.emit("chat history", updatedChat);
+                    // console.log('Chat history called😂❌❌❌❌❌❌❌😂😂😂😂😂😂😂😂',updatedChat);
+                // console.log('im called');
+
+                await    sendUpdatedChatHistory(io, redisClient, supabase, sender, receiver);
+
    
 
                 
             } catch (err) {
-                console.error("❌ Error updating seen messages:", err.message);
-                socket.emit("chat history", []); // fallback
+                // console.error("❌ Error updating seen messages:", err.message);
+                // socket.emit("chat history", []); // fallback
             }
         });
 

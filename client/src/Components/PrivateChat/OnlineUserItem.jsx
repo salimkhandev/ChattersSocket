@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useUser } from "../../context/UserContext";
+import { useAuth } from "../../context/AuthContext";
 
 const OnlineUserItem = ({
     user,
@@ -13,7 +13,7 @@ const OnlineUserItem = ({
     isTyping,
     isChattingWindowOpen,
 }) => {
-    const { username} = useUser();
+    const { username} = useAuth();
 
     const unseen = user.sentUnseenMessages?.find(
         (m) => m.receiver === username

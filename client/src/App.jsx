@@ -6,7 +6,9 @@ import ChatMessages from './Components/PrivateChat/ChatMessages';
 import MessageInput from "./Components/PrivateChat/MessageInput";
 import OnlineUserList from './Components/PrivateChat/OnlineUserList';
 import ToggleTabs from "./Components/PrivateChat/ToggleTabs";
-import { useUser } from "./context/UserContext";
+import { useAuth } from "./context/AuthContext";
+import { generateToken } from './Components/FCM/firebase'; // adjust the path
+
 
 import UserProfileUpload from "./Components/PrivateChat/UserProfile";
 // import profilePic from './Components/image.png';
@@ -51,8 +53,8 @@ export default function ChatApp() {
   const chatEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const prevChatRef = useRef([]);
-  const { username, setUsername } = useUser();
-
+  const { username, setUsername } = useAuth();
+  
   // const getSenderFullname = (username) => {
   //   const found = chat.find((msg) => msg.from === username);
   //   return found ? found.senderfullname : username;
@@ -60,16 +62,27 @@ export default function ChatApp() {
 
 
   // useEffect(() => {
-
+    
   //   console.log({chat});
     
   //   console.log('the fullname is ',getSenderFullname(username)); 
     
   // }, [selectedReceiver,chat]);
 
-
   useEffect(() => {
+    const getToken = async () => {
+      const token = await generateToken();
+      if (token) {
+        localStorage.setItem("token", token);
+        // setFcm_token(token);
+      }
+    };
+    getToken();
+  }, []);
 
+
+  
+  useEffect(() => {
     const prev = prevChatRef.current;
     const isSame =
       prev.length === chat.length &&
@@ -82,20 +95,58 @@ export default function ChatApp() {
     prevChatRef.current = chat;
   }, [chat]);
 
-  useEffect(() => {
+  // useEffect(() => {
     
-    if (!username || !selectedReceiver) return;
+  //   if (!username || !selectedReceiver) return;
+
+  //   const markSeen = () => {
+  //     if (document.visibilityState === "visible") {
+  //       socket.emit("mark messages seen", {
+  //         sender: selectedReceiver,
+  //         receiver: username,
+  //       });
+  //     }
+  //   };
+
+    
+
+  //   const interval = setInterval(markSeen, 2000);
+  //   document.addEventListener("visibilitychange", markSeen);
+
+  //   markSeen();
+
+  //   return () => {
+  //     clearInterval(interval);
+  //     document.removeEventListener("visibilitychange", markSeen);
+  //   };
+  // }, [selectedReceiver, username]);
+
+
+  useEffect(() => {
+    if (!username || !selectedReceiver || !chat) return;
+  
 
     const markSeen = () => {
-      if (document.visibilityState === "visible") {
+      const unseenMessages = chat.filter(
+        (msg) =>
+          msg.from === selectedReceiver &&
+          !msg.seen
+      );
+// console.log('Hello');
+
+
+      if (
+        unseenMessages.length > 0 &&
+        document.visibilityState === "visible"
+      ) {
+        console.log('tHis is the seen message😡❤️😂🟢❌😒🦞');
+        
         socket.emit("mark messages seen", {
           sender: selectedReceiver,
           receiver: username,
         });
       }
     };
-
-    
 
     const interval = setInterval(markSeen, 2000);
     document.addEventListener("visibilitychange", markSeen);
@@ -106,7 +157,9 @@ export default function ChatApp() {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", markSeen);
     };
-  }, [selectedReceiver, username]);
+  }, [selectedReceiver, username, chat]);
+
+
 
 
 
@@ -166,10 +219,6 @@ export default function ChatApp() {
           });
 
         } else {
-
-
-
-
           if (
             msg.from !== username && !selectedReceiver
           ) {
@@ -249,6 +298,8 @@ export default function ChatApp() {
         created_at: msg.created_at,
         audio_url: msg.audio_url,
         is_voice: msg.is_voice,
+        media_url: msg.media_url, 
+        format :msg.format, 
         seen: msg.seen,
         seen_at: msg.seen_at, 
         updated_at: msg.updated_at, 

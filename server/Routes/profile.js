@@ -75,7 +75,6 @@ router.post("/upload-profile-pic", upload.single("file"), async (req, res) => {
     .select("profile_pic")
     .eq("username", username)
     .single();
-    
 
   if (fetchError) {
     console.error("Failed to fetch existing image:", fetchError.message);

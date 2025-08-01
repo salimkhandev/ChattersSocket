@@ -1,8 +1,11 @@
 'use client';
 import React, { useState, useRef } from "react";
-import { Smile, Send, Mic, StopCircle } from "lucide-react";
-import VoiceRecorder from "./VoiceMessgae/VoiceRecorder"; // <-- Adjust the path if needed
+import { Smile, XCircle,Send, Mic, StopCircle } from "lucide-react";
 
+import VoiceRecorder from "./VoiceMessgae/VoiceRecorder"; // <-- Adjust the path if needed
+import UploadMedia from './SendMedia/UploadMedia'; // adjust path if needed
+import { useMedia } from "../../context/MediaContext";
+import MediaPreview from './SendMedia/MediaPreview';
 
 const emojiList = ["😀", "😂", "😍", "😎", "👍", "🙏", "🎉", "💯", "❤️", "🔥", "🤔", "🙌"];
 
@@ -15,11 +18,13 @@ const MessageInput = ({
     socket,
     sender,
 }) => {
+    // const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
     const [showStopIcon, setShowStopIcon] = useState(false);
     const [showRecordIcon, setShowRecordIcon] = useState(true);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const recorderRef = useRef();
+    const { localUrl, setLocalUrl, localFormat, setLocalFormat, isModalOpen,setIsModalOpen} = useMedia();
 
     const handleStart = () => {
         recorderRef.current?.startRecording(); 
@@ -75,6 +80,25 @@ const MessageInput = ({
                         />
                     </div>
                 )}
+
+                {isModalOpen && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+                        <div className="bg-white p-4 rounded-xl max-w-md w-full relative">
+                            <MediaPreview />
+
+                            <XCircle
+                                onClick={() => {
+                                    setLocalFormat(null);
+                                    setLocalUrl(null);
+                                    setIsModalOpen(false)
+                                }}
+                                className="text-red-500 cursor-pointer absolute top-2 right-2"
+                            />
+                        </div>
+                    {/* </div> */}
+                    </div>
+                )}
+
                 {/* Emoji Button */}
              { !isRecording &&  <button
                     type="button"
@@ -84,6 +108,15 @@ const MessageInput = ({
                 >
                     <Smile className="w-5 h-5 text-gray-500" />
                 </button>}
+                <div className="px-4 py-2">
+                    <UploadMedia
+                        sender={sender}
+                        receiver={selectedReceiver}
+                        socket={socket}
+                        // onOpenPreview={() => setIsMediaModalOpen(true)} // 👈 pass this
+                    />                </div>
+                
+
 
                 {/* Voice Button (Toggle Recorder UI) */}
                 {/* Mic Button (Start Recording) */}

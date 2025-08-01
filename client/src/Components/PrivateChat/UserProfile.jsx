@@ -2,11 +2,13 @@
 import imageCompression from "browser-image-compression";
 import { Camera, Check, Edit3, LogIn, Settings, Trash2, User, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import { useUser } from "../../context/UserContext";
+import { useAuth } from "../../context/AuthContext";
+import { useProfile } from "../../context/ProfileContext";
 // user react.memoe bellow
 
 export default function UserProfileUpload({ nameLoaded, socket }) {
-    const { username, profilePic, setProfilePic } = useUser();
+    const { username } = useAuth();
+    const { profilePic, setProfilePic} = useProfile();
 
     const fileInputRef = useRef(null);
     const [isUploading, setIsUploading] = useState(false);

@@ -2,11 +2,11 @@ import { MoreHorizontal, MoreVertical, Plus, Send, Smile, Trash2, Users, X } fro
 import React, { useEffect, useRef, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import GroupProfile from './GroupProfile';
-import { useUser } from "../../context/UserContext";
 
 import ChatInput from "./ChatInput";
+import { useAuth } from "../../context/AuthContext";
 const GroupChat = ({ socket }) => {
-    const { username, profilePic } = useUser();
+    const { username } = useAuth();
 
     const [groupName, setGroupName] = useState("");
     const [selectedGroup, setSelectedGroup] = useState("");

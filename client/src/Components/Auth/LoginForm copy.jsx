@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { io } from "socket.io-client";
 import { UserPlus, Loader2 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext';
-import { generateToken } from '../FCM/firebase'; // adjust the path
-
 // const socket = io("http://localhost:3000");
 
 // const socket = io("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/", {
@@ -18,30 +16,17 @@ const socket = io("http://localhost:3000", {
     reconnectionDelay: 2000,
 });
 function LoginForm({setIsLoggedIn,isLoggedIn}) {
-    const [fcm_token, setFcm_token] = useState('');
     const { username, setUsername } = useAuth();
-    useEffect(() => {
-        const getToken = async () => {
-            const token = await generateToken();
-            if (token) {
-                localStorage.setItem("token", token);
-                setFcm_token(token);
-            }
-        };
-        
-        getToken();
-    }, []);
+
     const [error, setError] = useState("");
     // loader
     const [isLoading, setIsLoading] = useState(false);
     // const [username, setUsername] = useState(localStorage.getItem("chat_user") || "");
     // const [isLoggedIn, setIsLoggedIn] = useState(null);
-
-
     const handleLogin = async (input) => {
         const trimmed = input.trim().toLowerCase();
         if (!trimmed) return alert("❌ Please enter a username");
-     
+
         // Call API to check username
         try {
             setIsLoading(true);
@@ -50,7 +35,7 @@ function LoginForm({setIsLoggedIn,isLoggedIn}) {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ username: trimmed, fcm_token}),
+                body: JSON.stringify({ username: trimmed }),
             });
 
             const { success, message } = await res.json();

@@ -4,10 +4,10 @@ import React, { useState, useRef, useEffect, forwardRef,useImperativeHandle } fr
 import { Mic, StopCircle, Send, Loader2, Trash2 } from 'lucide-react';
 import WaveSurfer from 'wavesurfer.js';
 import AudioWaveIcon from "./AudioWaveIcon";
-
+import { useVoice } from '../../../context/VoiceContext';
 const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecording }, ref) => {
     const [recording, setRecording] = useState(false);
-    const [audioUrl, setAudioUrl] = useState(null);
+    // const [audioUrl, setAudioUrl] = useState(null);
     const [uploading, setUploading] = useState(false);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -20,7 +20,43 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
     const [recordTime, setRecordTime] = useState(0);
     // const [recordTime, setRecordTime] = useState(0);
     const intervalRef = useRef(null);
-    const [tempVoice,setTempVoice]=useState([])
+    // const [tempVoiceUrl, setTempVoiceUrl] = useState(null);
+    const [audioBlob, setAudioBlob] = useState(null);
+    const { tempVoiceUrl, setTempVoiceUrl, setTempUrlAudio }=useVoice()
+
+    const playSendSound = () => {
+        const audio = new Audio('/notification/Sending-Message-Sound.mp3'); // fix path (see below)
+        audio.volume = 0.05; // volume from 0.0 (mute) to 1.0 (max)
+        audio.play().catch((err) => {
+            console.warn('Sound play error:', err);
+        });
+    };
+
+
+    const uploadVoice = async (blob) => {
+        if (!blob) return;
+        setUploading(true);
+        const formData = new FormData();
+        formData.append('audio', blob);
+
+        try {
+            const res = await fetch('http://localhost:3000/upload-audio', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const { audio_url } = await res.json();
+            if (audio_url) {
+                return audio_url
+            } else {
+                console.error('No audio_url returned');
+            }
+        } catch (err) {
+            console.error('Upload failed', err);
+        } finally {
+            setUploading(false);
+        }
+    };
 
     const startRecording = async () => {
        // reset timer
@@ -40,32 +76,14 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
         mediaRecorderRef.current.onstop = async () => {
             const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
             const localUrl = URL.createObjectURL(blob);
-            setAudioUrl(localUrl); // temporary preview
-            setUploading(true);
-
-            // Upload to server (which uploads to Cloudinary)
-            const formData = new FormData();
-            formData.append('audio', blob);
-
-            try {
-                const res = await fetch('http://localhost:3000/upload-audio', {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                const { audio_url } = await res.json();
-
-                if (audio_url) {
-                    setAudioUrl(audio_url); // ✅ only this should be sent
-                } else {
-                    console.error('No audio_url returned');
-                }
-            } catch (err) {
-                console.error('Upload failed', err);
-            } finally {
-                setUploading(false);
-            }
+            setTempVoiceUrl(localUrl); // Only used for preview
+            setAudioBlob(blob);   
+               // Actual audio data to upload
         };
+
+
+    
+
         mediaRecorderRef.current.start();
         setRecording(true);
         setRecordTime(0); 
@@ -74,41 +92,50 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
     };
 
     const stopRecording = () => {
-        
         if (mediaRecorderRef.current) {
             mediaRecorderRef.current.stop();
+
+            // ✅ Stop all audio tracks to remove mic access
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);
                 intervalRef.current = null;
             }
-
         }
         setRecording(false);
     };
 
-    const sendMessage = () => {
-        if (!audioUrl || uploading) return;
+
+    const sendMessage = async () => {
+
+        if (!audioBlob) return;
+        setIsRecording(false)
+        setTempUrlAudio(true)
+        const uploadedUrl = await uploadVoice(audioBlob); // wait for return
+
+setTempVoiceUrl(null)
+setTempUrlAudio(null)
 
         socket.emit('chat messages', {
             sender,
             receiver,
             message: null,
-            audio_url: audioUrl,
+            audio_url: uploadedUrl,
             is_voice: true,
         });
+        playSendSound()
 
-        // Cleanup
         if (waveSurferRef.current) {
             waveSurferRef.current.destroy();
             waveSurferRef.current = null;
         }
 
-        setAudioUrl(null);
         onDone?.();
     };
 
     useEffect(() => {
-        if (!audioUrl || !waveformRef.current) return;
+        if (!tempVoiceUrl || !waveformRef.current) return;
 
         if (waveSurferRef.current) {
             waveSurferRef.current.destroy();
@@ -124,8 +151,10 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
             responsive: true,
         });
 
-        waveSurferRef.current.load(audioUrl);
+        waveSurferRef.current.load(tempVoiceUrl);
         // waveSurferRef.current.load(src);
+        // console.log({tempVoiceUrl});
+        
 
         waveSurferRef.current.on('ready', () => {
             setDuration(waveSurferRef.current.getDuration());
@@ -152,9 +181,9 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
             if (waveSurferRef.current) {
                 waveSurferRef.current.destroy();
                 waveSurferRef.current = null;
-            }
+            }   
         };
-    }, [audioUrl]);
+    }, [tempVoiceUrl]);
     useImperativeHandle(ref, () => ({
         startRecording,
         stopRecording,
@@ -181,7 +210,7 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
                 </div>
 
                 
-            ) : audioUrl &&  (
+            ) : tempVoiceUrl &&  (
                     <div className="w-full border rounded-lg p-3 bg-gray-50">
                         <label className="text-sm font-medium text-gray-700 mb-2 block">🎧 Voice Message Preview</label>
 
@@ -211,12 +240,16 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
 
                             <button
                                 onClick={() => {
-                                    setAudioUrl(null);
+                                    // setAudioUrl(null);
                                     setRecording(false);
+                                    setTempUrlAudio(null)
+                                    setTempVoiceUrl(null);     // ✅ clear preview
+                                    setAudioBlob(null);        
                                     if (waveSurferRef.current) {
                                         waveSurferRef.current.destroy();
                                         waveSurferRef.current = null;
                                         setIsRecording(false)
+
                                     }
                                 }}
                                 className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 text-red-500 hover:bg-red-100 rounded"
@@ -227,23 +260,14 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
 
                             <button
                                 onClick={sendMessage}
-                                disabled={uploading}
+                                // disabled={uploading}
                                 className={`flex items-center gap-2 px-4 py-2 text-white rounded-md ${uploading
                                     ? 'bg-gray-400 cursor-not-allowed'
                                     : 'bg-green-600 hover:bg-green-700'
                                     }`}
                             >
-                                {uploading ? (
-                                    <>
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                        Uploading...
-                                    </>
-                                ) : (
-                                    <>
                                         <Send className="w-5 h-5" />
                                         Send
-                                    </>
-                                )}
                             </button>
                         </div>
                     </div>

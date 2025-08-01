@@ -2,7 +2,7 @@
 
 import React from "react";
 import OnlineUserItem from "./OnlineUserItem";
-import { useUser } from "../../context/UserContext";
+import { useAuth } from "../../context/AuthContext";
 
 const OnlineUserList = ({
     onlineUsers,
@@ -14,7 +14,7 @@ const OnlineUserList = ({
     isTyping,
     isChattingWindowOpen,
 }) => {
-    const { username} = useUser();
+    const { username} = useAuth();
 
     const filteredUsers = onlineUsers
         .filter((u) => u.username !== username)

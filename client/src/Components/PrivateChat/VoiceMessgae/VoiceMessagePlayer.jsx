@@ -2,6 +2,7 @@
 import { Play, Square } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
+import { setCurrentWaveSurfer } from '../../../context/globalWaveSurferManager';
 
 export default function VoiceMessagePlayer({ audioUrl }) {
     const waveformRef = useRef(null);
@@ -9,6 +10,8 @@ export default function VoiceMessagePlayer({ audioUrl }) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+
 
     useEffect(() => {
         if (!waveformRef.current || !audioUrl) return;
@@ -28,6 +31,8 @@ export default function VoiceMessagePlayer({ audioUrl }) {
         waveSurferRef.current.load(audioUrl);
 
         waveSurferRef.current.on('ready', () => {
+            setIsLoading(false); // Audio is ready
+
             setDuration(waveSurferRef.current.getDuration());
 
             waveSurferRef.current.on('audioprocess', () => {
@@ -56,6 +61,12 @@ export default function VoiceMessagePlayer({ audioUrl }) {
 
     const togglePlay = () => {
         if (!waveSurferRef.current) return;
+
+        // Inform global manager — it will stop others
+        if (!waveSurferRef.current.isPlaying()) {
+            setCurrentWaveSurfer(waveSurferRef.current);
+        }
+
         waveSurferRef.current.playPause();
         setIsPlaying(prev => !prev);
     };
@@ -68,13 +79,14 @@ export default function VoiceMessagePlayer({ audioUrl }) {
 
     return (
         <div className="flex items-center gap-2 bg-gray-100 px-3 pb-2  rounded-lg shadow-sm w-[250px]">
+            {isLoading ? (
+                <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full" />
+            ) : (
+                <button onClick={togglePlay} className="text-blue-600 hover:text-blue-800 p-1 rounded">
+                    {isPlaying ? <Square size={16} /> : <Play size={16} />}
+                </button>
+            )}
 
-            <button
-                onClick={togglePlay}
-                className="text-blue-600 hover:text-blue-800 p-1  rounded"
-            >
-                {isPlaying ? <Square size={16} /> : <Play size={16} />}
-            </button>
 
             <div className="flex-1">
                 <div ref={waveformRef} className="w-full pt-5 overflow-hidden" />

@@ -2,8 +2,10 @@
 const supabase = require("../../config/supabaseClient");
 const redisClient = require("../../config/redisConfig");
 const {sendUpdatedChatHistory }= require( './sendUpdatedChatHistory');
-
+const sendNotification =require('../../utils/sendNotification')
 const { v4: uuidv4 } = require('uuid');
+const  isImageUrl  = require('../../utils/isImageUrl');
+
 
 async function getAllUsers() {
     const { data, error } = await supabase.from("users").select("*");
@@ -446,7 +448,6 @@ function startServer(io) {
                         seen:false
                     };
                     
-console.log({messagePayload});
 
 
                     if (receiverParsed.socketId) {
@@ -459,10 +460,9 @@ console.log({messagePayload});
                         io.to(senderParsed.socketId).emit("chat message", messagePayload);
                         // console.log('to sender',messagePayload);
                     }
-
-                    console.log(`Message sent from ${sender} to ${receiver}`);
-
-                    // ✅ Save to DB with timestamp
+                
+                    
+                   
                     supabase
                         .from("messages")
                         .insert({
@@ -474,7 +474,7 @@ console.log({messagePayload});
                             senderfullname,
                             audio_url: msg.audio_url || null,
                             format: msg.format || null,
-                            media_url: msg.media_url || null,
+                            media_url: media_url || null,
                             is_voice: msg.is_voice,
                             seen:false
                         })
@@ -485,6 +485,59 @@ console.log({messagePayload});
                                 console.log("💾 Message saved to DB");
                             }
                         });
+
+                    let file = isImageUrl(format)
+                    if (msg.message) {
+                        await sendNotification({
+                            receiver,
+                            title: senderfullname,
+                            body: msg.message,
+                            imageUrl: null,
+                            badgeUrl: "https://i.ibb.co/0RS7Zm95/appIcon.png"
+
+                        });
+                    } else if (file==='image') {
+                        try {
+                            await sendNotification({
+                                receiver,
+                                title: senderfullname,
+                                body: null,
+                                imageUrl: media_url,
+                                badgeUrl: "https://i.ibb.co/0RS7Zm95/appIcon.png"
+                            });
+
+                            
+                        } catch (err) {
+                            console.error("❌ Error sending image notification:", err.message);
+                        }
+                    }else if (file==='file') {
+                        try {
+                            await sendNotification({
+                                receiver,
+                                title: senderfullname,
+                                body: 'File Received 📁',
+                                imageUrl: null,
+                                badgeUrl: "https://i.ibb.co/0RS7Zm95/appIcon.png"
+                            });
+                        } catch (err) {
+                            console.error("❌ Error sending file notification:", err.message);
+                        }
+                        }
+                    
+                    else if (msg.audio_url) {
+                        try {
+                            await sendNotification({
+                                receiver,
+                                title: senderfullname,
+                                body: 'Voice Message 🎤',
+                                imageUrl: null,
+                                badgeUrl: "https://i.ibb.co/0RS7Zm95/appIcon.png"
+                            });
+                        } catch (err) {
+                            console.error("❌ Error sending audio notification:", err.message);
+                        }
+                    } 
+
 
                         
                 } catch (err) {
@@ -498,7 +551,9 @@ console.log({messagePayload});
                     message: `User ${receiver} is not allowed to join.`,
                 });
             }
+       
         });
+
 
         // ✅ Get chat history between two users
         socket.on("get chat history", async ({ sender, receiver }) => {

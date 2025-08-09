@@ -35,6 +35,7 @@ router.post('/check-username', async (req, res) => {
 
             tokenStatus = tokenError ? "FCM token insertion failed." : "FCM token stored successfully.";
         }
+        
 
 console.log(tokenStatus);
 

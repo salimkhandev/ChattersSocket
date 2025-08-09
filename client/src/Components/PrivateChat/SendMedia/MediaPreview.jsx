@@ -46,12 +46,33 @@ export default function MediaPreview() {
                 />
             );
         }
+        if (['pdf'].includes(format)) {
+            return (
+                <iframe
+                    src={localUrl}
+                    className="w-full h-80 border rounded-md shadow"
+                    title="PDF Preview"
+                />
+            );
+        }
+
+        if (['txt', 'csv', 'json', 'xml', 'html', 'log', 'md', 'css', 'js', 'ini'].includes(format)) {
+            return (
+                <iframe
+                    src={localUrl}
+                    className="w-full h-60 border rounded-md shadow bg-white"
+                    title="Text File Preview"
+                />
+            );
+        }
+
 
         return (
             <div className="flex items-center justify-center w-full h-40 bg-gray-100 rounded-md">
                 <p className="text-sm text-gray-500">Preview not supported for this file type.</p>
             </div>
         );
+        
     };
 
     return (

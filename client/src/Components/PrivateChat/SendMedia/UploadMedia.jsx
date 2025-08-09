@@ -6,7 +6,7 @@ import { useUpload } from "../../../context/UploadContext";
 
 import { FilePlus, Loader2, Upload } from 'lucide-react';
 import axios from 'axios';
-// import { useMedia } from '../../../context/MediaContext';
+import imageCompression from 'browser-image-compression';
 
 const UploadMedia = ({ sender, receiver, socket }) => {
     const { registerUploadFn } = useUpload();
@@ -15,15 +15,34 @@ const UploadMedia = ({ sender, receiver, socket }) => {
     // const [localFormat, setLocalFormat] = useState(null);
     const { setLocalUrl, setLocalFormat, setUploading, isModalOpen, setIsModalOpen} = useMedia();
 
-    const handleFileChange = (e) => {
+    const handleFileChange =async (e) => {
         setIsModalOpen(true)
         const selectedFile = e.target.files[0];
+        let finalFile = selectedFile;
+
+        if (selectedFile.type.startsWith("image/")) {   
+            try {
+                const options = {
+                    maxSizeMB: 0.2,             // Max size ~200 KB
+                    maxWidthOrHeight: 1024,     // Resize if needed
+                    useWebWorker: true,
+                };
+
+                const compressedFile = await imageCompression(selectedFile, options);
+                console.log("🖼️ Original size:", (selectedFile.size / 1024).toFixed(2), "KB");
+                console.log("🗜️ Compressed size:", (compressedFile.size / 1024).toFixed(2), "KB");
+
+                finalFile = compressedFile;
+            } catch (error) {
+                console.error("Compression failed:", error);
+            }
+        }
         if (!selectedFile) return;
         
         const localPreviewUrl = URL.createObjectURL(selectedFile);
         const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase();
 
-        setFile(selectedFile);
+        setFile(finalFile);
         setLocalUrl(localPreviewUrl);
         setLocalFormat(fileExtension);
     };

@@ -5,7 +5,7 @@ const groupProfilePics = require('./Routes/group-profile-pics');
 const userLogin = require('./Routes/userLogin');
 const uploadAudio = require('./Routes/uploadAudio');
 const uploadMedia = require('./Routes/uploadMedia');
-const notificationRoutes = require('./Routes/notifications');
+// const notificationRoutes = require('./Routes/notifications');
 const admin = require('firebase-admin');
 
 
@@ -30,7 +30,7 @@ app.use('/', groupProfilePics);
 app.use('/', userLogin);
 app.use('/', uploadAudio);
 app.use('/', uploadMedia);
-app.use('/', notificationRoutes);
+// app.use('/', notificationRoutes);
 // Enable CORS - Remove the trailing slash from origin
 
 // Initialize Firebase Admin

@@ -3,7 +3,6 @@ const supabase = require("../config/supabaseClient");
 const redisClient = require("../config/redisConfig");
 function groupChat(io) {
     io.on("connection", (socket) => {
-        console.log("New user connected:", socket.id);
 
         socket.on("get groups", async () => {
             const { data, error } = await supabase

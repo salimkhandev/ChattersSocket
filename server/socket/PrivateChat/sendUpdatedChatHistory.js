@@ -1,5 +1,4 @@
 async function sendUpdatedChatHistory(io, redisClient, supabase, sender, receiver) {
-    console.log('📞 Calling sendUpdatedChatHistory...');
     
     try {
         sender = sender.trim().toLowerCase();
@@ -28,12 +27,10 @@ async function sendUpdatedChatHistory(io, redisClient, supabase, sender, receive
         // 3. Emit chat to both users if connected
         if (senderParsed?.socketId) {
             io.to(senderParsed.socketId).emit("chat history", updatedChat);
-            console.log("✅ Sent to sender:", sender);
         }
 
         if (receiverParsed?.socketId) {
             io.to(receiverParsed.socketId).emit("chat history", updatedChat);
-            console.log("✅ Sent to receiver:", receiver);
         }
 
     } catch (err) {

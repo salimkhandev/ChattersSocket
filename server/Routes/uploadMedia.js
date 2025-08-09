@@ -10,6 +10,7 @@ const upload = multer({ dest: "uploads/" });
 router.post("/upload-media", upload.single("file"), async (req, res) => {
     try {
         const filePath = req.file.path;
+console.log({filePath});
 
         // Upload to Cloudinary with auto resource type
         const result = await cloudinary.uploader.upload(filePath, {
@@ -17,7 +18,6 @@ router.post("/upload-media", upload.single("file"), async (req, res) => {
         });
 
         // Delete local temp file
-        fs.unlinkSync(filePath);
 
         // Extract format from original filename if Cloudinary doesn't return it
         const fileExt = path.extname(req.file.originalname).toLowerCase().replace(".", ""); // e.g., "zip"
@@ -32,6 +32,7 @@ router.post("/upload-media", upload.single("file"), async (req, res) => {
         });
     } catch (err) {
         console.error("Upload Error:", err);
+        fs.unlinkSync(filePath);
         return res.status(500).json({ error: "Upload failed" });
     }
 });

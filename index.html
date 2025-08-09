@@ -1,51 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Simple Voice Recorder</title>
-</head>
-<body>
-  <h2>🎤 Voice Recorder</h2>
 
-  <button id="start">Start Recording</button>
-  <button id="stop" disabled>Stop Recording</button>
-  <br><br>
-  <audio id="player" controls></audio>
+<head>
+  <meta charset="UTF-8" />
+  <title>Minimal WebRTC Demo</title>
+</head>
+
+<body>
+  <h2>Minimal WebRTC Video Demo</h2>
+
+  <video id="localVideo" autoplay playsinline muted style="width: 45%; border: 1px solid black;"></video>
+  <video id="remoteVideo" autoplay playsinline style="width: 45%; border: 1px solid black;"></video>
+
+  <div>
+    <button id="start">Start Camera</button>
+    <button id="createOffer">Create Offer</button>
+    <button id="createAnswer">Create Answer</button>
+  </div>
+
+  <textarea id="sdp" placeholder="SDP Offer/Answer here" rows="10" cols="70"></textarea>
 
   <script>
-    let mediaRecorder;
-    let audioChunks = [];
+    let localStream;
+    let pc;
+    const servers = null; // No STUN/TURN servers here for simplicity
 
-    const startBtn = document.getElementById('start');
-    const stopBtn = document.getElementById('stop');
-    const audioPlayer = document.getElementById('player');
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+    const sdpTextarea = document.getElementById('sdp');
 
-    startBtn.onclick = async () => {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      mediaRecorder = new MediaRecorder(stream);
-      mediaRecorder.start();
-      audioChunks = [];
-
-      mediaRecorder.ondataavailable = (e) => {
-        audioChunks.push(e.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(audioChunks, { type: 'audio/webm' });
-        const url = URL.createObjectURL(blob);
-        audioPlayer.src = url;
-      };
-
-      startBtn.disabled = true;
-      stopBtn.disabled = false;
+    document.getElementById('start').onclick = async () => {
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localVideo.srcObject = localStream;
     };
 
-    stopBtn.onclick = () => {
-      mediaRecorder.stop();
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
+    document.getElementById('createOffer').onclick = async () => {
+      pc = new RTCPeerConnection(servers);
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+      pc.ontrack = e => {
+        if (remoteVideo.srcObject !== e.streams[0]) {
+          remoteVideo.srcObject = e.streams[0];
+        }
+      };
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      sdpTextarea.value = JSON.stringify(pc.localDescription);
+    };
+
+    document.getElementById('createAnswer').onclick = async () => {
+      pc = new RTCPeerConnection(servers);
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+      pc.ontrack = e => {
+        if (remoteVideo.srcObject !== e.streams[0]) {
+          remoteVideo.srcObject = e.streams[0];
+        }
+      };
+
+      const offerDesc = JSON.parse(sdpTextarea.value);
+      await pc.setRemoteDescription(offerDesc);
+
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      sdpTextarea.value = JSON.stringify(pc.localDescription);
+    };
+
+    sdpTextarea.onchange = async () => {
+      if (!pc) return;
+      try {
+        const desc = JSON.parse(sdpTextarea.value);
+        await pc.setRemoteDescription(desc);
+      } catch (e) {
+        console.error('Invalid SDP JSON', e);
+      }
     };
   </script>
 </body>
+
 </html>

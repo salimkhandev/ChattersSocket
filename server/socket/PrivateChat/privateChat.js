@@ -5,7 +5,7 @@ const {sendUpdatedChatHistory }= require( './sendUpdatedChatHistory');
 const sendNotification =require('../../utils/sendNotification')
 const { v4: uuidv4 } = require('uuid');
 const  isImageUrl  = require('../../utils/isImageUrl');
-
+const videoCall = require("../calls/videoCall")
 
 async function getAllUsers() {
     const { data, error } = await supabase.from("users").select("*");
@@ -54,6 +54,9 @@ function startServer(io) {
 
     io.on("connection", (socket) => {
         // console.log("A user connected 😊", socket.id);
+
+videoCall(io, socket)
+        
         socket.on("edit message", async ({ messageId, newMessage ,sender , receiver}) => {
             function getPakistanISOString() {
                 const now = new Date();

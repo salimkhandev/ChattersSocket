@@ -7,15 +7,24 @@ export default function CallHandler({ socket }) {
 
     const pcRef = useRef(null);
     const localStreamRef = useRef(null);
+    const lastReceivedOffer = useRef(null);
 
     const remoteVideoRef = useRef(null);
     const localVideoRef = useRef(null);
 
-    // Create PeerConnection if not exists
+    // Create or reuse PeerConnection
     const createPeerConnection = () => {
-        if (pcRef.current) return pcRef.current; // reuse if exists
+        if (pcRef.current) return pcRef.current;
 
-        const pc = new RTCPeerConnection();
+        // Add STUN servers for better connectivity
+        const configuration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+            ]
+        };
+        
+        const pc = new RTCPeerConnection(configuration);
 
         pc.onicecandidate = (event) => {
             if (event.candidate && incomingCall?.from) {
@@ -27,58 +36,170 @@ export default function CallHandler({ socket }) {
         };
 
         pc.ontrack = (event) => {
-            if (remoteVideoRef.current) {
+            console.log("Remote track received in incoming call:", event.streams);
+            if (remoteVideoRef.current && event.streams && event.streams[0]) {
+                console.log("Setting remote video stream in incoming call", event.streams[0].getTracks().map(t => t.kind + ":" + t.readyState));
                 remoteVideoRef.current.srcObject = event.streams[0];
+                
+                // Force play to handle autoplay policy restrictions
+                remoteVideoRef.current.play().catch(error => {
+                    console.warn("Remote video autoplay failed:", error.message);
+                    // Add a user interaction element if needed for autoplay policy
+                });
             }
         };
 
-        // Debug connection state
         pc.onconnectionstatechange = () => {
             console.log("Peer connection state:", pc.connectionState);
+            
+            // Handle connection failures
+            if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+                console.warn("Connection state is", pc.connectionState, "- attempting recovery");
+                // Attempt to restart ICE if connection fails
+                if (pc.restartIce) {
+                    try {
+                        pc.restartIce();
+                        console.log("ICE restart attempted");
+                    } catch (e) {
+                        console.error("ICE restart failed:", e);
+                    }
+                }
+            }
         };
 
         pc.oniceconnectionstatechange = () => {
             console.log("ICE connection state:", pc.iceConnectionState);
+            
+            // Handle ICE connection failures
+             if (pc.iceConnectionState === 'failed') {
+                 console.warn("ICE connection failed - attempting to create new answer");
+                 // Use the stored offer for reconnection if available
+                 const offerToUse = lastReceivedOffer.current || incomingCall?.sdp;
+                 
+                 if (offerToUse) {
+                     try {
+                         // Ensure we have a proper RTCSessionDescription object
+                         let offerDesc;
+                         if (typeof offerToUse === 'string') {
+                             try {
+                                 offerDesc = new RTCSessionDescription(JSON.parse(offerToUse));
+                             } catch (e) {
+                                 offerDesc = new RTCSessionDescription(offerToUse);
+                             }
+                         } else {
+                             offerDesc = new RTCSessionDescription(offerToUse);
+                         }
+                         
+                         pc.setRemoteDescription(offerDesc)
+                             .then(() => pc.createAnswer())
+                             .then(answer => pc.setLocalDescription(answer))
+                             .then(() => {
+                                 // Send the new answer to restart ICE
+                                 const plainAnswer = {
+                                     type: pc.localDescription.type,
+                                     sdp: pc.localDescription.sdp
+                                 };
+                                 socket.emit('answer-call', { to: incomingCall.from, sdp: plainAnswer });
+                                 console.log("New answer sent for ICE restart");
+                             })
+                             .catch(e => console.error("Error creating new answer:", e));
+                     } catch (e) {
+                         console.error("Error during ICE restart process:", e);
+                     }
+                 } else {
+                     console.error("No stored offer available for ICE restart");
+                 }
+             }
         };
 
         pcRef.current = pc;
         return pc;
     };
 
-    // Start local stream and add tracks to pc
-    const startLocalStream = async () => {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true,
-        });
-        localStreamRef.current = stream;
-
-        if (localVideoRef.current) {
-            localVideoRef.current.srcObject = stream;
-        }
-
-        // Add tracks to existing pc
-        const pc = createPeerConnection();
-        stream.getTracks().forEach((track) => {
-            pc.addTrack(track, stream);
-        });
-    };
-
+    // Accept incoming call
     const handleAccept = async () => {
-        createPeerConnection(); // Make sure pc exists first
-        await startLocalStream(); // then start stream and add tracks
+        let stream;
+        try {
+            const pc = createPeerConnection();
+            // Get local media stream with specific constraints for better compatibility
+            try {
+                stream =await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        frameRate: { ideal: 30 }
+                    }, 
+                    audio: true 
+                });
+                localStreamRef.current = stream;
 
-        await pcRef.current.setRemoteDescription(
-            new RTCSessionDescription(incomingCall.sdp)
-        );
+                // Display local video
+                if (localVideoRef.current) {
+                    localVideoRef.current.srcObject = stream;
+                    console.log("Local video stream set", stream.getTracks().map(t => t.kind + ":" + t.readyState));
+                    
+                    // Force play to handle autoplay policy restrictions
+                    localVideoRef.current.play().catch(error => {
+                        console.warn("Local video autoplay failed:", error.message);
+                    });
+                }
+            } catch (mediaError) {
+                console.error("Error accessing media devices:", mediaError);
+                alert("Failed to access camera and microphone. Please ensure they are connected and permissions are granted.");
+                // Clean up and exit call process
+                handleReject();
+                return;
+            }
 
-        const answer = await pcRef.current.createAnswer();
-        await pcRef.current.setLocalDescription(answer);
-
-        socket.emit("answer-call", { to: incomingCall.from, sdp: answer });
-
-        setIncomingCall(null);
-        setInCall(true);
+            // Add tracks to peer connection
+            stream.getTracks().forEach(track => {
+                console.log("Adding track to peer connection:", track.kind);
+                pc.addTrack(track, stream);
+            });
+            
+            // Set remote description (the offer)
+            console.log("Setting remote description:", incomingCall.sdp);
+            
+            // Ensure proper SDP format for cross-browser compatibility
+            let sdpOffer = incomingCall.sdp;
+            if (typeof sdpOffer === 'string') {
+                try {
+                    sdpOffer = JSON.parse(sdpOffer);
+                } catch (e) {
+                    console.log("SDP is already in object format or not valid JSON");
+                }
+            }
+            
+            await pc.setRemoteDescription(new RTCSessionDescription(sdpOffer));
+            
+            // Create and set local description (the answer)
+            const answer = await pc.createAnswer();
+            console.log("Created answer:", answer);
+            await pc.setLocalDescription(answer);
+            
+            // Wait for ICE gathering to complete
+            await waitForIceGatheringComplete(pc);
+            
+            // Send answer to caller - ensure we're sending a plain object
+            // that can be serialized properly across browsers
+            const plainAnswer = {
+                type: answer.type,
+                sdp: answer.sdp
+            };
+            
+            console.log("Sending answer:", plainAnswer);
+            // Make sure we're sending the correct data to the server
+            console.log("Sending answer to:", incomingCall.from);
+            socket.emit("answer-call", { to: incomingCall.from, sdp: plainAnswer });
+            
+            // Add a debug log to confirm the call has been answered
+            console.log("Call answered, waiting for connection to establish...");
+            
+            setIncomingCall(null);
+            setInCall(true);
+        } catch (error) {
+            console.error("Error in handleAccept:", error);
+        }
     };
 
     const handleReject = () => {
@@ -87,66 +208,232 @@ export default function CallHandler({ socket }) {
     };
 
     const handleEndCall = () => {
+        console.log("Ending call and cleaning up resources");
+        
+        // Clean up peer connection
         if (pcRef.current) {
-            pcRef.current.close();
+            try {
+                // Close all data channels
+                pcRef.current.getDataChannels?.().forEach(channel => channel.close());
+            } catch (e) {
+                console.warn("Error closing data channels:", e);
+            }
+            
+            // Close the peer connection
+            try {
+                pcRef.current.close();
+                console.log("Peer connection closed");
+            } catch (e) {
+                console.warn("Error closing peer connection:", e);
+            }
             pcRef.current = null;
         }
+        
+        // Clean up media streams
         if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach((track) => track.stop());
+            try {
+                localStreamRef.current.getTracks().forEach(track => {
+                    track.stop();
+                    console.log(`Stopped local track: ${track.kind}`);
+                });
+            } catch (e) {
+                console.warn("Error stopping local tracks:", e);
+            }
             localStreamRef.current = null;
         }
+        
+        // Reset video elements
+        if (localVideoRef.current) {
+            localVideoRef.current.srcObject = null;
+        }
+        if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = null;
+        }
+        
+        // Reset state
         setInCall(false);
+        
+        console.log("Call ended and resources cleaned up");
     };
 
+    // Handle incoming call events
     useEffect(() => {
         socket.on("incoming-call", ({ senderFullname, sdp, from }) => {
             setIncomingCall({ senderFullname, sdp, from });
-        });
-
-        socket.on("ice-candidate", async ({ candidate }) => {
-            if (pcRef.current && candidate) {
-                try {
-                    await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-                } catch (e) {
-                    console.error("Error adding ICE candidate:", e);
-                }
-            }
-        });
-
-        socket.on("call-answered", async ({ sdp }) => {
-            if (pcRef.current) {
-                await pcRef.current.setRemoteDescription(new RTCSessionDescription(sdp));
-                setInCall(true);
-            }
-        });
-
-        socket.on("call-rejected", () => {
-            alert("Call rejected by remote user");
-            setIncomingCall(null);
-            setInCall(false);
-            if (pcRef.current) {
-                pcRef.current.close();
-                pcRef.current = null;
-            }
-            if (localStreamRef.current) {
-                localStreamRef.current.getTracks().forEach((track) => track.stop());
-                localStreamRef.current = null;
+            
+            // Store the offer for potential reconnection attempts
+            if (sdp) {
+                lastReceivedOffer.current = sdp;
+                console.log("Stored SDP offer for potential reconnection");
             }
         });
 
         return () => {
             socket.off("incoming-call");
-            socket.off("ice-candidate");
-            socket.off("call-answered");
-            socket.off("call-rejected");
         };
     }, [socket]);
+    
+    // Handle autoplay policy for remote video
+    useEffect(() => {
+        if (inCall && remoteVideoRef.current && remoteVideoRef.current.srcObject) {
+            const playVideo = async () => {
+                try {
+                    await remoteVideoRef.current.play();
+                    console.log("Remote video playback started successfully");
+                } catch (e) {
+                    console.warn("Autoplay failed due to browser policy:", e);
+                    
+                    // Create and show a play button overlay for user interaction
+                    const playButton = document.createElement('button');
+                    playButton.textContent = 'Click to Play Video';
+                    playButton.style.position = 'absolute';
+                    playButton.style.zIndex = '10';
+                    playButton.style.top = '50%';
+                    playButton.style.left = '50%';
+                    playButton.style.transform = 'translate(-50%, -50%)';
+                    playButton.style.padding = '10px 15px';
+                    playButton.style.backgroundColor = '#4CAF50';
+                    playButton.style.color = 'white';
+                    playButton.style.border = 'none';
+                    playButton.style.borderRadius = '5px';
+                    playButton.style.cursor = 'pointer';
+                    
+                    // Add the button to the video container
+                    const videoContainer = remoteVideoRef.current.parentElement;
+                    if (videoContainer) {
+                        videoContainer.style.position = 'relative';
+                        videoContainer.appendChild(playButton);
+                        
+                        // Play video when button is clicked and remove the button
+                        playButton.addEventListener('click', async () => {
+                            try {
+                                await remoteVideoRef.current.play();
+                                console.log("Remote video playback started after user interaction");
+                                videoContainer.removeChild(playButton);
+                            } catch (err) {
+                                console.error("Failed to play video after user interaction:", err);
+                            }
+                        });
+                    }
+                }
+            };
+            
+            playVideo();
+        }
+    }, [inCall, remoteVideoRef.current?.srcObject]);
+    
+    // Handle ICE candidates
+    useEffect(() => {
+        socket.on("ice-candidate", async ({ candidate }) => {
+            if (pcRef.current && candidate) {
+                try {
+                    // Ensure proper candidate format
+                    if (typeof candidate === 'string') {
+                        try {
+                            candidate = JSON.parse(candidate);
+                        } catch (e) {
+                            console.log("Candidate is already in object format or not valid JSON");
+                        }
+                    }
+                    
+                    console.log("Adding ICE candidate:", candidate);
+                    const iceCandidate = new RTCIceCandidate(candidate);
+                    await pcRef.current.addIceCandidate(iceCandidate);
+                    console.log("ICE candidate added successfully");
+                } catch (e) {
+                    console.error("Error adding ICE candidate:", e);
+                }
+            } else {
+                console.warn("Received ICE candidate but peer connection not ready");
+            }
+        });
+        
+        return () => {
+            socket.off("ice-candidate");
+        };
+    }, [socket]);
+    
+    // Wait for ICE gathering to complete before sending SDP
+    const waitForIceGatheringComplete = pc => { 
+        return new Promise(resolve => {
+            if (pc.iceGatheringState === 'complete') {
+                resolve();
+            } else {
+                const timeout = setTimeout(() => {
+                    pc.removeEventListener('icegatheringstatechange', checkState);
+                    resolve();
+                }, 5000); // 5 second timeout
+
+                function checkState() {
+                    if (pc.iceGatheringState === 'complete') {
+                        clearTimeout(timeout);
+                        pc.removeEventListener('icegatheringstatechange', checkState);
+                        resolve();
+                    }
+                }
+                pc.addEventListener('icegatheringstatechange', checkState);
+            }
+        });
+    };
+    
+    // Handle call answered
+    useEffect(() => {
+        socket.on("call-answered", async ({ sdp }) => {
+            if (pcRef.current) {
+                try {
+                    console.log("Received answer SDP:", sdp);
+                    
+                    // Ensure proper SDP format for cross-browser compatibility
+                    let sdpAnswer = sdp;
+                    if (typeof sdpAnswer === 'string') {
+                        try {
+                            sdpAnswer = JSON.parse(sdpAnswer);
+                        } catch (e) {
+                            console.log("SDP is already in object format or not valid JSON");
+                        }
+                    }
+                    
+                    // Validate SDP format
+                    if (!sdpAnswer || !sdpAnswer.type || !sdpAnswer.sdp) {
+                        console.error("Invalid SDP format:", sdpAnswer);
+                        return;
+                    }
+                    
+                    // Create a proper RTCSessionDescription object
+                    const remoteDesc = new RTCSessionDescription(sdpAnswer);
+                    await pcRef.current.setRemoteDescription(remoteDesc);
+                    console.log("Remote description set successfully");
+                    setInCall(true); // mark that call is active
+                } catch (error) {
+                    console.error("Error setting remote description:", error);
+                }
+            } else {
+                console.error("Peer connection not initialized when receiving answer");
+            }
+        });
+        
+        return () => {
+            socket.off("call-answered");
+        };
+    }, [socket]);
+    
+    // Handle call rejected
+    useEffect(() => {
+        socket.on("call-rejected", () => {
+            alert("Call rejected by remote user");
+            handleEndCall();
+            setIncomingCall(null);
+        });
+        
+        return () => {
+            socket.off("call-rejected");
+        };
+    }, [socket, handleEndCall]);
 
     if (incomingCall && !inCall) {
         return (
             <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
                 <div className="bg-white rounded-2xl p-6 w-96 text-center shadow-2xl border border-gray-200">
-                    {/* Videos */}
                     <div className="flex gap-4 justify-center mb-4">
                         <video
                             ref={localVideoRef}
@@ -163,7 +450,6 @@ export default function CallHandler({ socket }) {
                         />
                     </div>
 
-                    {/* Ripple Animation Icon */}
                     <div className="flex justify-center mb-4">
                         <div className="relative">
                             <div
@@ -190,7 +476,6 @@ export default function CallHandler({ socket }) {
                         {incomingCall.senderFullname} is calling you...
                     </p>
 
-                    {/* Buttons */}
                     <div className="flex gap-3">
                         <button
                             onClick={handleAccept}
@@ -228,12 +513,22 @@ export default function CallHandler({ socket }) {
                     muted
                     playsInline
                     className="w-40 h-32 bg-black rounded-lg mb-4"
+                    style={{ objectFit: 'contain' }}
+                    onLoadedMetadata={() => {
+                        console.log("Local video metadata loaded");
+                        localVideoRef.current.play().catch(e => console.warn("Local play failed:", e));
+                    }}
                 />
                 <video
                     ref={remoteVideoRef}
                     autoPlay
                     playsInline
                     className="w-80 h-60 bg-black rounded-lg mb-4"
+                    style={{ objectFit: 'contain' }}
+                    onLoadedMetadata={() => {
+                        console.log("Remote video metadata loaded");
+                        remoteVideoRef.current.play().catch(e => console.warn("Remote play failed:", e));
+                    }}
                 />
                 <button
                     onClick={handleEndCall}

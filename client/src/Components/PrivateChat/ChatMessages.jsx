@@ -144,7 +144,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
 
                             <div className="break-word items-start justify-between gap-2">
                                 <>
-                                    <p className="break-words flex-1">
+                                    <div className="break-words flex-1">
                                         {msg.deleted_for?.split(",").map(s => s.trim()).includes(username)
                                             ? (
                                                 <span className="italic text-gray-400">Deleted for you</span>
@@ -156,7 +156,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                             ) : (
                                                 <p className="break-words">{msg.message}</p>
                                             )}
-                                    </p>
+                                    </div>
                                     <p>
                                         {msg.updated && msg.from !== username && <span className="italic text-gray-400">edited at {new Date(msg.updated_at).toLocaleString("en-US", {
                                             timeZone: "Asia/Karachi",

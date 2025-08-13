@@ -48,15 +48,22 @@ export default function ManualSDPWebRTC() {
 
   const createPeerConnection = () => {
     if (!pc.current) {
-      pc.current = new RTCPeerConnection()
+      pc.current = new RTCPeerConnection({
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+        ],
+      });
+
       pc.current.ontrack = e => {
         if (remoteVideoRef.current && remoteVideoRef.current.srcObject !== e.streams[0]) {
-          remoteVideoRef.current.srcObject = e.streams[0]
+          remoteVideoRef.current.srcObject = e.streams[0];
         }
-      }
+      };
     }
-    return pc.current
-  }
+    return pc.current;
+  };
+
   const createOffer = async () => {
     setOfferCreated(true)
     const connection = createPeerConnection()

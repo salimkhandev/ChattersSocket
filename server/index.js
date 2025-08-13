@@ -15,7 +15,9 @@ const app = express();
 // app.use(cors());
 // app.use(express.json());
 app.use(cors({
-    origin: ['https://firebase-fcm2.vercel.app', 'http://localhost:5173'],  // Remove trailing slash
+    origin: ['https://firebase-fcm2.vercel.app',
+        "https://chatters-socket-frontend.vercel.app",
+        'http://localhost:5173'],  // Remove trailing slash
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true

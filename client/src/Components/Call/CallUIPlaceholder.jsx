@@ -5,6 +5,7 @@ export default function CallUIPlaceholder() {
     const { incomingCall, acceptCall, rejectCall, setCallAccepted } = useCall();
 
     if (!incomingCall) return null;
+    
 
     return (
         <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">

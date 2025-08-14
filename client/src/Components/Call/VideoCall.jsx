@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useRef, useState,useEffect } from 'react'
+import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef } from 'react'
 import { useAuth } from '../../context/AuthContext';
 import { useCall } from '../../context/CallContext';
-
-export default function ManualSDPWebRTC({receiver, socket}) {
+import VideoDisplay from "./VideoDisplay";
+const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
     const localVideoRef = useRef(null)
     const remoteVideoRef = useRef(null)
     const pc = useRef(null)
@@ -14,7 +14,10 @@ export default function ManualSDPWebRTC({receiver, socket}) {
     const [answerCreated, setAnswerCreated] = useState(false)
     const [remoteSDPSet, setRemoteSDPSet] = useState(false)
     const { username } = useAuth();
-    const { setIncomingCall, acceptCall, callAccepted }=useCall();
+    const { setIncomingCall, callAccepted, showVideo}=useCall();
+    useImperativeHandle(ref, () => ({
+        createOffer,
+    }));
     const startLocalStream = async () => {
         console.log("📹 Attempting to access local camera/mic...");
         try {
@@ -80,7 +83,7 @@ export default function ManualSDPWebRTC({receiver, socket}) {
     };
     const createOffer = async () => {
         setOfferCreated(true)
-
+// setShowVideo(true)
         const connection = createPeerConnection()
         const stream = await startLocalStream()
         stream.getTracks().forEach(track => connection.addTrack(track, stream))
@@ -103,54 +106,54 @@ export default function ManualSDPWebRTC({receiver, socket}) {
     const [pendingOffer, setPendingOffer] = useState(null);
     // const [incomingCall, setIncomingCall] = useState(false);
 
-    useEffect(() => {
-        if (!socket) return;
+        useEffect(() => {
+            if (!socket) return;
 
-        socket.on("incoming-call", ({ sender, sdp }) => {
-            console.log("Incoming call from:", sender);
-            setIncomingCall(true);
-            setPendingOffer({ sender, sdp }); // store temporarily
-        });
+            socket.on("incoming-call", ({ sender, sdp }) => {
+                console.log("Incoming call from:", sender);
+                setIncomingCall(true);
+                setPendingOffer({ sender, sdp }); // store temporarily
+            });
 
-        return () => socket.off("incoming-call");
-    }, [socket]);
+            return () => socket.off("incoming-call");
+        }, [socket]);
 
-    // When user accepts the call
-    useEffect(() => {
-        if (callAccepted && pendingOffer) {
-            console.log("User accepted, setting remote SDP now...");
+        // When user accepts the call
+        useEffect(() => {
+            if (callAccepted && pendingOffer) {
+                console.log("User accepted, setting remote SDP now...");
 
-            const startCall = async () => {
-                const connection = createPeerConnection();
+                const startCall = async () => {
+                    const connection = createPeerConnection();
 
-                const stream = await startLocalStream();
-                stream.getTracks().forEach(track =>
-                    connection.addTrack(track, stream)
-                );
+                    const stream = await startLocalStream();
+                    stream.getTracks().forEach(track =>
+                        connection.addTrack(track, stream)
+                    );
 
-                const remoteDesc = new RTCSessionDescription(
-                    JSON.parse(pendingOffer.sdp)
-                );
-                await connection.setRemoteDescription(remoteDesc);
+                    const remoteDesc = new RTCSessionDescription(
+                        JSON.parse(pendingOffer.sdp)
+                    );
+                    await connection.setRemoteDescription(remoteDesc);
 
-                const answer = await connection.createAnswer();
-                await connection.setLocalDescription(answer);
-                await waitForIceGatheringComplete(connection);
+                    const answer = await connection.createAnswer();
+                    await connection.setLocalDescription(answer);
+                    await waitForIceGatheringComplete(connection);
 
-                const localSDPString = JSON.stringify(connection.localDescription);
+                    const localSDPString = JSON.stringify(connection.localDescription);
 
-                socket.emit("sendAnswer", {
-                    sender: username,
-                    receiver: pendingOffer.sender,
-                    sdp: localSDPString
-                });
+                    socket.emit("sendAnswer", {
+                        sender: username,
+                        receiver: pendingOffer.sender,
+                        sdp: localSDPString
+                    });
 
-                setPendingOffer(null); // clear after use
-            };
+                    setPendingOffer(null); // clear after use
+                };
 
-            startCall();
-        }
-    }, [callAccepted, pendingOffer]);
+                startCall();
+            }
+        }, [callAccepted, pendingOffer]);
 
     // useEffect(() => {
     //     if (!socket) return;
@@ -225,7 +228,7 @@ export default function ManualSDPWebRTC({receiver, socket}) {
 
     return (
         <div className="flex flex-col gap-4 max-w-3xl w-full p-4 mx-auto">
-            <div className="flex flex-col sm:flex-row gap-2">
+            {/* <div className="flex flex-col sm:flex-row gap-2">
                 <button
                     onClick={createOffer}
                     disabled={offerCreated}
@@ -234,8 +237,8 @@ export default function ManualSDPWebRTC({receiver, socket}) {
                 >
                     Call
                 </button>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 mt-6">
+            </div> */}
+            {/* <div className="flex flex-col sm:flex-row gap-4 mt-6">
                 <div className="flex-1">
                     <h2 className="mb-2 font-semibold">Local Video</h2>
                     <video
@@ -255,7 +258,12 @@ export default function ManualSDPWebRTC({receiver, socket}) {
                         className="w-full max-w-sm sm:max-w-full h-auto aspect-video bg-black rounded"
                     />
                 </div>
-            </div>
+            </div> */}
+
+            {(callAccepted || showVideo )&& <VideoDisplay localRef={localVideoRef} remoteRef={remoteVideoRef} />}
+
         </div>
     )
-}
+})
+
+export default ManualSDPWebRTC;

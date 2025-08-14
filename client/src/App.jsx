@@ -11,7 +11,7 @@ import { generateToken } from './Components/FCM/firebase'; // adjust the path
 import CallUIPlaceholder from './Components/Call/CallUIPlaceholder';
 import VideoCall from './Components/Call/VideoCall';
 import UserProfileUpload from "./Components/PrivateChat/UserProfile";
-
+import { useCall } from "./context/CallContext";
 import { io } from "socket.io-client";
 const backendURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -35,6 +35,7 @@ const socket = io(`${backendURL}`, {
 export default function ChatApp() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [nameLoaded, setNameLoaded] = useState(false);  // track when name is ready
+  const { setIncomingCall, acceptCall, callAccepted ,setShowVideo,showVideo} = useCall();
 
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
@@ -49,6 +50,7 @@ export default function ChatApp() {
   const prevChatRef = useRef([]);
   const { username, setUsername } = useAuth();
 
+  const webrtcRef = useRef(null);
 
 
 
@@ -359,6 +361,8 @@ export default function ChatApp() {
         
         <div className="w-full max-w-6xl bg-white rounded-xl shadow-xl flex flex-col overflow-hidden h-[calc(100vh-2rem)]">
             <CallUIPlaceholder />
+          
+
           {/* Top Navigation Bar */}
           <div className="bg-white border-b p-4 flex items-center justify-between shrink-0 z-20">
             <UserProfileUpload nameLoaded={nameLoaded} username={username} socket={socket} />
@@ -377,8 +381,13 @@ export default function ChatApp() {
             <div className={`absolute inset-0 w-full h-full transition-all duration-300 ease-in-out transform ${activeTab === "people"
               ? "translate-x-0 opacity-100 z-10"
               : "-translate-x-full opacity-0 pointer-events-none z-0"
-              }`}>
-              <div className="w-full h-full flex">
+            }`}>
+             
+                <VideoCall ref={webrtcRef} receiver={selectedReceiver} socket={socket} />
+                {(callAccepted||showVideo) ?null:
+                  <>
+            
+            <div className="w-full h-full flex">
                 {/* People content */}
                 <aside className="w-80 bg-white border-r p-5 flex flex-col">
                   <div className="flex justify-between items-center">
@@ -412,9 +421,18 @@ export default function ChatApp() {
                           <span className="text-indigo-600">
                             {onlineUsers.find(u => u.username === selectedReceiver)?.fName || selectedReceiver}
                           </span>
-                          <VideoCall receiver={selectedReceiver} socket={socket} />
-                         
-
+                              <button
+                                onClick={() => {
+                                  if (webrtcRef.current) {
+                                    webrtcRef.current.createOffer();
+                                    setShowVideo(true);
+                                  } else {
+                                    console.warn("WebRTC component not ready yet");
+                                  }
+                                }}
+                              >
+                                Start Call 📞
+                              </button>
                         </h1>
                         <button
                           onClick={closeChat}
@@ -453,6 +471,8 @@ export default function ChatApp() {
                   </main>
                 )}
               </div>
+                 </>
+              }
             </div>
 
             {/* Groups Tab */}

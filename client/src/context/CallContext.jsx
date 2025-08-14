@@ -4,6 +4,7 @@ import React, { createContext, useState, useContext } from "react";
 const CallContext = createContext();
 
 export const CallProvider = ({ children }) => {
+    const [showVideo, setShowVideo] = useState(false); // true when someone is calling
     const [incomingCall, setIncomingCall] = useState(false); // true when someone is calling
     const [callAccepted, setCallAccepted] = useState(false);
     const [callerInfo, setCallerInfo] = useState(null); // optional: store caller name/id
@@ -30,11 +31,13 @@ export const CallProvider = ({ children }) => {
         <CallContext.Provider value={{
             incomingCall,
             setIncomingCall,
+            showVideo,
+            setShowVideo,
             callAccepted,
             callerInfo,
             receiveCall,
             acceptCall,
-             setCallAccepted,
+            setCallAccepted,
             rejectCall
         }}>
             {children}

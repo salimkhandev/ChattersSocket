@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Video, PhoneOff } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
 
+import { useAuth } from '../../context/AuthContext';
 function CallerModal({ calleeName, onCancel, localVideoRef }) {
     return (
         <div className="fixed inset-0 bg-black/60 flex flex-col justify-center items-center z-50 space-y-4">

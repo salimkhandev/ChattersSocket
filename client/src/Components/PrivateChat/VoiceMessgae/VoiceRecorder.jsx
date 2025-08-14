@@ -5,6 +5,8 @@ import { Mic, StopCircle, Send, Loader2, Trash2 } from 'lucide-react';
 import WaveSurfer from 'wavesurfer.js';
 import AudioWaveIcon from "./AudioWaveIcon";
 import { useVoice } from '../../../context/VoiceContext';
+const backendURL = import.meta.env.VITE_BACKEND_URL;
+
 const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecording }, ref) => {
     const [recording, setRecording] = useState(false);
     // const [audioUrl, setAudioUrl] = useState(null);
@@ -40,8 +42,8 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
         formData.append('audio', blob);
 
         try {
-            const res = await fetch('http://192.168.137.1:3000/upload-audio', {
-                method: 'POST',
+            const res = await fetch(`${backendURL}/upload-audio`, {               
+                 method: 'POST',
                 body: formData,
             });
 

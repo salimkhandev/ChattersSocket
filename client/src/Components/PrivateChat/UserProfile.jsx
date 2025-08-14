@@ -5,6 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useProfile } from "../../context/ProfileContext";
 // user react.memoe bellow
+const backendURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function UserProfileUpload({ nameLoaded, socket }) {
     const { username } = useAuth();
@@ -24,7 +25,7 @@ export default function UserProfileUpload({ nameLoaded, socket }) {
   
     const fetchFullName = async (username) => {
         try {
-            const res = await fetch(`http://192.168.137.1:3000/get-users-fullName/${username}`);
+            const res = await fetch(`${backendURL}/get-users-fullName/${username}`);
 
             if (!res.ok) {
                 throw new Error("Failed to fetch full name");
@@ -71,8 +72,8 @@ export default function UserProfileUpload({ nameLoaded, socket }) {
             //     headers: { "Content-Type": "application/json" },
             //     body: JSON.stringify({ username, fullName: newFullName }),
             // });
-            const res = await fetch("http://192.168.137.1:3000/update-fullname", {
-                method: "POST",
+            const res = await fetch(`${backendURL}/update-fullname`, {
+  method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, fullName: newFullName }),
             });
@@ -127,7 +128,7 @@ export default function UserProfileUpload({ nameLoaded, socket }) {
             //     method: "POST",
             //     body: formData,
             // });
-            const res = await fetch("http://192.168.137.1:3000/upload-profile-pic", {
+            const res = await fetch(`${backendURL}/upload-profile-pic`, {
                 method: "POST",
                 body: formData,
             });
@@ -161,7 +162,7 @@ export default function UserProfileUpload({ nameLoaded, socket }) {
             //     headers: { "Content-Type": "application/json" },
             //     body: JSON.stringify({ username }),
             // });
-            const res = await fetch("http://192.168.137.1:3000/delete-profile-pic", {
+            const res = await fetch(`${backendURL}/upload-profile-pic`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username }),

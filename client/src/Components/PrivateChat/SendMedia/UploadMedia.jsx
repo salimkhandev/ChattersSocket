@@ -7,7 +7,7 @@ import { useUpload } from "../../../context/UploadContext";
 import { FilePlus, Loader2, Upload } from 'lucide-react';
 import axios from 'axios';
 import imageCompression from 'browser-image-compression';
-
+const backendURL = import.meta.env.VITE_BACKEND_URL;
 const UploadMedia = ({ sender, receiver, socket }) => {
     const { registerUploadFn } = useUpload();
     const [file, setFile] = useState(null);
@@ -57,7 +57,7 @@ const UploadMedia = ({ sender, receiver, socket }) => {
        setUploading(true);
 
         try {
-            const response = await axios.post('http://192.168.137.1:3000/upload-media', formData, {
+            const response = await axios.post(`${backendURL}/upload-media`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },

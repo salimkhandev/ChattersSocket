@@ -3,8 +3,8 @@ import { io } from "socket.io-client";
 import { UserPlus, Loader2 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext';
 import { generateToken } from '../FCM/firebase'; // adjust the path
+const backendURL = import.meta.env.VITE_BACKEND_URL;
 
-// const socket = io("http://192.168.137.1:3000");
 
 // const socket = io("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/", {
 //   reconnection: true,
@@ -12,7 +12,7 @@ import { generateToken } from '../FCM/firebase'; // adjust the path
 //   reconnectionDelay: 2000,
 // });
 
-const socket = io("http://192.168.137.1:3000", {
+const socket = io(`${backendURL}`, {
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 2000,
@@ -45,8 +45,8 @@ function LoginForm({setIsLoggedIn,isLoggedIn}) {
         // Call API to check username
         try {
             setIsLoading(true);
-            const res = await fetch("http://192.168.137.1:3000/check-username", {
-                method: "POST",
+            const res = await fetch(`${backendURL}/check-username`, {
+                method: "POST",     
                 headers: {
                     "Content-Type": "application/json",
                 },
@@ -81,7 +81,7 @@ function LoginForm({setIsLoggedIn,isLoggedIn}) {
     useEffect(() => {
         async function checkUsername(username) {
             try {
-                const res = await fetch("http://192.168.137.1:3000/check-username", {
+                const res = await fetch(`${backendURL}/check-username`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",

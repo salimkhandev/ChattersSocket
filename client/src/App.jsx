@@ -11,11 +11,10 @@ import { generateToken } from './Components/FCM/firebase'; // adjust the path
 import OutgoingCallModal from './Components/Call/OutgoingCallModal';
 import VideoCall from './Components/Call/VideoCall';
 
-
 import UserProfileUpload from "./Components/PrivateChat/UserProfile";
 // import profilePic from './Components/image.png';
 import { io } from "socket.io-client";
-
+const backendURL = import.meta.env.VITE_BACKEND_URL;
 
 import {
   LogOut,
@@ -24,7 +23,7 @@ import {
   X
 } from "lucide-react";
 
-// const socket = io("http://192.168.137.1:3000");
+
 
 // const socket = io("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/", {
 //   reconnection: true,
@@ -32,7 +31,7 @@ import {
 //   reconnectionDelay: 2000,
 // });
 
-const socket = io("http://192.168.137.1:3000", {
+const socket = io(`${backendURL}`, {
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 2000,

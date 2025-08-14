@@ -2,6 +2,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
+const backendURL = import.meta.env.VITE_BACKEND_URL;
 
 const ProfileContext = createContext();
 
@@ -11,7 +12,7 @@ export const ProfileProvider = ({ children }) => {
 
     const fetchProfilePic = async () => {
         try {
-            const res = await fetch(`http://192.168.137.1:3000/get-profile-pic/${username}`);
+            const res = await fetch(`${backendURL}/get-profile-pic/${username}`);
             const data = await res.json();
             setProfilePic(data?.profilePicUrl || null);
         } catch (err) {

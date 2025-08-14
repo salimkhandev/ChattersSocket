@@ -57,7 +57,7 @@ const UploadMedia = ({ sender, receiver, socket }) => {
        setUploading(true);
 
         try {
-            const response = await axios.post('http://localhost:3000/upload-media', formData, {
+            const response = await axios.post('http://192.168.137.1:3000/upload-media', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },

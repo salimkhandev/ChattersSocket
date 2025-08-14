@@ -40,7 +40,7 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
         formData.append('audio', blob);
 
         try {
-            const res = await fetch('http://localhost:3000/upload-audio', {
+            const res = await fetch('http://192.168.137.1:3000/upload-audio', {
                 method: 'POST',
                 body: formData,
             });

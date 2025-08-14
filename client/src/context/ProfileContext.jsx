@@ -11,7 +11,7 @@ export const ProfileProvider = ({ children }) => {
 
     const fetchProfilePic = async () => {
         try {
-            const res = await fetch(`http://localhost:3000/get-profile-pic/${username}`);
+            const res = await fetch(`http://192.168.137.1:3000/get-profile-pic/${username}`);
             const data = await res.json();
             setProfilePic(data?.profilePicUrl || null);
         } catch (err) {

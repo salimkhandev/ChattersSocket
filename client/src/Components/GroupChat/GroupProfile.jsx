@@ -27,7 +27,7 @@ function GroupProfile({ groupID, groupName, setGroupName, socket, created_by }) 
         }
 
         try {
-            const res = await fetch(`http://localhost:3000/get-group-profile-pic/${groupID}`);
+            const res = await fetch(`http://192.168.137.1:3000/get-group-profile-pic/${groupID}`);
             if (!res.ok) {
                 throw new Error('Failed to fetch profile picture');
             }
@@ -89,7 +89,7 @@ function GroupProfile({ groupID, groupName, setGroupName, socket, created_by }) 
             formData.append("file", fileToUpload);
             formData.append("groupID", groupID);
 
-            const response = await fetch("http://localhost:3000/upload-group-profile-pic", {
+            const response = await fetch("http://192.168.137.1:3000/upload-group-profile-pic", {
                 method: "POST",
                 body: formData,
             });
@@ -131,7 +131,7 @@ function GroupProfile({ groupID, groupName, setGroupName, socket, created_by }) 
 
         try {
             setIsDeleting(true);
-            const response = await fetch("http://localhost:3000/delete-group-profile-pic", {
+            const response = await fetch("http://192.168.137.1:3000/delete-group-profile-pic", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ groupID }),
@@ -173,7 +173,7 @@ function GroupProfile({ groupID, groupName, setGroupName, socket, created_by }) 
         }
 
         try {
-            const response = await fetch("http://localhost:3000/update-group-name", {
+            const response = await fetch("http://192.168.137.1:3000/update-group-name", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

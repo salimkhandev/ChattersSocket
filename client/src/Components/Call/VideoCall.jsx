@@ -14,11 +14,14 @@ export default function ManualSDPWebRTC({receiver, socket}) {
     const [remoteSDPSet, setRemoteSDPSet] = useState(false)
     const { username } = useAuth();
     const startLocalStream = async () => {
+        console.log("📹 Attempting to access local camera/mic...");
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             if (localVideoRef.current) localVideoRef.current.srcObject = stream
+            console.log("✅ Local stream started", stream);
             return stream
         } catch (err) {
+            console.error("❌ Error accessing camera/mic:", err);
             alert('Error accessing camera/mic: ' + err.message)
             throw err
         }
@@ -210,10 +213,10 @@ export default function ManualSDPWebRTC({receiver, socket}) {
                     className={`flex-1 px-4 py-2 rounded text-white ${offerCreated ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
                         }`}
                 >
-                    Create Offer
+                    Call
                 </button>
 
-                <button
+                {/* <button
                     // onClick={createAnswer}
                     disabled={answerCreated || !remoteSDP}
                     className={`flex-1 px-4 py-2 rounded text-white ${answerCreated || !remoteSDP
@@ -222,10 +225,10 @@ export default function ManualSDPWebRTC({receiver, socket}) {
                         }`}
                 >
                     Create Answer
-                </button>
+                </button> */}
             </div>
 
-            <label className="block font-semibold">Local SDP:</label>
+            {/* <label className="block font-semibold">Local SDP:</label>
             <textarea
                 className="w-22 p-2 border rounded h-12 font-mono text-xs sm:text-sm"
                 readOnly
@@ -238,9 +241,9 @@ export default function ManualSDPWebRTC({receiver, socket}) {
                 value={remoteSDP}
                 onChange={e => setRemoteSDP(e.target.value)}
                 placeholder="Paste remote SDP here"
-            />
+            /> */}
 
-            <button
+            {/* <button
                 // onClick={setAnswerSDP}
                 disabled={remoteSDPSet || !remoteSDP || !offerCreated}
                 className={`px-4 py-2 rounded text-white mt-2 ${remoteSDPSet || !remoteSDP || !offerCreated
@@ -249,7 +252,7 @@ export default function ManualSDPWebRTC({receiver, socket}) {
                     }`}
             >
                 Set Remote SDP
-            </button>
+            </button> */}
 
             <div className="flex flex-col sm:flex-row gap-4 mt-6">
                 <div className="flex-1">
@@ -268,7 +271,7 @@ export default function ManualSDPWebRTC({receiver, socket}) {
                         ref={remoteVideoRef}
                         autoPlay
                         playsInline
-                        className="w-12 max-w-sm sm:max-w-full h-auto aspect-video bg-black rounded"
+                        className="w-full max-w-sm sm:max-w-full h-auto aspect-video bg-black rounded"
                     />
                 </div>
             </div>

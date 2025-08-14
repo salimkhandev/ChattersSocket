@@ -55,7 +55,7 @@ function startServer(io) {
     io.on("connection", (socket) => {
         // console.log("A user connected 😊", socket.id);
 
-videoCall(io, socket)
+
         
         socket.on("edit message", async ({ messageId, newMessage ,sender , receiver}) => {
             function getPakistanISOString() {

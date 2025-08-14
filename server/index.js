@@ -5,6 +5,7 @@ const groupProfilePics = require('./Routes/group-profile-pics');
 const userLogin = require('./Routes/userLogin');
 const uploadAudio = require('./Routes/uploadAudio');
 const uploadMedia = require('./Routes/uploadMedia');
+const videoCall=require('./socket/Calls/videoCall')
 // const notificationRoutes = require('./Routes/notifications');
 const admin = require('firebase-admin');
 
@@ -58,6 +59,7 @@ const { startServer } = require("./socket/PrivateChat/privateChat");
 
 groupChat(io);
 startServer(io);
+videoCall(io)
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT,() => {

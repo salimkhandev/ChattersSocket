@@ -1,8 +1,9 @@
 const redisClient = require("../../config/redisConfig");
 
-module.exports = (io, socket) => {
-
-    // Caller sends offer
+module.exports = (io) => {
+    io.on("connection", (socket) => {
+        console.log("A user connected:", socket.id)
+   
     socket.on('sendOffer', async ({ sender, receiver, sdp }) => {
         const receiverData = await redisClient.hGet("connectedUsers", receiver);
         const senderData = await redisClient.hGet("connectedUsers", sender);
@@ -33,5 +34,9 @@ module.exports = (io, socket) => {
             console.log('Sending answer back to caller');
             io.to(callerSocketId).emit('answer-received', { sender, sdp });
         }
+    });
+        socket.on("disconnect", () => {
+            console.log("User disconnected:", socket.id);
+        });
     });
 };

@@ -129,55 +129,6 @@ export default function ManualSDPWebRTC({receiver, socket}) {
     }, [socket]);
 
 
-    // const createAnswer = async () => {
-    //     if (!remoteSDP) {
-    //         alert('Paste remote SDP (offer) first!')
-    //         setAnswerCreated(false)
-    //         return
-    //     }
-    //     setAnswerCreated(true)
-
-    //     const connection = createPeerConnection()
-
-    //     const stream = await startLocalStream()
-    //     stream.getTracks().forEach(track => connection.addTrack(track, stream))
-    //     let remoteDesc
-    //     try {
-    //         remoteDesc = new RTCSessionDescription(JSON.parse(remoteSDP))
-    //     } catch {
-    //         alert('Invalid SDP format!')
-    //         return
-    //     }
-    //     await connection.setRemoteDescription(remoteDesc)
-    //     const answer = await connection.createAnswer()
-    //     await connection.setLocalDescription(answer)
-    //     await waitForIceGatheringComplete(connection)
-
-    //     setLocalSDP(JSON.stringify(connection.localDescription))
-    // }
-
-    // const setAnswerSDP = async () => {
-    //     if (!pc.current) {
-    //         alert('You must create an offer first!')
-    //         return
-    //     }
-    //     if (!remoteSDP) {
-    //         alert('Paste remote SDP (answer) first!')
-    //         return
-    //     }
-
-    //     setRemoteSDPSet(true)
-
-    //     let remoteDesc
-    //     try {
-    //         remoteDesc = new RTCSessionDescription(JSON.parse(remoteSDP))
-    //     } catch {
-    //         alert('Invalid SDP format!')
-    //         return
-    //     }
-
-    //     await pc.current.setRemoteDescription(remoteDesc)
-    // }
     useEffect(() => {
         if (!socket) return;
 
@@ -215,45 +166,7 @@ export default function ManualSDPWebRTC({receiver, socket}) {
                 >
                     Call
                 </button>
-
-                {/* <button
-                    // onClick={createAnswer}
-                    disabled={answerCreated || !remoteSDP}
-                    className={`flex-1 px-4 py-2 rounded text-white ${answerCreated || !remoteSDP
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-green-600 hover:bg-green-700'
-                        }`}
-                >
-                    Create Answer
-                </button> */}
             </div>
-
-            {/* <label className="block font-semibold">Local SDP:</label>
-            <textarea
-                className="w-22 p-2 border rounded h-12 font-mono text-xs sm:text-sm"
-                readOnly
-                value={localSDP}
-            />
-
-            <label className="block font-semibold mt-4">Remote SDP:</label>
-            <textarea
-                className="w-full p-2 border rounded h-12 font-mono text-xs sm:text-sm"
-                value={remoteSDP}
-                onChange={e => setRemoteSDP(e.target.value)}
-                placeholder="Paste remote SDP here"
-            /> */}
-
-            {/* <button
-                // onClick={setAnswerSDP}
-                disabled={remoteSDPSet || !remoteSDP || !offerCreated}
-                className={`px-4 py-2 rounded text-white mt-2 ${remoteSDPSet || !remoteSDP || !offerCreated
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-purple-600 hover:bg-purple-700'
-                    }`}
-            >
-                Set Remote SDP
-            </button> */}
-
             <div className="flex flex-col sm:flex-row gap-4 mt-6">
                 <div className="flex-1">
                     <h2 className="mb-2 font-semibold">Local Video</h2>

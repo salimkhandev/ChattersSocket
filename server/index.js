@@ -54,7 +54,7 @@ const io = new Server(server, {
     cors: { origin: "*", methods: ["GET", "POST"] },
 });
 const groupChat = require("./socket/groupChat");
-const { startServer } = require("./socket/privateChat/privateChat");
+const { startServer } = require("./socket/PrivateChat/privateChat");
 
 groupChat(io);
 startServer(io);

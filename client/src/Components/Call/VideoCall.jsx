@@ -176,17 +176,21 @@ export default function ManualSDPWebRTC({receiver, socket}) {
     //     await pc.current.setRemoteDescription(remoteDesc)
     // }
     useEffect(() => {
-        if (!socket || !pc.current) return;
+        if (!socket) return;
 
         // Listen for the answer from the receiver
         socket.on("answer-received", async ({ sdp }) => {
+            console.log('Answer received:', sdp);
+
             if (!pc.current) return;
 
             try {
                 const remoteDesc = new RTCSessionDescription(JSON.parse(sdp));
                 await pc.current.setRemoteDescription(remoteDesc);
                 console.log("Answer SDP set automatically!");
-                setRemoteSDPSet(true); // update state if needed
+
+                setRemoteSDPSet(true); // mark remote SDP applied
+                setLocalSDP(JSON.stringify(pc.current.localDescription)); // update local SDP
             } catch (err) {
                 console.error("Failed to set remote SDP:", err);
             }
@@ -194,6 +198,7 @@ export default function ManualSDPWebRTC({receiver, socket}) {
 
         return () => socket.off("answer-received");
     }, [socket]);
+
 
 
     return (
@@ -221,19 +226,19 @@ export default function ManualSDPWebRTC({receiver, socket}) {
             </div>
 
             <label className="block font-semibold">Local SDP:</label>
-            {/* <textarea
-                className="w-2 p-2 border rounded h-32 font-mono text-xs sm:text-sm"
+            <textarea
+                className="w-22 p-2 border rounded h-12 font-mono text-xs sm:text-sm"
                 readOnly
                 value={localSDP}
             />
 
             <label className="block font-semibold mt-4">Remote SDP:</label>
             <textarea
-                className="w-full p-2 border rounded h-32 font-mono text-xs sm:text-sm"
+                className="w-full p-2 border rounded h-12 font-mono text-xs sm:text-sm"
                 value={remoteSDP}
                 onChange={e => setRemoteSDP(e.target.value)}
                 placeholder="Paste remote SDP here"
-            /> */}
+            />
 
             <button
                 // onClick={setAnswerSDP}
@@ -253,7 +258,8 @@ export default function ManualSDPWebRTC({receiver, socket}) {
                         ref={localVideoRef}
                         autoPlay
                         playsInline
-                        className="w-full max-w-sm sm:max-w-full h-auto aspect-video bg-black rounded"
+                        muted
+                        className="w-12 max-w-sm sm:max-w-full h-auto aspect-video bg-black rounded"
                     />
                 </div>
                 <div className="flex-1">
@@ -262,7 +268,7 @@ export default function ManualSDPWebRTC({receiver, socket}) {
                         ref={remoteVideoRef}
                         autoPlay
                         playsInline
-                        className="w-full max-w-sm sm:max-w-full h-auto aspect-video bg-black rounded"
+                        className="w-12 max-w-sm sm:max-w-full h-auto aspect-video bg-black rounded"
                     />
                 </div>
             </div>

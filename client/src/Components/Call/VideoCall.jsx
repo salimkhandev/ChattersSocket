@@ -55,15 +55,19 @@ export default function ManualSDPWebRTC({receiver, socket}) {
         if (!pc.current) {
             pc.current = new RTCPeerConnection({
                 iceServers: [
-                    { urls: "stun:stun.l.google.com:19302" },
-{ urls: "stun:stun1.l.google.com:19302" },
-{ urls: "stun:stun2.l.google.com:19302" },
-{ urls: "stun:stun3.l.google.com:19302" },
-{ urls: "stun:stun4.l.google.com:19302" },
-{ urls: "stun:stun.stunprotocol.org:3478" },
-{ urls: "stun:stun.voipstunt.com" }
+                    {
+                        urls: ["stun:bn-turn2.xirsys.com"] // ✅ STUN from Xirsys
+                    },
+                    {
+                        urls: [
+                            "turn:bn-turn2.xirsys.com:3478?transport=udp",
+                            "turn:bn-turn2.xirsys.com:3478?transport=tcp"
+                        ],
+                        username: "gkFDOpBmrkdYNBvLEQfqs38nbyf-ClCmuyo59o1H-Qj22fjKTpc7_tsBdAJL5Y3eAAAAAGiePClzYWxpbWtoYW4=",
+                        credential: "d2c6c5b2-7946-11f0-863e-0242ac140004"
+                    }
+                ]
 
-                ],
             });
 
             pc.current.ontrack = e => {

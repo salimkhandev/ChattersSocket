@@ -8,11 +8,13 @@ import { VoiceProvider } from './context/VoiceContext';
 import { AuthProvider } from './context/AuthContext';
 import { MediaProvider } from './context/MediaContext';
 import { UploadProvider } from './context/UploadContext';
+import { CallProvider } from "./context/CallContext";
 
 import App from './App';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
+    <CallProvider>
     <UploadProvider>
         <MediaProvider>
         <AuthProvider>
@@ -24,5 +26,6 @@ createRoot(document.getElementById('root')).render(
         </AuthProvider>
         </MediaProvider>
     </UploadProvider>
+      </CallProvider>
   </StrictMode>
 );

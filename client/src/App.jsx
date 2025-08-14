@@ -8,11 +8,10 @@ import OnlineUserList from './Components/PrivateChat/OnlineUserList';
 import ToggleTabs from "./Components/PrivateChat/ToggleTabs";
 import { useAuth } from "./context/AuthContext";
 import { generateToken } from './Components/FCM/firebase'; // adjust the path
-import OutgoingCallModal from './Components/Call/OutgoingCallModal';
+import CallUIPlaceholder from './Components/Call/CallUIPlaceholder';
 import VideoCall from './Components/Call/VideoCall';
-
 import UserProfileUpload from "./Components/PrivateChat/UserProfile";
-// import profilePic from './Components/image.png';
+
 import { io } from "socket.io-client";
 const backendURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -25,25 +24,18 @@ import {
 
 
 
-// const socket = io("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/", {
-//   reconnection: true,
-//   reconnectionAttempts: Infinity,
-//   reconnectionDelay: 2000,
-// });
 
 const socket = io(`${backendURL}`, {
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 2000,
 });
-// const socket = io("https://6f5c0ecc-d764-4d9b-99d7-ed5849f753b0-00-3qdthpdkcdg9n.worf.replit.dev");
 
 
 export default function ChatApp() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [nameLoaded, setNameLoaded] = useState(false);  // track when name is ready
 
-  // const [username, setUsername] = useState(localStorage.getItem("chat_user") || "");
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
   const [isTyping, setIsTyping] = useState({});
@@ -57,19 +49,8 @@ export default function ChatApp() {
   const prevChatRef = useRef([]);
   const { username, setUsername } = useAuth();
 
-  // const getSenderFullname = (username) => {
-  //   const found = chat.find((msg) => msg.from === username);
-  //   return found ? found.senderfullname : username;
-  // };
 
 
-  // useEffect(() => {
-
-  //   console.log({chat});
-
-  //   console.log('the fullname is ',getSenderFullname(username)); 
-
-  // }, [selectedReceiver,chat]);
 
   useEffect(() => {
     const getToken = async () => {
@@ -97,31 +78,6 @@ export default function ChatApp() {
     prevChatRef.current = chat;
   }, [chat]);
 
-  // useEffect(() => {
-
-  //   if (!username || !selectedReceiver) return;
-
-  //   const markSeen = () => {
-  //     if (document.visibilityState === "visible") {
-  //       socket.emit("mark messages seen", {
-  //         sender: selectedReceiver,
-  //         receiver: username,
-  //       });
-  //     }
-  //   };
-
-
-
-  //   const interval = setInterval(markSeen, 2000);
-  //   document.addEventListener("visibilitychange", markSeen);
-
-  //   markSeen();
-
-  //   return () => {
-  //     clearInterval(interval);
-  //     document.removeEventListener("visibilitychange", markSeen);
-  //   };
-  // }, [selectedReceiver, username]);
 
 
   useEffect(() => {
@@ -280,13 +236,6 @@ export default function ChatApp() {
 
 
 
-    // ✅ Handle login response
-    // const handleLogin = ({ success, message }) => {
-    //   setIsLoggedIn(success);
-    //   setError(success ? "" : message);
-    // };
-
-    // ✅ Handle chat history response
     const handleChatHistory = (messagesFromDB) => {
       const formattedMessages = messagesFromDB.map((msg) => ({
         from: msg.sender,
@@ -407,9 +356,9 @@ export default function ChatApp() {
       {!username || !isLoggedIn ? (
         <LoginForm isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
       ) : (
-
-
+        
         <div className="w-full max-w-6xl bg-white rounded-xl shadow-xl flex flex-col overflow-hidden h-[calc(100vh-2rem)]">
+            <CallUIPlaceholder />
           {/* Top Navigation Bar */}
           <div className="bg-white border-b p-4 flex items-center justify-between shrink-0 z-20">
             <UserProfileUpload nameLoaded={nameLoaded} username={username} socket={socket} />
@@ -418,7 +367,7 @@ export default function ChatApp() {
             <button
               onClick={logout}
               className="text-red-500 hover:text-red-600 text-sm flex items-center gap-2"
-            >
+              >
               <LogOut className="w-4 h-4" />
               Logout
             </button>

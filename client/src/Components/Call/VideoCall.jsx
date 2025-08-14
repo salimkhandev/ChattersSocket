@@ -2,6 +2,7 @@
 
 import React, { useRef, useState,useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext';
+import { useCall } from '../../context/CallContext';
 
 export default function ManualSDPWebRTC({receiver, socket}) {
     const localVideoRef = useRef(null)
@@ -13,6 +14,7 @@ export default function ManualSDPWebRTC({receiver, socket}) {
     const [answerCreated, setAnswerCreated] = useState(false)
     const [remoteSDPSet, setRemoteSDPSet] = useState(false)
     const { username } = useAuth();
+    const { setIncomingCall, acceptCall, callAccepted }=useCall();
     const startLocalStream = async () => {
         console.log("📹 Attempting to access local camera/mic...");
         try {
@@ -88,70 +90,126 @@ export default function ManualSDPWebRTC({receiver, socket}) {
         })
     }
     // Inside your component, use useEffect to listen once socket is available
+    const [pendingOffer, setPendingOffer] = useState(null);
+    // const [incomingCall, setIncomingCall] = useState(false);
+
     useEffect(() => {
         if (!socket) return;
 
-        socket.on("incoming-call", async ({ sender, sdp }) => {
+        socket.on("incoming-call", ({ sender, sdp }) => {
             console.log("Incoming call from:", sender);
-
-            // 1. Create or get peer connection
-            const connection = createPeerConnection();
-
-            // 2. Start local media
-            const stream = await startLocalStream();
-            stream.getTracks().forEach(track => connection.addTrack(track, stream));
-
-            // 3. Set remote SDP (offer)
-            const remoteDesc = new RTCSessionDescription(JSON.parse(sdp));
-            await connection.setRemoteDescription(remoteDesc);
-
-            // 4. Create answer
-            const answer = await connection.createAnswer();
-            await connection.setLocalDescription(answer);
-            await waitForIceGatheringComplete(connection);
-
-            // 5. Send answer back to caller
-            const localSDPString = JSON.stringify(connection.localDescription);
-            socket.emit("sendAnswer", {
-                sender: username,    // receiver now
-                receiver: sender,    // original caller
-                sdp: localSDPString
-            });
-
-            // 6. Update state
-            setLocalSDP(localSDPString);
-            setRemoteSDP(sdp);
-            setAnswerCreated(true);
+            setIncomingCall(true);
+            setPendingOffer({ sender, sdp }); // store temporarily
         });
 
-        // Cleanup
         return () => socket.off("incoming-call");
     }, [socket]);
 
+    // When user accepts the call
+    useEffect(() => {
+        if (callAccepted && pendingOffer) {
+            console.log("User accepted, setting remote SDP now...");
+
+            const startCall = async () => {
+                const connection = createPeerConnection();
+
+                const stream = await startLocalStream();
+                stream.getTracks().forEach(track =>
+                    connection.addTrack(track, stream)
+                );
+
+                const remoteDesc = new RTCSessionDescription(
+                    JSON.parse(pendingOffer.sdp)
+                );
+                await connection.setRemoteDescription(remoteDesc);
+
+                const answer = await connection.createAnswer();
+                await connection.setLocalDescription(answer);
+                await waitForIceGatheringComplete(connection);
+
+                const localSDPString = JSON.stringify(connection.localDescription);
+
+                socket.emit("sendAnswer", {
+                    sender: username,
+                    receiver: pendingOffer.sender,
+                    sdp: localSDPString
+                });
+
+                setPendingOffer(null); // clear after use
+            };
+
+            startCall();
+        }
+    }, [callAccepted, pendingOffer]);
+
+    // useEffect(() => {
+    //     if (!socket) return;
+
+    //     socket.on("incoming-call", async ({ sender, sdp }) => {
+    //         console.log("Incoming call from:", sender);
+    //         setIncomingCall(true)
+    //         // 1. Create or get peer connection
+    //         const connection = createPeerConnection();
+
+    //         // 2. Start local media
+    //         const stream = await startLocalStream();
+    //         stream.getTracks().forEach(track => connection.addTrack(track, stream));
+
+    //         // 3. Set remote SDP (offer)
+    //         const remoteDesc = new RTCSessionDescription(JSON.parse(sdp));
+    //         await connection.setRemoteDescription(remoteDesc);
+
+    //         // 4. Create answer
+    //         const answer = await connection.createAnswer();
+    //         await connection.setLocalDescription(answer);
+    //         await waitForIceGatheringComplete(connection);
+
+    //         // 5. Send answer back to caller
+    //         const localSDPString = JSON.stringify(connection.localDescription);
+      
+    //             socket.emit("sendAnswer", {
+    //                 sender: username,    // receiver now
+    //                 receiver: sender,    // original caller
+    //                 sdp: localSDPString
+    //             });
+            
+                
+    //         // 6. Update state
+    //         setLocalSDP(localSDPString);
+    //         setRemoteSDP(sdp);
+    //         setAnswerCreated(true);
+    //     });
+
+    //     // Cleanup
+    //     return () => socket.off("incoming-call");
+    // }, [socket]);
+
 
     useEffect(() => {
         if (!socket) return;
+  
 
-        // Listen for the answer from the receiver
-        socket.on("answer-received", async ({ sdp }) => {
-            console.log('Answer received:', sdp);
-
-            if (!pc.current) return;
-
-            try {
-                const remoteDesc = new RTCSessionDescription(JSON.parse(sdp));
-                await pc.current.setRemoteDescription(remoteDesc);
-                console.log("Answer SDP set automatically!");
-
-                setRemoteSDPSet(true); // mark remote SDP applied
-                setLocalSDP(JSON.stringify(pc.current.localDescription)); // update local SDP
-            } catch (err) {
-                console.error("Failed to set remote SDP:", err);
-            }
-        });
+            // Listen for the answer from the receiver
+            socket.on("answer-received", async ({ sdp }) => {
+                console.log('Answer received:', sdp);
+                
+                if (!pc.current) return;
+                
+                try {
+                    const remoteDesc = new RTCSessionDescription(JSON.parse(sdp));
+                    await pc.current.setRemoteDescription(remoteDesc);
+                    console.log("Answer SDP set automatically!");
+                    
+                    setRemoteSDPSet(true); // mark remote SDP applied
+                    setLocalSDP(JSON.stringify(pc.current.localDescription)); // update local SDP
+                } catch (err) {
+                    console.error("Failed to set remote SDP:", err);
+                }
+            });
+        
 
         return () => socket.off("answer-received");
-    }, [socket]);
+    }, [socket,]);
 
 
 

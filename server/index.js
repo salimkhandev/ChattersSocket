@@ -5,15 +5,16 @@ const groupProfilePics = require('./Routes/group-profile-pics');
 const userLogin = require('./Routes/userLogin');
 const uploadAudio = require('./Routes/uploadAudio');
 const uploadMedia = require('./Routes/uploadMedia');
-const videoCall=require('./socket/Calls/videoCall')
-// const notificationRoutes = require('./Routes/notifications');
+const videoCall=require('./socket/calls/videoCall')
 const admin = require('firebase-admin');
-
+const groupChat = require("./socket/groupChat");
+const { startServer } = require("./socket/privateChat/privateChat");
 
 const http = require("http");
 const { Server } = require("socket.io");
 const app = express();
 // app.use(cors());
+// const notificationRoutes = require('./Routes/notifications');
 // app.use(express.json());
 app.use(cors({
     origin: ['https://firebase-fcm2.vercel.app',
@@ -54,8 +55,6 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: { origin: "*", methods: ["GET", "POST"] },
 });
-const groupChat = require("./socket/groupChat");
-const { startServer } = require("./socket/PrivateChat/privateChat");
 
 groupChat(io);
 startServer(io);

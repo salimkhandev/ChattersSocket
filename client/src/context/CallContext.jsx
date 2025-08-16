@@ -1,5 +1,5 @@
 // context/CallContext.js
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState,useRef, useContext } from "react";
 
 const CallContext = createContext();
 
@@ -8,7 +8,11 @@ export const CallProvider = ({ children }) => {
     const [incomingCall, setIncomingCall] = useState(false); // true when someone is calling
     const [callAccepted, setCallAccepted] = useState(false);
     const [callerInfo, setCallerInfo] = useState(null); // optional: store caller name/id
-
+    const [callerFullname, setCallerFullname] = useState("");
+    const [outGoingCall, setOutGoingCall] = useState(null);
+    const [callID , setCallID] = useState([]);
+    // const [localStream, setLocalStream] = useState(null);
+    const localVideoRef2 = useRef(null);
     const receiveCall = (caller) => {
         setCallerInfo(caller);
         setIncomingCall(true);
@@ -22,9 +26,12 @@ export const CallProvider = ({ children }) => {
     };
 
     const rejectCall = () => {
+    setIncomingCall(true);
         setCallAccepted(false);
         setIncomingCall(false);
-        setCallerInfo(null);
+        // setCallerInfo(null);
+        setShowVideo(false);
+        setOutGoingCall(false); 
     };
 
     return (
@@ -35,10 +42,19 @@ export const CallProvider = ({ children }) => {
             setShowVideo,
             callAccepted,
             callerInfo,
+            outGoingCall, 
+            setOutGoingCall,
             receiveCall,
             acceptCall,
+            callerFullname, 
+            setCallerFullname,
             setCallAccepted,
-            rejectCall
+            rejectCall,
+            callID, 
+            setCallID,
+            // localStream,
+            //  setLocalStream,
+            localVideoRef2
         }}>
             {children}
         </CallContext.Provider>

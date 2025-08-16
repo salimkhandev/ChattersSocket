@@ -5,7 +5,7 @@ const {sendUpdatedChatHistory }= require( './sendUpdatedChatHistory');
 const sendNotification =require('../../utils/sendNotification')
 const { v4: uuidv4 } = require('uuid');
 const  isImageUrl  = require('../../utils/isImageUrl');
-const videoCall = require("../calls/videoCall")
+const videoCall = require("../Calls/videoCall")
 
 async function getAllUsers() {
     const { data, error } = await supabase.from("users").select("*");

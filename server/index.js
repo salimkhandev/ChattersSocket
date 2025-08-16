@@ -5,10 +5,10 @@ const groupProfilePics = require('./Routes/group-profile-pics');
 const userLogin = require('./Routes/userLogin');
 const uploadAudio = require('./Routes/uploadAudio');
 const uploadMedia = require('./Routes/uploadMedia');
-const videoCall=require('./socket/calls/videoCall')
+const videoCall=require('./socket/Calls/videoCall')
 const admin = require('firebase-admin');
 const groupChat = require("./socket/groupChat");
-const { startServer } = require("./socket/privateChat/privateChat");
+const { startServer } = require("./socket/PrivateChat/privateChat");
 
 const http = require("http");
 const { Server } = require("socket.io");

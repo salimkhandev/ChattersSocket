@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef } f
 import { useAuth } from '../../context/AuthContext';
 import { useCall } from '../../context/CallContext';
 import VideoDisplay from "./VideoDisplay";
+import { useBlock } from "../../context/BlockedCallContext";
 const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
     const localVideoRef = useRef(null)
     const remoteVideoRef = useRef(null)
@@ -13,17 +14,27 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
     const [offerCreated, setOfferCreated] = useState(false)
     const [answerCreated, setAnswerCreated] = useState(false)
     const [remoteSDPSet, setRemoteSDPSet] = useState(false)
+
+    const { isBlocked } = useBlock();
+    // const [incomingCallRejected, setIncomingCallRejected] = useState(false); // NEW
+
     const { username } = useAuth();
-    const { setIncomingCall, callAccepted, showVideo}=useCall();
+    const { setIncomingCall, callAccepted, showVideo, setCallerFullname, outGoingCall, localVideoRef2 ,callID, setCallID }=useCall();
     useImperativeHandle(ref, () => ({
         createOffer,
+        cleanupMedia,
     }));
+
     const startLocalStream = async () => {
         console.log("📹 Attempting to access local camera/mic...");
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             if (localVideoRef.current) localVideoRef.current.srcObject = stream
             console.log("✅ Local stream started", stream);
+            if (localVideoRef2?.current) {
+                localVideoRef2.current.srcObject = stream;
+            }
+          
             return stream
         } catch (err) {
             console.error("❌ Error accessing camera/mic:", err);
@@ -31,6 +42,35 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
             throw err
         }
     }
+    const cleanupMedia = () => {
+        console.log("🛑 Cleaning up media and PeerConnection...");
+
+        // Stop all local tracks
+        if (localVideoRef.current?.srcObject) {
+            localVideoRef.current.srcObject.getTracks().forEach(track => track.stop());
+            localVideoRef.current.srcObject = null;
+        }
+
+        // Stop all remote tracks
+        if (remoteVideoRef.current?.srcObject) {
+            remoteVideoRef.current.srcObject.getTracks().forEach(track => track.stop());
+            remoteVideoRef.current.srcObject = null;
+        }
+
+        // Close PeerConnection
+        if (pc.current) {
+            pc.current.close();
+            pc.current = null;
+        }
+
+        // Reset states
+        setLocalSDP("");
+        setRemoteSDP("");
+        setOfferCreated(false);
+        setAnswerCreated(false);
+        setRemoteSDPSet(false);
+    };
+
 
     const waitForIceGatheringComplete = pc => {
         return new Promise(resolve => {
@@ -83,6 +123,9 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
     };
     const createOffer = async () => {
         setOfferCreated(true)
+        const callId = crypto.randomUUID();
+        setCallID(callId)
+
 // setShowVideo(true)
         const connection = createPeerConnection()
         const stream = await startLocalStream()
@@ -97,6 +140,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
 
         // Send offer via Socket.IO
         socket.emit("sendOffer", {
+            callID: callId,
             sender: username,          // your current username
             receiver: receiver, // selected receiver username
             sdp: localSDPString
@@ -109,14 +153,17 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
         useEffect(() => {
             if (!socket) return;
 
-            socket.on("incoming-call", ({ sender, sdp }) => {
+            socket.on("incoming-call", ({ sender, sdp, senderFullname, callID }) => {
                 console.log("Incoming call from:", sender);
-                setIncomingCall(true);
-                setPendingOffer({ sender, sdp }); // store temporarily
+                if (!isBlocked(callID)) {
+                    setIncomingCall(true);
+                    setCallerFullname(senderFullname)
+                    setPendingOffer({ sender, sdp }); // store temporarily
+                }
             });
 
             return () => socket.off("incoming-call");
-        }, [socket]);
+        }, [socket,callID,isBlocked]);
 
         // When user accepts the call
         useEffect(() => {
@@ -154,6 +201,8 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
                 startCall();
             }
         }, [callAccepted, pendingOffer]);
+
+
 
     // useEffect(() => {
     //     if (!socket) return;
@@ -260,7 +309,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
                 </div>
             </div> */}
 
-            {(callAccepted || showVideo )&& <VideoDisplay localRef={localVideoRef} remoteRef={remoteVideoRef} />}
+            {(callAccepted || showVideo) && <VideoDisplay localRef={localVideoRef} socket={socket} username={username} remoteRef={remoteVideoRef} />}
 
         </div>
     )

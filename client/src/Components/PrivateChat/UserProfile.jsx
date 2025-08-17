@@ -1,15 +1,17 @@
 'use client';
 import imageCompression from "browser-image-compression";
-import { Camera, Check, Edit3, LogIn, Settings, Trash2, User, X } from "lucide-react";
+import { Calculator, Camera, Check, Edit3, LogIn, Settings, Trash2, User, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useProfile } from "../../context/ProfileContext";
+import { useCall } from "../../context/CallContext";
 // user react.memoe bellow
 const backendURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function UserProfileUpload({ nameLoaded, socket }) {
     const { username } = useAuth();
     const { profilePic, setProfilePic} = useProfile();
+    const { setCallReceiverFullname } = useCall();
 
     const fileInputRef = useRef(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -46,6 +48,7 @@ export default function UserProfileUpload({ nameLoaded, socket }) {
             fetchFullName(username).then((name) => {
                 if (name){ setNewFullName(name) 
                      setCurrentFullName(name);
+                    setCallReceiverFullname({ name, username });
                     }
             });
         }

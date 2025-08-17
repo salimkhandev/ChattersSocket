@@ -5,7 +5,7 @@ module.exports = (io) => {
     io.on("connection", (socket) => {
         console.log("A user connected:", socket.id)
    
-        socket.on('sendOffer', async ({ sender, receiver, sdp, callID }) => {
+        socket.on('sendOffer', async ({ sender, receiver, sdp, callID, isVideoCall, profilePic }) => {
         const receiverData = await redisClient.hGet("connectedUsers", receiver);
         const senderData = await redisClient.hGet("connectedUsers", sender);
 toReceiver=sender
@@ -15,14 +15,15 @@ toSender=receiver
         const receiverParsed = JSON.parse(receiverData); 
         const senderParsed = JSON.parse(senderData);
         const senderFullname = senderParsed.fName;
-            io.to(receiverParsed.socketId).emit('incoming-call', { sender, sdp, senderFullname, callID });
+            io.to(receiverParsed.socketId).emit('incoming-call', { sender, sdp, senderFullname, callID, isVideoCall, profilePic });
     });
 
     // Receiver sends answer back
-    socket.on('sendAnswer', async ({ sender, receiver, sdp }) => {
+        socket.on('sendAnswer', async ({ sender, receiver, sdp, profilePic, callReceiverFullname }) => {
         // sender = receiver of original offer (answer sender)
         // receiver = original caller
         const callerData = await redisClient.hGet("connectedUsers", receiver); // ✅ use receiver here
+console.log({callReceiverFullname});
 
         if (!callerData) {
             console.log(`Caller ${receiver} not found or offline`);
@@ -36,10 +37,10 @@ toSender=receiver
 
         if (callerSocketId) {
             console.log('Sending answer back to caller');
-            io.to(callerSocketId).emit('answer-received', { sender, sdp });
+            io.to(callerSocketId).emit('answer-received', { sender, sdp, profilePic, callReceiverFullname });
         }
     });
-        socket.on("acceptCall", async ({ username }) => {
+        socket.on("acceptCall", async ({ username ,profilePic}) => {
             const calleeData = await redisClient.hGet("connectedUsers", username);
             if (!calleeData) return;
 
@@ -54,7 +55,8 @@ toSender=receiver
             const callerSocketId = callerParsed.socketId;
 
             io.to(callerSocketId).emit("call-accepted", {
-                acceptedByFullname: calleeParsed?.fName
+                acceptedByFullname: calleeParsed?.fName,
+                acceptedByProfilePic: profilePic
             });
         });
 

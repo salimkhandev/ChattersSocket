@@ -69,7 +69,7 @@ export default function VideoDisplay({ localRef, remoteRef, socket,username }) {
             </div>
 
             {/* ✅ End Call Button - Highest z-index, always visible and clickable */}
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] pointer-events-auto">
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[21] pointer-events-auto">
                 <button
                     onClick={handleEndCall}
                     className="px-8 py-4 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-lg rounded-full shadow-2xl focus:outline-none focus:ring-4 focus:ring-red-500/50 transition-all duration-200 hover:scale-105 active:scale-95 backdrop-blur-sm border border-red-500/30"

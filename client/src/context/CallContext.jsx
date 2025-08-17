@@ -9,10 +9,20 @@ export const CallProvider = ({ children }) => {
     const [callAccepted, setCallAccepted] = useState(false);
     const [callerInfo, setCallerInfo] = useState(null); // optional: store caller name/id
     const [callerFullname, setCallerFullname] = useState("");
+    const [callerUsername, setCallerUsername] = useState("");
     const [outGoingCall, setOutGoingCall] = useState(null);
     const [callID , setCallID] = useState([]);
+    const [isAudioCall , setIsAudioCall] = useState();
+    const [callerProfilePic, setCallerProfilePic] = useState(null);
+    const [callReceiverProfilePic, setCallReceiverProfilePic] = useState(null)
+    const [callReceiverFullname, setCallReceiverFullname] = useState({})
+    const [callReceiverFullname2, setCallReceiverFullname2] = useState({})
+
+    const [currentIsVideo, setCurrentIsVideo] = useState(false);
     // const [localStream, setLocalStream] = useState(null);
     const localVideoRef2 = useRef(null);
+    const remoteVideoRef2 = useRef(null);
+    const localVideoRefForOutgoing = useRef(null);
     const receiveCall = (caller) => {
         setCallerInfo(caller);
         setIncomingCall(true);
@@ -52,9 +62,24 @@ export const CallProvider = ({ children }) => {
             rejectCall,
             callID, 
             setCallID,
-            // localStream,
-            //  setLocalStream,
-            localVideoRef2
+            isAudioCall,
+            setIsAudioCall,
+            localVideoRef2,
+            remoteVideoRef2,
+            currentIsVideo,
+             setCurrentIsVideo,
+            localVideoRefForOutgoing,
+            callerProfilePic, 
+            setCallerProfilePic,
+            callerUsername,
+             setCallerUsername,
+            callReceiverProfilePic,
+             setCallReceiverProfilePic,
+             callReceiverFullname,
+             setCallReceiverFullname,
+            callReceiverFullname2, 
+            setCallReceiverFullname2
+       
         }}>
             {children}
         </CallContext.Provider>

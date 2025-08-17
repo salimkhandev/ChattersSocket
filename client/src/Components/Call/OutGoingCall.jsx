@@ -1,5 +1,5 @@
     import React, { useEffect, useRef, useState } from "react";
-    import { PhoneOff, Mic, MicOff, Video, VideoOff, Phone } from "lucide-react";
+    import { PhoneOff, Phone } from "lucide-react";
     import { useCall } from "../../context/CallContext";
 
     export default function OutgoingCallUI({
@@ -7,14 +7,14 @@
         selectedReceiverProfilePic,
         socket,
         username,
-        cleanupMedia
+        cleanupMedia,
+        
     }) {
-        const [audioContext, setAudioContext] = useState(null);
+        const [audioContext] = useState(null);
         // const [stream, setStream] = useState(null);
         const [ripples, setRipples] = useState([]);
-        const { rejectCall, callID, localVideoRef2 } = useCall();
+        const { rejectCall, callID, localVideoRefForOutgoing , localVideoRef2 } = useCall();
 
-        const videoRef = useRef(null);
         const audioRef = useRef(null); // 🎵 for ringtone
 
         // attach localStream to video
@@ -23,6 +23,7 @@
         //         videoRef.current.srcObject = localStream;
         //     }
         // }, [localStream]);
+        
 
         // 🎵 Play ringtone on mount
         useEffect(() => {
@@ -32,10 +33,10 @@
                 });
             }
             return () => {
-                // if (audioRef.current) {
-                //     audioRef.current.pause();
-                //     // audioRef.current.currentTime = 0;
-                // }
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                    audioRef.current.currentTime = 0;
+                }
             };
         }, []);
 
@@ -92,17 +93,15 @@
                 callID: callID
             });
 
-            // if (audioContext && audioContext.state !== "closed") {
-            //     audioContext.close();
-            // }
+            if (audioContext && audioContext.state !== "closed") {
+                audioContext.close();
+            }
             
-            // // if (localStream) {
-            // //     localStream.getTracks().forEach(track => track.stop());
-            // // }
-            // if (audioRef.current) {
-            //     audioRef.current.pause();
-            //     audioRef.current.currentTime = 0;
-            // }
+           
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+            }
         };
 
         return (
@@ -181,7 +180,7 @@
                         <div className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
                             <div className="relative w-full aspect-video bg-gray-900/80 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-white/20">
                                 <video
-                                    ref={localVideoRef2}
+                                    ref={localVideoRefForOutgoing}
                                     autoPlay
                                     muted
                                     playsInline

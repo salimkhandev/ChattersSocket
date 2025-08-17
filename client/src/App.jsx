@@ -15,7 +15,9 @@ import VideoCall from './Components/Call/VideoCall';
 import UserProfileUpload from "./Components/PrivateChat/UserProfile";
 import { useCall } from "./context/CallContext";
 import { io } from "socket.io-client";
-import { Video } from "lucide-react";
+import { Video, Phone } from "lucide-react";
+import AudioCallDisplay from './Components/Call/AudioCallDisplay';
+import VideoDisplay from './Components/Call/VideoDisplay';
 
 import { useBlock } from "./context/BlockedCallContext";
 
@@ -41,7 +43,7 @@ const socket = io(`${backendURL}`, {
 export default function ChatApp() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [nameLoaded, setNameLoaded] = useState(false);  // track when name is ready
-  const { callAccepted, setShowVideo, showVideo, callerFullname, outGoingCall, setOutGoingCall, rejectCall } = useCall();
+  const { callAccepted, setShowVideo, showVideo, callerFullname, callerUsername,outGoingCall, setOutGoingCall, rejectCall, isAudioCall, remoteVideoRef2, currentIsVideo, setCurrentIsVideo, localVideoRef2, localVideoRefForOutgoing, callerProfilePic, } = useCall();
   const [selectedReceiverFullname, setSelectedReceiverFullname] = useState("");
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
@@ -57,13 +59,20 @@ export default function ChatApp() {
   const { username, setUsername } = useAuth();
   const webrtcRef = useRef(null);
   // const webrtcRef2 = useRef(null);
-  const { blockCaller, isBlocked } = useBlock();
+  const { blockCaller } = useBlock();
 
 
   // Add new state
   const [selectedReceiverProfilePic, setSelectedReceiverProfilePic] = useState("");
 
-  // Update your effect that runs when selectedReceiver changes
+  // Add states for caller info
+
+  // Example: when you select a receiver or get a call event
+
+
+
+
+
   useEffect(() => {
     if (selectedReceiver) {
       const foundUser = onlineUsers.find(u => u.username === selectedReceiver);
@@ -73,7 +82,7 @@ export default function ChatApp() {
       setSelectedReceiverFullname("");
       setSelectedReceiverProfilePic(""); // reset if no receiver
     }
-  }, [selectedReceiver, onlineUsers]);
+  }, [selectedReceiver, onlineUsers, localVideoRef2]);
 
 
   useEffect(() => {
@@ -126,6 +135,7 @@ export default function ChatApp() {
       toast.success(`${acceptedByFullname} accepted your call 🎉`);
       setShowVideo(true); // show video component
       setOutGoingCall(false); // hide outgoing call 
+
       
     };
 
@@ -421,14 +431,18 @@ export default function ChatApp() {
 
         <div className="w-full max-w-6xl bg-white rounded-xl shadow-xl flex flex-col overflow-hidden h-[calc(100vh-2rem)]">
             <CallUIPlaceholder socket={socket} username={username} />
-            {outGoingCall && <OutGoingCall  socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia} username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
+            {outGoingCall && <OutGoingCall  socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia}  username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
+            {(callAccepted || showVideo) && isAudioCall && (
+              <AudioCallDisplay callerUsername={callerUsername} remoteVideoRef2={remoteVideoRef2} profilePic={selectedReceiverProfilePic} callerProfilePic={callerProfilePic} callerName={callerFullname}  socket={socket} username={username} />
+            )}
+            {(callAccepted || showVideo) && currentIsVideo && <VideoDisplay localRef={localVideoRef2} remoteRef={remoteVideoRef2} socket={socket} username={username} />}
 
 
           {/* Top Navigation Bar */}
           <div className="bg-white border-b p-4 flex items-center justify-between shrink-0 z-20">
             <UserProfileUpload nameLoaded={nameLoaded} username={username} socket={socket} />
             <ToggleTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-
+            
             <button
               onClick={logout}
               className="text-red-500 hover:text-red-600 text-sm flex items-center gap-2"
@@ -485,31 +499,60 @@ export default function ChatApp() {
 
 
                               {/*  */}
+                  
                                 <button
+                                  onClick={() => {
+                                    if (webrtcRef.current) {
+                                      webrtcRef.current.createOffer(true);
+                                      setShowVideo(true);
+                                      setOutGoingCall(true)
+                                    } else {
+                                      console.warn("WebRTC component not ready yet");
+                                    }
+                                  }}
                                   className="
-                                    relative group
-                                    w-10 h-10 rounded-full
-                                    bg-gradient-to-br from-blue-500 via-sky-500 to-cyan-500
-                                    shadow-xl shadow-blue-500/30
-                                    flex items-center justify-center
-                                    focus:outline-none focus:ring-4 focus:ring-blue-400/30
+                                   relative group
+                                   w-[50px] h-[27px]
+                                   rounded-full
+                                   bg-gradient-to-br from-blue-500 via-sky-500 to-cyan-500
+                                   shadow-xl shadow-blue-500/30
+                                   flex items-center justify-center
+                                   focus:outline-none focus:ring-4 focus:ring-blue-400/30
+                                    translate-y-[10px] left-[7px] -top-[6px]
+                                                "
+                                >
+                                  <div className="relative flex items-center justify-center h-full">
+                                    <Video className="w-4 h-4 text-white drop-shadow-lg" />
 
-                                                                                             "
-                                onClick={() => {
-                                  if (webrtcRef.current) {
-                                    webrtcRef.current.createOffer();
-                                    setShowVideo(true);
-                                    setOutGoingCall(true)
-                                  } else {
-                                    console.warn("WebRTC component not ready yet");
-                                  }
-                                }}
-                              >
-                                <div className="relative flex items-center justify-center h-full">
-                                  <Video className="w-4 h-4 text-white drop-shadow-lg" />
-                                </div>
+                                  </div>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (webrtcRef.current) {
+                                      webrtcRef.current.createOffer(false);
+                                      setShowVideo(true);
+                                      setOutGoingCall(true)
+                                    } else {
+                                      console.warn("WebRTC component not ready yet");
+                                    }
+                                  }}
+                                  className="
+                                   relative group
+                                   w-[50px] h-[27px]
+                                   rounded-full
+                                   bg-gradient-to-br from-blue-500 via-sky-500 to-cyan-500
+                                   shadow-xl shadow-blue-500/30
+                                   flex items-center justify-center
+                                   focus:outline-none focus:ring-4 focus:ring-blue-400/30
+                                    translate-y-[10px] left-[7px] -top-[6px]
+                                                "
+                                >
+                                  <div className="relative flex items-center justify-center h-full">
+                                    <Phone className="w-4 h-4 text-white drop-shadow-lg" />
 
-                              </button>
+                                  </div>
+                                </button>
+
 
                             </h1>
                             <button

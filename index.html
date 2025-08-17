@@ -1,83 +1,603 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <title>Minimal WebRTC Demo</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Snake Game 🐍</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #0b1220;
+      --grid: #071025;
+      --snake: #10b981;
+      /* green */
+      --snake-head: #059669;
+      --food: #ef4444;
+      /* red */
+      --text: #e6eef8;
+      --accent: #60a5fa;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: linear-gradient(180deg, var(--bg), #071029);
+      color: var(--text);
+      padding: 18px;
+    }
+
+    .wrap {
+      width: min(920px, 96vw);
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(2, 6, 23, 0.6);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 420px;
+    }
+
+    .title {
+      font-weight: 700;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button {
+      background: var(--accent);
+      border: none;
+      color: #022;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button.secondary {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--text);
+    }
+
+    .status {
+      font-size: 14px;
+      color: #cfe8ff;
+    }
+
+    /* Game area */
+    .game-area {
+      background: linear-gradient(180deg, var(--grid), #071025);
+      border-radius: 10px;
+      padding: 10px;
+      display: grid;
+      place-items: center;
+    }
+
+    canvas {
+      background: linear-gradient(180deg, #071025, #08162a);
+      border-radius: 8px;
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .info {
+      width: 240px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0.01));
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .scoreline {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      gap: 8px;
+    }
+
+    .kbd {
+      font-size: 13px;
+      color: #cfe8ff;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 6px 8px;
+      border-radius: 6px;
+    }
+
+    .hint {
+      font-size: 13px;
+      color: #9fbbe8;
+    }
+
+    footer.small {
+      font-size: 12px;
+      color: #8aa7d9;
+      margin-top: 6px;
+    }
+
+    @media (max-width:960px) {
+      .wrap {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .panel,
+      .info {
+        width: 94vw;
+        max-width: 640px;
+      }
+    }
+  </style>
 </head>
 
 <body>
-  <h2>Minimal WebRTC Video Demo</h2>
+  <div class="wrap">
+    <div class="panel">
+      <div class="title">Snake Game 🐍 <span style="font-weight:400; font-size:13px; color:#ade1ff"> — arrow/WASD or
+          swipe</span></div>
 
-  <video id="localVideo" autoplay playsinline muted style="width: 45%; border: 1px solid black;"></video>
-  <video id="remoteVideo" autoplay playsinline style="width: 45%; border: 1px solid black;"></video>
+      <div class="game-area" aria-label="Snake game area">
+        <canvas id="game" width="480" height="480"></canvas>
+      </div>
 
-  <div>
-    <button id="start">Start Camera</button>
-    <button id="createOffer">Create Offer</button>
-    <button id="createAnswer">Create Answer</button>
+      <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
+        <div class="controls">
+          <button id="startBtn">Start ▶</button>
+          <button id="pauseBtn" class="secondary">Pause ⏸</button>
+          <button id="speedBtn" class="secondary">Speed ×1</button>
+          <button id="resetBtn" class="secondary">Reset ↺</button>
+        </div>
+
+        <div class="status" id="status">Ready — Press Start</div>
+      </div>
+
+      <div class="hint">Tip: Press Space to Pause/Resume. Touch: swipe to control on mobile. 🍎 Eat food to grow.</div>
+      <footer class="small">Made simple & responsive — tweak the grid size in code. ✅</footer>
+    </div>
+
+    <div class="info" aria-hidden="false">
+      <div style="font-weight:700">Scoreboard</div>
+      <div class="scoreline">
+        <div>Score</div>
+        <div id="score">0</div>
+      </div>
+      <div class="scoreline">
+        <div>High Score</div>
+        <div id="highscore">0</div>
+      </div>
+      <div style="display:flex; gap:8px; width:100%; align-items:center; justify-content:space-between;">
+        <div>
+          <div style="font-weight:700; margin-bottom:6px;">Controls</div>
+          <div class="kbd">Arrows / WASD</div>
+          <div style="height:6px"></div>
+          <div class="kbd">Space — Pause</div>
+          <div style="height:6px"></div>
+          <div class="kbd">Swipe — mobile</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-weight:700">Level</div>
+          <div id="level" style="font-size:20px; color:var(--accent)">1</div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <textarea id="sdp" placeholder="SDP Offer/Answer here" rows="10" cols="70"></textarea>
-
   <script>
-    let localStream;
-    let pc;
-    const servers = null; // No STUN/TURN servers here for simplicity
+    /*
+      Simple Snake Game
+      - Canvas-based
+      - Arrow / WASD controls
+      - Touch swipe support for mobile
+      - Score, Highscore (localStorage)
+      - Speed control, Pause, Restart
+      - Small sounds via WebAudio
+      - Beginner-friendly code with comments
+    */
 
-    const localVideo = document.getElementById('localVideo');
-    const remoteVideo = document.getElementById('remoteVideo');
-    const sdpTextarea = document.getElementById('sdp');
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
 
-    document.getElementById('start').onclick = async () => {
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      localVideo.srcObject = localStream;
-    };
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const speedBtn = document.getElementById('speedBtn');
+    const scoreEl = document.getElementById('score');
+    const highEl = document.getElementById('highscore');
+    const statusEl = document.getElementById('status');
+    const levelEl = document.getElementById('level');
 
-    document.getElementById('createOffer').onclick = async () => {
-      pc = new RTCPeerConnection(servers);
-      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+    const CANVAS_SIZE = 480;            // canvas pixel size (square)
+    canvas.width = CANVAS_SIZE;
+    canvas.height = CANVAS_SIZE;
 
-      pc.ontrack = e => {
-        if (remoteVideo.srcObject !== e.streams[0]) {
-          remoteVideo.srcObject = e.streams[0];
-        }
-      };
+    // Game grid settings
+    let COLS = 24;                      // grid columns
+    let ROWS = 24;                      // grid rows
+    let CELL = Math.floor(CANVAS_SIZE / COLS); // pixel size per cell
 
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
+    // Game state
+    let snake = [];
+    let dir = { x: 1, y: 0 };               // current direction (unit vector)
+    let nextDir = null;                 // buffered direction
+    let food = null;
+    let running = false;
+    let paused = false;
+    let score = 0;
+    let highScore = parseInt(localStorage.getItem('snake_high') || '0', 10);
+    let speedMultiplier = 1;            // 0.7x,1x,1.4x etc
+    let level = 1;
 
-      sdpTextarea.value = JSON.stringify(pc.localDescription);
-    };
+    // timing
+    let baseInterval = 120; // ms per step at speed ×1 (lower = faster)
+    let timerId = null;
 
-    document.getElementById('createAnswer').onclick = async () => {
-      pc = new RTCPeerConnection(servers);
-      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-
-      pc.ontrack = e => {
-        if (remoteVideo.srcObject !== e.streams[0]) {
-          remoteVideo.srcObject = e.streams[0];
-        }
-      };
-
-      const offerDesc = JSON.parse(sdpTextarea.value);
-      await pc.setRemoteDescription(offerDesc);
-
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-
-      sdpTextarea.value = JSON.stringify(pc.localDescription);
-    };
-
-    sdpTextarea.onchange = async () => {
-      if (!pc) return;
+    // audio (small beep and chime) using WebAudio
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    function ensureAudio() {
+      if (!audioCtx) audioCtx = new AudioCtx();
+    }
+    function playBeep(freq = 440, type = 'sine', duration = 0.08, gain = 0.12) {
       try {
-        const desc = JSON.parse(sdpTextarea.value);
-        await pc.setRemoteDescription(desc);
-      } catch (e) {
-        console.error('Invalid SDP JSON', e);
+        ensureAudio();
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = type; o.frequency.value = freq;
+        g.gain.value = gain;
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start();
+        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        o.stop(audioCtx.currentTime + duration + 0.02);
+      } catch (e) { }
+    }
+
+    // init UI
+    scoreEl.textContent = score;
+    highEl.textContent = highScore;
+    levelEl.textContent = level;
+    pauseBtn.disabled = true;
+
+    // helper: grid -> pixel
+    function toPx(pos) { return { x: pos.x * CELL, y: pos.y * CELL }; }
+
+    // random position (not on snake)
+    function randomPos() {
+      while (true) {
+        const x = Math.floor(Math.random() * COLS);
+        const y = Math.floor(Math.random() * ROWS);
+        if (!snake.some(s => s.x === x && s.y === y)) return { x, y };
       }
-    };
+    }
+
+    // reset game
+    function resetGame() {
+      snake = [
+        { x: Math.floor(COLS / 2) - 1, y: Math.floor(ROWS / 2) },
+        { x: Math.floor(COLS / 2), y: Math.floor(ROWS / 2) }
+      ];
+      dir = { x: 1, y: 0 };
+      nextDir = null;
+      food = randomPos();
+      running = false;
+      paused = false;
+      score = 0;
+      level = 1;
+      speedMultiplier = 1;
+      updateUI();
+      draw();
+      statusEl.textContent = 'Ready — Press Start';
+    }
+
+    // update UI elements
+    function updateUI() {
+      scoreEl.textContent = score;
+      highEl.textContent = highScore;
+      levelEl.textContent = level;
+      pauseBtn.textContent = paused ? 'Resume ▶' : 'Pause ⏸';
+      speedBtn.textContent = `Speed ×${speedMultiplier}`;
+      startBtn.textContent = running ? 'Running' : 'Start ▶';
+      pauseBtn.disabled = !running;
+    }
+
+    // game over
+    function gameOver() {
+      running = false;
+      paused = false;
+      clearTimeout(timerId);
+      statusEl.textContent = 'Game Over 💥 Press Start or Reset';
+      playBeep(120, 'sine', 0.25, 0.2);
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('snake_high', highScore);
+      }
+      updateUI();
+    }
+
+    // step (game tick)
+    function step() {
+      if (!running || paused) return;
+
+      // apply buffered direction if valid (no reverse)
+      if (nextDir) {
+        if (!(nextDir.x === -dir.x && nextDir.y === -dir.y)) {
+          dir = nextDir;
+        }
+        nextDir = null;
+      }
+
+      // new head
+      const head = { x: snake[snake.length - 1].x + dir.x, y: snake[snake.length - 1].y + dir.y };
+
+      // wrap-around edges OR collision check; here we choose solid walls -> collision
+      if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
+        return gameOver();
+      }
+
+      // self-collision
+      if (snake.some(s => s.x === head.x && s.y === head.y)) {
+        return gameOver();
+      }
+
+      // move snake
+      snake.push(head);
+
+      // eat food?
+      if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        playBeep(880, 'triangle', 0.12, 0.12);
+        // place new food
+        food = randomPos();
+
+        // increase difficulty every 50 points
+        if (score % 50 === 0) {
+          level++;
+          // increase speed slightly
+          speedMultiplier = Math.min(2.0, speedMultiplier + 0.15);
+        }
+      } else {
+        // normal move: remove tail
+        snake.shift();
+      }
+
+      // draw
+      draw();
+      updateUI();
+
+      // schedule next step
+      const interval = Math.max(40, baseInterval / speedMultiplier);
+      timerId = setTimeout(step, interval);
+    }
+
+    // draw grid, snake, food
+    function draw() {
+      // clear
+      ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+      // background
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid') || '#071025';
+      ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+      // draw snack food
+      const foodPx = toPx(food);
+      const pad = Math.max(2, CELL * 0.08);
+      ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.arc(foodPx.x + CELL / 2, foodPx.y + CELL / 2, CELL * 0.28, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--food') || '#ef4444';
+      ctx.beginPath();
+      ctx.arc(foodPx.x + CELL / 2, foodPx.y + CELL / 2, CELL * 0.23, 0, Math.PI * 2);
+      ctx.fill();
+
+      // draw snake
+      for (let i = 0; i < snake.length; i++) {
+        const s = snake[i];
+        const p = toPx(s);
+        // head different color
+        if (i === snake.length - 1) {
+          ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--snake-head') || '#059669';
+          // draw head with slight shine
+          ctx.beginPath();
+          ctx.ellipse(p.x + CELL / 2, p.y + CELL / 2, CELL * 0.46, CELL * 0.44, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.08)';
+          ctx.beginPath();
+          ctx.ellipse(p.x + CELL / 2 - CELL * 0.14, p.y + CELL / 2 - CELL * 0.18, CELL * 0.18, CELL * 0.12, 0, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--snake') || '#10b981';
+          // body squares with rounding
+          const r = Math.max(3, CELL * 0.12);
+          roundRect(ctx, p.x + 1, p.y + 1, CELL - 2, CELL - 2, r);
+          ctx.fill();
+        }
+      }
+
+      // optional grid lines (very faint)
+      ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= COLS; x++) {
+        const px = x * CELL;
+        ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, CANVAS_SIZE); ctx.stroke();
+      }
+      for (let y = 0; y <= ROWS; y++) {
+        const py = y * CELL;
+        ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(CANVAS_SIZE, py); ctx.stroke();
+      }
+    }
+
+    // rounded rect helper
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    // start game loop
+    function startGame() {
+      if (!running) {
+        // ensure audio unlocked by user gesture
+        try { ensureAudio(); } catch (e) { }
+        running = true;
+        paused = false;
+        statusEl.textContent = 'Running ▶';
+        // step schedule
+        clearTimeout(timerId);
+        const interval = Math.max(40, baseInterval / speedMultiplier);
+        timerId = setTimeout(step, interval);
+        updateUI();
+      }
+    }
+
+    // pause/resume
+    function togglePause() {
+      if (!running) return;
+      paused = !paused;
+      if (!paused) {
+        statusEl.textContent = 'Running ▶';
+        // resume stepping
+        clearTimeout(timerId);
+        timerId = setTimeout(step, Math.max(40, baseInterval / speedMultiplier));
+      } else {
+        statusEl.textContent = 'Paused ⏸';
+        clearTimeout(timerId);
+      }
+      updateUI();
+    }
+
+    // change speed (cycle)
+    function cycleSpeed() {
+      const speeds = [0.7, 1, 1.4, 1.8];
+      const idx = speeds.indexOf(speedMultiplier);
+      speedMultiplier = speeds[(idx + 1) % speeds.length];
+      updateUI();
+    }
+
+    // handle keyboard
+    window.addEventListener('keydown', (e) => {
+      const key = e.key;
+      if (key === ' ') {
+        // toggle pause
+        if (running) togglePause();
+        else startGame();
+        e.preventDefault();
+        return;
+      }
+      if (!running) return;
+      let changed = false;
+      if (key === 'ArrowUp' || key === 'w' || key === 'W') { nextDir = { x: 0, y: -1 }; changed = true; }
+      if (key === 'ArrowDown' || key === 's' || key === 'S') { nextDir = { x: 0, y: 1 }; changed = true; }
+      if (key === 'ArrowLeft' || key === 'a' || key === 'A') { nextDir = { x: -1, y: 0 }; changed = true; }
+      if (key === 'ArrowRight' || key === 'd' || key === 'D') { nextDir = { x: 1, y: 0 }; changed = true; }
+      if (changed) playBeep(660, 'sine', 0.04, 0.02);
+    });
+
+    // buttons
+    startBtn.addEventListener('click', startGame);
+    pauseBtn.addEventListener('click', togglePause);
+    resetBtn.addEventListener('click', () => {
+      resetGame();
+      playBeep(520, 'sine', 0.06, 0.06);
+    });
+    speedBtn.addEventListener('click', () => {
+      cycleSpeed();
+      playBeep(720, 'triangle', 0.06, 0.06);
+    });
+
+    // touch swipe support
+    let touchStart = null;
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches && e.touches.length === 1) {
+        const t = e.touches[0];
+        touchStart = { x: t.clientX, y: t.clientY, time: Date.now() };
+      }
+    });
+    canvas.addEventListener('touchend', (e) => {
+      if (!touchStart) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touchStart.x;
+      const dy = t.clientY - touchStart.y;
+      const adx = Math.abs(dx);
+      const ady = Math.abs(dy);
+      if (Math.max(adx, ady) < 20) {
+        // tap - start/pause
+        if (!running) startGame(); else togglePause();
+      } else {
+        if (adx > ady) {
+          nextDir = dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 };
+        } else {
+          nextDir = dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 };
+        }
+        playBeep(660, 'sine', 0.04, 0.02);
+      }
+      touchStart = null;
+    });
+
+    // mouse click on canvas toggles pause/start
+    canvas.addEventListener('click', () => {
+      if (!running) startGame();
+      else togglePause();
+    });
+
+    // Resize handling: keep grid cell matching canvas size
+    function recomputeGrid() {
+      const size = Math.min(window.innerWidth * 0.92, 520, 480);
+      // maintain canvas square
+      canvas.style.width = size + 'px';
+      canvas.style.height = size + 'px';
+      // recompute CELL if we change COLS/ROWS (left as is to maintain grid)
+      // CELL = Math.floor(CANVAS_SIZE / COLS);
+    }
+    window.addEventListener('resize', recomputeGrid);
+
+    // helper: when window/tab hidden, pause
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && running && !paused) {
+        togglePause();
+      }
+    });
+
+    // initial setup
+    resetGame();
+    draw();
+    recomputeGrid();
+
+    // place initial food before start (already set in reset)
+    draw();
   </script>
 </body>
 

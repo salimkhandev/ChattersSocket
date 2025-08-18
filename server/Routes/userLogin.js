@@ -24,8 +24,8 @@ router.post('/check-username', async (req, res) => {
         }
 
         // Handle FCM token insert
-        let tokenStatus = "";
-        // let tokenStatus = "No FCM token provided.";
+        // let tokenStatus = "";
+        let tokenStatus = "No FCM token provided.";
         if (fcm_token) {
             const { error: tokenError } = await supabase
                 .from('fcm_tokens')

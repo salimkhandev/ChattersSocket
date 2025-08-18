@@ -8,8 +8,8 @@ module.exports = (io) => {
         socket.on('sendOffer', async ({ sender, receiver, sdp, callID, isVideoCall, profilePic }) => {
         const receiverData = await redisClient.hGet("connectedUsers", receiver);
         const senderData = await redisClient.hGet("connectedUsers", sender);
-toReceiver=sender
-toSender=receiver
+          toReceiver=sender          
+          toSender=receiver
         if (!receiverData || !senderData) return;
 
         const receiverParsed = JSON.parse(receiverData); 
@@ -81,8 +81,12 @@ console.log({callReceiverFullname});
         socket.on('end call', async ({ username, callID }) => {
             // sender = the user who rejected
             // receiver = the original caller
+         
             const calleeData = await redisClient.hGet("connectedUsers", username);
-           
+            if (!toSender || !toReceiver) {
+                console.error("No active call context");
+                return;
+            }
             const callerData = await redisClient.hGet("connectedUsers", toSender); // ✅ use sender here
             const callerDataD = await redisClient.hGet("connectedUsers", toReceiver); // ✅ use receiver here    
 

@@ -17,12 +17,44 @@ export const CallProvider = ({ children }) => {
     const [callReceiverProfilePic, setCallReceiverProfilePic] = useState(null)
     const [callReceiverFullname, setCallReceiverFullname] = useState({})
     const [callReceiverFullname2, setCallReceiverFullname2] = useState({})
-
+    const pc = useRef(null)
     const [currentIsVideo, setCurrentIsVideo] = useState(false);
     // const [localStream, setLocalStream] = useState(null);
     const localVideoRef2 = useRef(null);
     const remoteVideoRef2 = useRef(null);
     const localVideoRefForOutgoing = useRef(null);
+    const cleanupMedia = () => {
+
+        // Stop all local tracks
+        if (localVideoRef2.current?.srcObject) {
+            localVideoRef2.current.srcObject.getTracks().forEach(track => track.stop());
+            localVideoRef2.current.srcObject = null;
+        }
+        if (localVideoRefForOutgoing.current?.srcObject) {
+            localVideoRefForOutgoing.current.srcObject.getTracks().forEach(track => track.stop());
+            localVideoRefForOutgoing.current.srcObject = null;
+        }
+
+        // Stop all remote tracks
+        if (remoteVideoRef2.current?.srcObject) {
+            remoteVideoRef2.current.srcObject.getTracks().forEach(track => track.stop());
+            // remoteVideoRef.current.srcObject = null;
+            remoteVideoRef2.current.srcObject = null;
+        }
+
+        // Close PeerConnection
+        if (pc.current) {
+            pc.current.close();
+            pc.current = null;
+        }
+
+        // Reset call state
+        setIncomingCall(false);
+        setCallAccepted(false);
+        setShowVideo(false);
+        setOutGoingCall(false);
+
+    };
     const receiveCall = (caller) => {
         setCallerInfo(caller);
         setIncomingCall(true);
@@ -78,7 +110,9 @@ export const CallProvider = ({ children }) => {
              callReceiverFullname,
              setCallReceiverFullname,
             callReceiverFullname2, 
-            setCallReceiverFullname2
+            setCallReceiverFullname2,
+            cleanupMedia,
+ pc
        
         }}>
             {children}

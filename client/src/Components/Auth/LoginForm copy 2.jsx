@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { io } from "socket.io-client";
 import { UserPlus, Loader2 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext';
-// const socket = io("http://localhost:3000");
+import { generateToken } from '../FCM/firebase'; // adjust the path
+const backendURL = import.meta.env.VITE_BACKEND_URL;
+
 
 // const socket = io("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/", {
 //   reconnection: true,
@@ -10,32 +12,45 @@ import { useAuth } from '../../context/AuthContext';
 //   reconnectionDelay: 2000,
 // });
 
-const socket = io("http://localhost:3000", {
+const socket = io(`${backendURL}`, {
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 2000,
 });
 function LoginForm({setIsLoggedIn,isLoggedIn}) {
+    const [fcm_token, setFcm_token] = useState('');
     const { username, setUsername } = useAuth();
-
+    useEffect(() => {
+        const getToken = async () => {
+            const token = await generateToken();
+            if (token) {
+                localStorage.setItem("token", token);
+                setFcm_token(token);
+            }
+        };
+        
+        getToken();
+    }, []);
     const [error, setError] = useState("");
     // loader
     const [isLoading, setIsLoading] = useState(false);
     // const [username, setUsername] = useState(localStorage.getItem("chat_user") || "");
     // const [isLoggedIn, setIsLoggedIn] = useState(null);
+
+
     const handleLogin = async (input) => {
         const trimmed = input.trim().toLowerCase();
         if (!trimmed) return alert("❌ Please enter a username");
-
+     
         // Call API to check username
         try {
             setIsLoading(true);
-            const res = await fetch("http://localhost:3000/check-username", {
-                method: "POST",
+            const res = await fetch(`${backendURL}/check-username`, {
+                method: "POST",     
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ username: trimmed }),
+                body: JSON.stringify({ username: trimmed, fcm_token}),
             });
 
             const { success, message } = await res.json();
@@ -66,7 +81,7 @@ function LoginForm({setIsLoggedIn,isLoggedIn}) {
     useEffect(() => {
         async function checkUsername(username) {
             try {
-                const res = await fetch("http://localhost:3000/check-username", {
+                const res = await fetch(`${backendURL}/check-username`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",

@@ -7,6 +7,8 @@
         authDomain: "pwa-push-notification-8649b.firebaseapp.com",
         projectId: "pwa-push-notification-8649b",
         storageBucket: "pwa-push-notification-8649b.firebasestorage.app",
+        // storageBucket: "pwa-push-notification-8649b.appspot.com", // ✅ fixed,
+
         messagingSenderId: "504230264197",
         appId: "1:504230264197:web:6723b541451cb8fd2498ec",
         measurementId: "G-HL2TYM3QF6"

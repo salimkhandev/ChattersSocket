@@ -10,7 +10,7 @@ import { useProfile } from "../../context/ProfileContext";
 const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
     // const localVideoRef = useRef(null)
     // const remoteVideoRef = useRef(null)
-    const pc = useRef(null)
+    // const pc = useRef(null)
 
 
 
@@ -21,7 +21,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
 
     const { username } = useAuth();
     const { setIncomingCall, callAccepted, showVideo, setCallerUsername, setCallerFullname, localVideoRef2, callID, setCallID, remoteVideoRef2, localVideoRefForOutgoing,
-        setIsAudioCall, currentIsVideo, setCurrentIsVideo, setCallerProfilePic, setCallReceiverProfilePic, callReceiverFullname, setCallReceiverFullname2 } = useCall();
+        setIsAudioCall, currentIsVideo, setCurrentIsVideo, setCallerProfilePic, setCallReceiverProfilePic, callReceiverFullname, setCallReceiverFullname2,pc } = useCall();
         // make a state for that callReceiverProfilePi
     useImperativeHandle(ref, () => ({
         createOffer,
@@ -134,6 +134,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
                 if (remoteVideoRef2.current && remoteVideoRef2.current.srcObject !== stream) {
                     remoteVideoRef2.current.srcObject = stream;
                 }
+             
             };
 
         }

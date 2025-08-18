@@ -22,13 +22,7 @@ import {
   X
 } from "lucide-react";
 
-// const socket = io("http://localhost:3000");
 
-// const socket = io("https://5dbb6c84-cb5e-4423-ba04-72e6a621809a-00-7sp7cj9ozrz2.spock.replit.dev/", {
-//   reconnection: true,
-//   reconnectionAttempts: Infinity,
-//   reconnectionDelay: 2000,
-// });
 
 const socket = io("http://localhost:3000", {
   reconnection: true,

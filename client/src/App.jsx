@@ -11,12 +11,13 @@ import { useAuth } from "./context/AuthContext";
 import { generateToken } from './Components/FCM/firebase'; // adjust the path
 import CallUIPlaceholder from './Components/Call/CallUIPlaceholder';
 import OutGoingCall from './Components/Call/OutGoingCall';
+import OutGoingAudioCall from './Components/Call/OutGoingAudioCall';
 import VideoCall from './Components/Call/VideoCall';
 import UserProfileUpload from "./Components/PrivateChat/UserProfile";
 import { useCall } from "./context/CallContext";
 import { io } from "socket.io-client";
 import { Video, Phone } from "lucide-react";
-import AudioCallDisplay from './Components/Call/AudioCallDisplay';
+// import AudioCallDisplay from './Components/Call/AudioCallDisplay';
 import VideoDisplay from './Components/Call/VideoDisplay';
 
 import { useBlock } from "./context/BlockedCallContext";
@@ -43,7 +44,7 @@ const socket = io(`${backendURL}`, {
 export default function ChatApp() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [nameLoaded, setNameLoaded] = useState(false);  // track when name is ready
-  const { callAccepted, setShowVideo, showVideo, callerFullname, callerUsername,outGoingCall, setOutGoingCall, rejectCall, isAudioCall, remoteVideoRef2, currentIsVideo, setCurrentIsVideo, localVideoRef2, localVideoRefForOutgoing, callerProfilePic, } = useCall();
+  const { callAccepted, setShowVideo, showVideo, callerFullname, callerUsername, outGoingCall, cleanupMedia, setOutGoingCall, rejectCall, isAudioCall, remoteVideoRef2, currentIsVideo, setCurrentIsVideo, localVideoRef2, localVideoRefForOutgoing, callerProfilePic } = useCall();
   const [selectedReceiverFullname, setSelectedReceiverFullname] = useState("");
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
@@ -68,6 +69,8 @@ export default function ChatApp() {
   // Add states for caller info
 
   // Example: when you select a receiver or get a call event
+
+
 
 
 
@@ -122,8 +125,9 @@ export default function ChatApp() {
       // alert("Call rejected by " + callID);
       blockCaller(callID)
     
-      webrtcRef?.current?.cleanupMedia();
+      // webrtcRef?.current?.cleanupMedia();
       // webrtcRef2?.current?.cleanupMedia();
+      cleanupMedia()
     
 
 
@@ -431,11 +435,12 @@ export default function ChatApp() {
 
         <div className="w-full max-w-6xl bg-white rounded-xl shadow-xl flex flex-col overflow-hidden h-[calc(100vh-2rem)]">
             <CallUIPlaceholder socket={socket} username={username} />
-            {outGoingCall && <OutGoingCall  socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia}  username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
-            {(callAccepted || showVideo) && isAudioCall && (
-              <AudioCallDisplay callerUsername={callerUsername} remoteVideoRef2={remoteVideoRef2} profilePic={selectedReceiverProfilePic} callerProfilePic={callerProfilePic} callerName={callerFullname}  socket={socket} username={username} />
-            )}
-            {(callAccepted || showVideo) && currentIsVideo && <VideoDisplay localRef={localVideoRef2} remoteRef={remoteVideoRef2} socket={socket} username={username} />}
+            {outGoingCall && currentIsVideo&& <OutGoingCall  socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia}  username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
+            {outGoingCall && !currentIsVideo&& <OutGoingAudioCall  socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia}  username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
+            {/* {(callAccepted || showVideo) && isAudioCall && (
+              <AudioCallDisplay  localRef={localVideoRef2} remoteVideoRef2={remoteVideoRef2}  />
+            )} */}
+            {(callAccepted || showVideo) && <VideoDisplay callerUsername={callerUsername} currentIsVideo={currentIsVideo} profilePic={selectedReceiverProfilePic} callerProfilePic={callerProfilePic} callerName={callerFullname} socket={socket} username={username} localRef={localVideoRef2} remoteRef={remoteVideoRef2}  />}
 
 
           {/* Top Navigation Bar */}

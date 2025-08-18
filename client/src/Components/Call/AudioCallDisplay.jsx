@@ -4,13 +4,14 @@ import { useCall } from "../../context/CallContext";
 
 export default function AudioCallDisplay({
     remoteVideoRef2,
+    localRef
     callerName,
     profilePic,
     username,
     socket,
     callerProfilePic,
 }) {
-    const { callReceiverProfilePic, callReceiverFullname2 } = useCall();
+    const { callReceiverProfilePic, callReceiverFullname2, cleanupMedia2 } = useCall();
     const [callTime, setCallTime] = useState(0); // seconds
 
     useEffect(() => {
@@ -39,10 +40,15 @@ export default function AudioCallDisplay({
     };
 
     const handleEndCall = () => {
+   
+        // cleanupMedia2()
+     
+
         if (socket) {
             socket.emit("end call", { username });
         }
     };
+
 
     return (
         <div className="flex flex-col items-center justify-center w-full h-full bg-gray-900 text-white">
@@ -71,6 +77,12 @@ export default function AudioCallDisplay({
                 ref={remoteVideoRef2}
                 autoPlay
                 playsInline
+                controls={false}
+                className="hidden"
+            />
+            <audio
+                ref={localRef}
+                muted
                 controls={false}
                 className="hidden"
             />

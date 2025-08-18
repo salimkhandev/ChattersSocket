@@ -3,15 +3,16 @@
 
 
     firebase.initializeApp({
-        apiKey: "AIzaSyBitV6MCQj4INcj_yfW4ljILifa-7ziRik",
-        authDomain: "pwa-push-notification-8649b.firebaseapp.com",
-        projectId: "pwa-push-notification-8649b",
-        storageBucket: "pwa-push-notification-8649b.firebasestorage.app",
-        // storageBucket: "pwa-push-notification-8649b.appspot.com", // ✅ fixed,
 
-        messagingSenderId: "504230264197",
-        appId: "1:504230264197:web:6723b541451cb8fd2498ec",
-        measurementId: "G-HL2TYM3QF6"
+
+        apiKey: "AIzaSyDFuiAp6zexGw8xh81NgnZlMO0JDkDUIdY",
+        authDomain: "chattersocket.firebaseapp.com",
+        projectId: "chattersocket",
+        storageBucket: "chattersocket.firebasestorage.app",
+        messagingSenderId: "1027720984076",
+        appId: "1:1027720984076:web:658de7e82a0e01f1b36029",
+        measurementId: "G-XXLJJF6CE5"
+
     });
     const messaging = firebase.messaging();
 

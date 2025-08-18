@@ -58,12 +58,11 @@ const sendNotification = async ({ receiver, title, body, imageUrl, badgeUrl }) =
                 .filter(t => t !== null);
 
             if (failedTokens.length) {
-                console.warn('⚠️ invalid maybe removed later tokens:', failedTokens);
-                // console.warn('⚠️ Removing invalid tokens:', failedTokens);
-                // await supabase
-                //     .from('fcm_tokens')
-                //     .delete()
-                //     .in('token', failedTokens);
+                console.warn('⚠️ Removing invalid tokens:', failedTokens);
+                await supabase
+                    .from('fcm_tokens')
+                    .delete()
+                    .in('token', failedTokens);
             }
         }
 

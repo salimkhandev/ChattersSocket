@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken } from "firebase/messaging";
+import { getMessaging, getToken, deleteToken } from "firebase/messaging";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDFuiAp6zexGw8xh81NgnZlMO0JDkDUIdY",
@@ -23,8 +23,9 @@ export const generateToken = async () => {
     try {
         const permission = await Notification.requestPermission();
         console.log("permission", permission);
-
+        
         if (permission === "granted") {
+            // await deleteToken(messaging);
             const token = await getToken(getMessaging(), {
                 vapidKey: "BIcC4lohkB34qJ0ZZk3TvsGgsFO7eMBh12vY8a-l0NlOObn8WjD6uO6ON6PXj5Mfy3-jEL4R3C_MKEouU5SEN2g"
             });

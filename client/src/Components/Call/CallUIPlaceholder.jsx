@@ -76,12 +76,30 @@ export default function CallUIPlaceholder({ socket, username }) {
             socket.emit("acceptCall", { username, profilePIc });
         }, 200);
     };
+    useEffect(() => {
+        let audio;
+        if (incomingCall) {
+            audio = new Audio("/notification/incoming-call.mp3");
+            audio.loop = true;
+            audio.play().catch(() => {
+                console.warn("Autoplay blocked by browser😒😒😒");
+            });
+        }
+        return () => {
+            if (audio) {
+                audio.pause();
+                audio = null;
+            }
+        };
+    }, [incomingCall]);
 
     if (!incomingCall) return null;
+
 
     return (
         <div className="fixed inset-0 z-[9999] overflow-hidden">
             {/* Backdrop with blur effect */}
+
             <div className="absolute inset-0 bg-black/50 backdrop-blur-md"></div>
 
             {/* Animated particles */}
@@ -109,9 +127,10 @@ export default function CallUIPlaceholder({ socket, username }) {
                     <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 sm:p-8 shadow-2xl">
                         {/* Header */}
                         <div className="text-center mb-6">
-                            <p className="text-white/80 text-sm sm:text-base mb-2">Incoming Call   <div className="flex items-center justify-center space-x-2 text-blue-300">
+                            < div className="text-white/80 text-sm sm:text-base mb-2">Incoming Call   <div className="flex items-center justify-center space-x-2 text-blue-300">
                                 <Phone size={16} className="animate-pulse" />
-                            </div> </p>
+                            </div> 
+                            </div>
                           
                         </div>
 
@@ -139,12 +158,12 @@ export default function CallUIPlaceholder({ socket, username }) {
                                     {callerProfilePic ? (
                                         <img
                                             src={callerProfilePic}
-                                            alt={callerFullname || "Caller"}
+                                            alt={callerFullname.callerFullname || "Caller"}
                                             className="w-full h-full object-cover"
                                         />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold">
-                                            {callerFullname?.charAt(0) || "?"}
+                                                {callerFullname.callerFullname?.charAt(0) || "?"}
                                         </div>
                                     )}
                                 </div>
@@ -152,7 +171,7 @@ export default function CallUIPlaceholder({ socket, username }) {
 
                             {/* Caller name */}
                             <h2 className="text-white text-lg sm:text-xl font-bold mb-2 drop-shadow-lg">
-                                {callerFullname || "Unknown Caller"}
+                                {callerFullname.callerFullname || "Unknown Caller"}
                             </h2>
                         </div>
 

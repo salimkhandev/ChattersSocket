@@ -399,12 +399,7 @@ export default function UserProfileUpload({ nameLoaded, socket }) {
                         onChange={handleImageUpload}
                     />
 
-                    {/* Upload Info */}
-                    <div className="bg-gray-50 px-4 py-3 rounded-lg">
-                        <p className="text-xs text-gray-600">
-                            Supported formats: JPG, PNG, GIF
-                        </p>
-                    </div>
+                  
                 </div>
             </div>
         </div>

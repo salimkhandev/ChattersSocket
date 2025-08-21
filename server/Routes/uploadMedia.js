@@ -10,7 +10,7 @@ const upload = multer({ dest: "uploads/" });
 router.post("/upload-media", upload.single("file"), async (req, res) => {
     try {
         const filePath = req.file.path;
-console.log({filePath});
+// console.log({filePath});
 
         // Upload to Cloudinary with auto resource type
         const result = await cloudinary.uploader.upload(filePath, {

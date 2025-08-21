@@ -3,8 +3,9 @@
 import { useMedia } from '../../../context/MediaContext';
 import React, { useState, useEffect } from 'react';
 import { useUpload } from "../../../context/UploadContext";
+import { MdInsertPhoto, MdInsertDriveFile } from "react-icons/md";
 
-import { FilePlus, Loader2, Upload } from 'lucide-react';
+import { Images, File} from 'lucide-react';
 import axios from 'axios';
 import imageCompression from 'browser-image-compression';
 const backendURL = import.meta.env.VITE_BACKEND_URL;
@@ -90,21 +91,26 @@ const UploadMedia = ({ sender, receiver, socket }) => {
     }, [file]); 
     return (
         <div className="relative inline-block space-y-2">
-            {/* File Picker */}
+            {/* Image/Video Picker */}
             <label className="cursor-pointer inline-block">
-                <FilePlus size={24} />
+                <Images size={25} className="text-gray-700" />
+                <input
+                    type="file"
+                    accept="image/*,video/*"   // opens gallery/camera
+                    className="hidden"
+                    onChange={handleFileChange}
+                />
+            </label>
+
+            {/* General File Picker */}
+            <label className="cursor-pointer pl-4 inline-block">
+                <File size={25} className="text-gray-700" />
                 <input
                     type="file"
                     className="hidden"
                     onChange={handleFileChange}
                 />
             </label>
-
-            {/* Upload Button */}
-      
-
-            {/* Loader */}
-          
         </div>
     );
 };

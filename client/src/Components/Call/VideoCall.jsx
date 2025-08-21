@@ -180,7 +180,10 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
             console.log("Incoming call from:", sender);
             if (!isBlocked(callID)) {
                 setIncomingCall(true);
-                setCallerFullname(senderFullname)
+                setCallerFullname({
+                    callerFullname: senderFullname,
+                    callerUsername: sender
+                });
                 setCallerProfilePic(profilePic)
                 setPendingOffer({ sender, sdp, isVideoCall }); // store temporarily
                 setCurrentIsVideo(isVideoCall);

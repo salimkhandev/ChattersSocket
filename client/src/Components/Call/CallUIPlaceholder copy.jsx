@@ -17,7 +17,7 @@ export default function CallUIPlaceholder({socket,username}) {
         <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
             <div className="bg-white rounded-2xl p-6 w-96 text-center shadow-2xl">
                 <h2 className="text-2xl font-bold mb-2">Incoming Call</h2>
-                <p className="text-gray-500 mb-4">{callerFullname} is calling you...</p>
+                <p className="text-gray-500 mb-4">{callerFullname.callerFullname} is calling you...</p>
                 <div className="flex gap-3">
                     <img src={callerProfilePic} alt="caller" className="w-12 h-12 rounded-full" />
                     <button

@@ -103,10 +103,10 @@ const MessageInput = ({
              { !isRecording &&  <button
                     type="button"
                     onClick={() => setShowEmojiPicker((prev) => !prev)}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    className="p-2 rounded-full transition-colors"
                     title="Insert Emoji"
                 >
-                    <Smile className="w-5 h-5 text-gray-500" />
+                    <Smile className="w-6 relative left-2 h-6 text-gray-500" />
                 </button>}
                 <div className="px-4 py-2">
                     <UploadMedia
@@ -126,10 +126,10 @@ const MessageInput = ({
                             setIsRecording(true);
                             setTimeout(() => handleStart(), 0);
                         }}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2  rounded-full transition-colors"
                         title="Start Recording"
                     >
-                        <Mic className="w-5 h-5 text-gray-500" />
+                        <Mic className="w-6 h-6 relative right-3 text-gray-500" />
                     </button>
                 ):null}
 

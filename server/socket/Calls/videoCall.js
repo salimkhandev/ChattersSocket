@@ -23,7 +23,7 @@ module.exports = (io) => {
         // sender = receiver of original offer (answer sender)
         // receiver = original caller
         const callerData = await redisClient.hGet("connectedUsers", receiver); // ✅ use receiver here
-console.log({callReceiverFullname});
+// console.log({callReceiverFullname});
 
         if (!callerData) {
             console.log(`Caller ${receiver} not found or offline`);
@@ -53,11 +53,14 @@ console.log({callReceiverFullname});
             const calleeParsed = JSON.parse(calleeData);
             const callerParsed = JSON.parse(callerData);
             const callerSocketId = callerParsed.socketId;
+            const calleeSocketId = calleeParsed.socketId;
 
             io.to(callerSocketId).emit("call-accepted", {
                 acceptedByFullname: calleeParsed?.fName,
                 acceptedByProfilePic: profilePic
             });
+            io.to(callerSocketId).emit("call-started");
+            io.to(calleeSocketId).emit("call-started");
         });
 
         socket.on('rejectCall', async ({ username }) => {

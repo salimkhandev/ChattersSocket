@@ -402,6 +402,12 @@ function startServer(io) {
             const receiver = msg.receiver.trim().toLowerCase();
             const format = msg.format;
             const media_url = msg.media_url;
+            
+                console.log({
+                    msg
+                });
+            
+            
 
             // console.log({msg});
             

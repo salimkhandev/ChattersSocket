@@ -8,11 +8,12 @@ export default function OutgoingCallUI({
     socket,
     username,
     cleanupMedia,
+    performCallCleanup
 
 }) {
     const [audioContext] = useState(null);
     const [ripples, setRipples] = useState([]);
-    const { rejectCall, callID, localVideoRefForOutgoing, localVideoRef2, cleanupMedia2 } = useCall();
+    const { rejectCall, callID, localVideoRefForOutgoing, localVideoRef2, cleanupMedia2, setShowVideo, setOutGoingCall } = useCall();
 
     const audioRef = useRef(null); // 🎵 for ringtone
 
@@ -65,6 +66,7 @@ export default function OutgoingCallUI({
     // 📡 Socket listener
     useEffect(() => {
         socket.on("call-rejected", () => {
+            performCallCleanup();
             rejectCall();
             cleanupMedia();
             if (audioRef.current) {
@@ -79,6 +81,8 @@ export default function OutgoingCallUI({
     }, [socket, audioContext, rejectCall, cleanupMedia]);
 
     const handleCancel = () => {
+
+        performCallCleanup();   
         socket.emit("end call", {
             username: username,
             callID: callID
@@ -97,7 +101,7 @@ export default function OutgoingCallUI({
     return (
         <div className="fixed inset-0 z-50 w-full h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
             {/* 🎵 Local audio for ringing */}
-            <audio ref={audioRef} src="/sounds/ringtone.mp3" loop />
+            <audio ref={audioRef} src="/notification/outgoing-call.mp3" loop />
 
             {/* Fullscreen Local Video Background */}
             <div className="absolute inset-0 w-full h-full z-10">
@@ -158,7 +162,7 @@ export default function OutgoingCallUI({
                             </h1>
                             <div className="flex items-center justify-center space-x-2 text-blue-200">
                                 <Phone size={14} className="animate-pulse" />
-                                <span className="text-sm sm:text-base drop-shadow">Calling...</span>
+                                <span className="text-sm sm:text-base drop-shadow">Ranging...</span>
                             </div>
                         </div>
                     </div>
@@ -228,7 +232,7 @@ export default function OutgoingCallUI({
                         </h1>
                         <div className="flex items-center justify-center space-x-2 text-blue-200">
                             <Phone size={12} className="animate-pulse" />
-                            <span className="text-sm drop-shadow">Calling...</span>
+                            <span className="text-sm drop-shadow">Ranging...</span>
                         </div>
                     </div>
                 </div>

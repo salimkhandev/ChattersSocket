@@ -8,10 +8,12 @@ export default function AudioOutgoingCallUI({
     socket,
     username,
     cleanupMedia,
+    performCallCleanup
 }) {
     const [audioContext] = useState(null);
     const [ripples, setRipples] = useState([]);
-    const { rejectCall, callID, cleanupMedia2 } = useCall();
+    const { rejectCall, callID, cleanupMedia2, setOutGoingCall } = useCall();
+    const [disabled, setDisabled] = useState(false);
 
     const audioRef = useRef(null); // 🎵 for ringtone
 
@@ -64,8 +66,7 @@ export default function AudioOutgoingCallUI({
     // 📡 Socket listener
     useEffect(() => {
         socket.on("call-rejected", () => {
-            rejectCall();
-            cleanupMedia();
+            performCallCleanup()
             if (audioRef.current) {
                 audioRef.current.pause();
                 audioRef.current.currentTime = 0;
@@ -84,6 +85,8 @@ export default function AudioOutgoingCallUI({
     };
 
     const handleCancel = () => {
+        setDisabled(true)
+        performCallCleanup()
         socket.emit("end call", {
             username: username,
             callID: callID
@@ -102,7 +105,7 @@ export default function AudioOutgoingCallUI({
     return (
         <div className="fixed inset-0 z-50 w-full h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
             {/* 🎵 Local audio for ringing */}
-            <audio ref={audioRef} src="/sounds/ringtone.mp3" loop />
+            <audio ref={audioRef} src="/notification/outgoing-call.mp3" loop />
 
             {/* Animated particles */}
             <div className="absolute inset-0">
@@ -204,10 +207,13 @@ export default function AudioOutgoingCallUI({
                         {/* End Call Button */}
                         <button
                             onClick={handleCancel}
-                            className="w-16 h-16 sm:w-20 sm:h-20 bg-red-500 rounded-full flex items-center justify-center shadow-2xl hover:bg-red-600 hover:scale-110 transition-all duration-200 active:scale-95 border-4 border-red-400/30"
+                            disabled={disabled} // disable when state is true
+                            className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center shadow-2xl transition-all duration-200 active:scale-95 border-4 border-red-400/30
+        ${disabled ? "bg-gray-400 cursor-not-allowed" : "bg-red-500 hover:bg-red-600 hover:scale-110"}`}
                         >
                             <PhoneOff size={24} className="text-white sm:w-8 sm:h-8" />
                         </button>
+                        
                     </div>
                 </div>
             </div>

@@ -8,7 +8,7 @@ export const CallProvider = ({ children }) => {
     const [incomingCall, setIncomingCall] = useState(false); // true when someone is calling
     const [callAccepted, setCallAccepted] = useState(false);
     const [callerInfo, setCallerInfo] = useState(null); // optional: store caller name/id
-    const [callerFullname, setCallerFullname] = useState("");
+    const [callerFullname, setCallerFullname] = useState({});
     const [callerUsername, setCallerUsername] = useState("");
     const [outGoingCall, setOutGoingCall] = useState(null);
     const [callID , setCallID] = useState([]);
@@ -22,6 +22,8 @@ export const CallProvider = ({ children }) => {
     // const [localStream, setLocalStream] = useState(null);
     const localVideoRef2 = useRef(null);
     const remoteVideoRef2 = useRef(null);
+    const [isConnected, setIsConnected] = useState(false);
+
     const localVideoRefForOutgoing = useRef(null);
     const cleanupMedia = () => {
 
@@ -50,7 +52,7 @@ export const CallProvider = ({ children }) => {
 
         // Reset call state
         setIncomingCall(false);
-        setCallAccepted(false);
+        // setCallAccepted(false);
         setShowVideo(false);
         setOutGoingCall(false);
 
@@ -112,7 +114,10 @@ export const CallProvider = ({ children }) => {
             callReceiverFullname2, 
             setCallReceiverFullname2,
             cleanupMedia,
- pc
+            pc,
+            isConnected,
+            setIsConnected
+            
        
         }}>
             {children}

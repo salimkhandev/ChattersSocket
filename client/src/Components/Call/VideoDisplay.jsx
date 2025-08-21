@@ -1,50 +1,78 @@
-"use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useCall } from "../../context/CallContext";
 
 export default function VideoDisplay({ localRef, remoteRef, socket, username, currentIsVideo, callerName,
     profilePic,
-    callerProfilePic, }) {
+    callerProfilePic, performCallCleanup }) {
+
     const [isLocalMinimized, setIsLocalMinimized] = useState(false);
     const [isLocalDragging, setIsLocalDragging] = useState(false);
 
-    const { callReceiverProfilePic, callReceiverFullname2, cleanupMedia2 } = useCall();
-    const [callTime, setCallTime] = useState(0); // seconds
+    const { callReceiverProfilePic, callReceiverFullname2, isConnected } = useCall(); // ✅ get isConnected
+    const [callTime, setCallTime] = useState(0);
+    const timerRef = useRef(null); // ✅ keep timer reference
 
+    // Remote video/audio play
     useEffect(() => {
         if (remoteRef.current) {
             remoteRef.current.play().catch((err) => {
                 console.error("Error playing remote audio:", err);
             });
         }
-    }, [remoteRef, callerName, profilePic]);
+    }, [remoteRef]);
 
-    // Timer logic
+    // ✅ Timer starts only when isConnected becomes true
     useEffect(() => {
-        const timer = setInterval(() => {
-            setCallTime((prev) => prev + 1);
-        }, 1000);
+        if (isConnected) {
+            timerRef.current = setInterval(() => {
+                setCallTime(prev => prev + 1);
+            }, 1000);
+        } else {
+            clearInterval(timerRef.current);
+            setCallTime(0); // optional: reset timer if disconnected
+        }
 
-        return () => clearInterval(timer); // cleanup on unmount
-    }, []);
+        return () => clearInterval(timerRef.current);
+    }, [isConnected]);
 
     const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60)
-            .toString()
-            .padStart(2, "0");
+        const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
         const secs = (seconds % 60).toString().padStart(2, "0");
         return `${mins}:${secs}`;
     };
 
     const handleEndCall = () => {
-        if (socket) {
+        // Format duration before cleanup
+        const mins = Math.floor(callTime / 60).toString().padStart(2, "0");
+        const secs = (callTime % 60).toString().padStart(2, "0");
+        const durationString = `${mins}:${secs}`;
+
+        // Emit message with duration
+        // if (socket) {
+          socket.emit("chat messages", {
+              sender: callerName.callerUsername,
+  receiver: username, // or selectedReceiver if you have that in props
+  message: `Call duration: ${durationString}`,
+  seen: true,                 // still not seen
+  seen_at: new Date().toISOString()   // current time (ISO format)
+});
+
+
             socket.emit("end call", { username });
-        }
+        // }
+
+
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+        setCallTime(0);
+        performCallCleanup();
     };
+
 
     const toggleLocalVideo = () => {
         setIsLocalMinimized(!isLocalMinimized);
     };
+
 
     return (
         <div className="fixed inset-0 z-[43] w-full h-full bg-black overflow-hidden" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh' }}>
@@ -70,14 +98,14 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-green-400">
                                     <img
                                         src={callReceiverFullname2?.name ? callReceiverProfilePic : callerProfilePic}
-                                        alt={callerName}
+                                        alt={callerName.callerFullname}
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
 
                                 <div className="text-white">
                                     <h3 className="text-sm sm:text-base font-semibold">
-                                        {callReceiverFullname2?.name ? callReceiverFullname2.name : callerName}
+                                        {callReceiverFullname2?.name ? callReceiverFullname2.name : callerName.callerFullname}
                                     </h3>
                                     <div className="flex items-center space-x-2 text-xs sm:text-sm text-green-300">
                                         <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
@@ -162,7 +190,7 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                         <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-green-400/60 shadow-2xl bg-gradient-to-br from-blue-500 to-indigo-600">
                             <img
                                 src={callReceiverFullname2?.name ? callReceiverProfilePic : callerProfilePic}
-                                alt={callerName}
+                                    alt={callerName.callerFullname}
                                 className="w-full h-full object-cover"
                             />
                         </div>
@@ -170,7 +198,7 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                         {/* Caller info */}
                         <div className="text-center space-y-2">
                             <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-bold drop-shadow-lg">
-                                {callReceiverFullname2?.name ? callReceiverFullname2.name : callerName}
+                                    {callReceiverFullname2?.name ? callReceiverFullname2.name : callerName.callerFullname}
                             </h2>
                             <p className="text-blue-200 text-sm sm:text-base">Audio Call</p>
                             <div className="flex items-center justify-center space-x-2 text-green-300">

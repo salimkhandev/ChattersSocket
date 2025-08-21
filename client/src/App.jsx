@@ -10,9 +10,10 @@ import ToggleTabs from "./Components/PrivateChat/ToggleTabs";
 import { useAuth } from "./context/AuthContext";
 import { generateToken } from './Components/FCM/firebase'; // adjust the path
 import CallUIPlaceholder from './Components/Call/CallUIPlaceholder';
-import OutGoingCall from './Components/Call/OutGoingCall';
+import OutGoingVideoCall from './Components/Call/OutGoingVideoCall';
 import OutGoingAudioCall from './Components/Call/OutGoingAudioCall';
 import VideoCall from './Components/Call/VideoCall';
+import CallRingtone from './Components/Call/CallRingtone';
 import UserProfileUpload from "./Components/PrivateChat/UserProfile";
 import { useCall } from "./context/CallContext";
 import { io } from "socket.io-client";
@@ -44,7 +45,8 @@ const socket = io(`${backendURL}`, {
 export default function ChatApp() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [nameLoaded, setNameLoaded] = useState(false);  // track when name is ready
-  const { callAccepted, setShowVideo, showVideo, callerFullname, callerUsername, outGoingCall, cleanupMedia, setOutGoingCall, rejectCall, isAudioCall, remoteVideoRef2, currentIsVideo, setCurrentIsVideo, localVideoRef2, localVideoRefForOutgoing, callerProfilePic } = useCall();
+  const { callAccepted, setShowVideo, showVideo, callerFullname, callerUsername, outGoingCall, cleanupMedia, setOutGoingCall, rejectCall, isAudioCall, remoteVideoRef2, currentIsVideo, setCurrentIsVideo, localVideoRef2, localVideoRefForOutgoing, callerProfilePic, isConnected,
+    setIsConnected } = useCall();
   const [selectedReceiverFullname, setSelectedReceiverFullname] = useState("");
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
@@ -66,12 +68,30 @@ export default function ChatApp() {
   // Add new state
   const [selectedReceiverProfilePic, setSelectedReceiverProfilePic] = useState("");
 
-  // Add states for caller info
+  useEffect(() => {
+    if (!socket) return;
 
-  // Example: when you select a receiver or get a call event
+    socket.on("call-started", () => {
+      setIsConnected(true); // timer starts
+    });
+
+    return () => {
+      socket.off("call-started");
+    };
+  }, [socket]);
 
 
 
+  const performCallCleanup = (callID) => {
+    
+    rejectCall(); // hide outgoing call component
+    blockCaller(callID);
+    setShowVideo(false);
+    cleanupMedia();
+    // alert("Call ended");
+    setOutGoingCall(false); // hide outgoing call component
+    // setVideoDisplay(false); // hide video component
+  };
 
 
 
@@ -121,13 +141,7 @@ export default function ChatApp() {
     const handleCallRejected = ({ rejectedByFullname,callID }) => {
     if (rejectedByFullname != 'you') {  console.log(`${rejectedByFullname} rejected your call`);
       toast.error(`${rejectedByFullname} rejected your call 😢`);}
-      rejectCall() // hide outgoing call component
-      // alert("Call rejected by " + callID);
-      blockCaller(callID)
-    
-      // webrtcRef?.current?.cleanupMedia();
-      // webrtcRef2?.current?.cleanupMedia();
-      cleanupMedia()
+      performCallCleanup(callID);
     
 
 
@@ -139,6 +153,8 @@ export default function ChatApp() {
       toast.success(`${acceptedByFullname} accepted your call 🎉`);
       setShowVideo(true); // show video component
       setOutGoingCall(false); // hide outgoing call 
+        // setVideoDisplay(true)
+
 
       
     };
@@ -435,12 +451,13 @@ export default function ChatApp() {
 
         <div className="w-full max-w-6xl bg-white rounded-xl shadow-xl flex flex-col overflow-hidden h-[calc(100vh-2rem)]">
             <CallUIPlaceholder socket={socket} username={username} />
-            {outGoingCall && currentIsVideo&& <OutGoingCall  socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia}  username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
-            {outGoingCall && !currentIsVideo&& <OutGoingAudioCall  socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia}  username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
+            <CallRingtone/>
+            {outGoingCall && currentIsVideo && <OutGoingVideoCall performCallCleanup={performCallCleanup}  socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia}  username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
+            {outGoingCall && !currentIsVideo && <OutGoingAudioCall performCallCleanup={performCallCleanup} socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia}  username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
             {/* {(callAccepted || showVideo) && isAudioCall && (
               <AudioCallDisplay  localRef={localVideoRef2} remoteVideoRef2={remoteVideoRef2}  />
             )} */}
-            {(callAccepted || showVideo) && <VideoDisplay callerUsername={callerUsername} currentIsVideo={currentIsVideo} profilePic={selectedReceiverProfilePic} callerProfilePic={callerProfilePic} callerName={callerFullname} socket={socket} username={username} localRef={localVideoRef2} remoteRef={remoteVideoRef2}  />}
+            {(callAccepted || showVideo) && <VideoDisplay performCallCleanup={performCallCleanup} callerUsername={callerUsername} currentIsVideo={currentIsVideo} profilePic={selectedReceiverProfilePic} callerProfilePic={callerProfilePic} callerName={callerFullname} socket={socket} username={username} localRef={localVideoRef2} remoteRef={remoteVideoRef2}  />}
 
 
           {/* Top Navigation Bar */}
@@ -494,17 +511,18 @@ export default function ChatApp() {
                     {selectedReceiver && (
                       <main className="flex-1 flex flex-col">
                         <div className="flex flex-col h-full">
-                          <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center justify-between  pt-3 pb-4">
                             <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                              <MessageSquareMore className="w-5 h-5 text-purple-600" />
-                              Chat with{" "}
-                              <span className="text-indigo-600 ">
+                             
+                              <span className="text-indigo-600 ml-8 ">
                                 {onlineUsers.find(u => u.username === selectedReceiver)?.fName || selectedReceiver}
                               </span>
+                              </h1>
+
 
 
                               {/*  */}
-                  
+                              <div className="flex items-center ml-20 gap-2">
                                 <button
                                   onClick={() => {
                                     if (webrtcRef.current) {
@@ -557,12 +575,12 @@ export default function ChatApp() {
 
                                   </div>
                                 </button>
+                          </div>
 
 
-                            </h1>
                             <button
                               onClick={closeChat}
-                              className="p-2 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                              className="p-2 rounded-full hover:bg-red-50 mr-6 text-gray-400 hover:text-red-500 transition-colors"
                               title="Close chat"
                             >
                               <X className="w-5 h-5" />

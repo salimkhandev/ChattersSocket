@@ -42,7 +42,7 @@ export default function AudioCallDisplay({
     const handleEndCall = () => {
    
         // cleanupMedia2()
-     
+        // setOutGoingCall(false)
 
         if (socket) {
             socket.emit("end call", { username });

@@ -26,7 +26,7 @@ module.exports = (io) => {
 // console.log({callReceiverFullname});
 
         if (!callerData) {
-            console.log(`Caller ${receiver} not found or offline`);
+            console.log(`Caller ${receiver}  not found or offline`);
             return;
         }
         

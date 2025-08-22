@@ -45,7 +45,9 @@ const socket = io(`${backendURL}`, {
 export default function ChatApp() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [nameLoaded, setNameLoaded] = useState(false);  // track when name is ready
-  const { callAccepted, setShowVideo, showVideo, callerFullname, callerUsername, outGoingCall, cleanupMedia, setOutGoingCall, rejectCall, isAudioCall, remoteVideoRef2, currentIsVideo, setCurrentIsVideo, localVideoRef2, localVideoRefForOutgoing, callerProfilePic, isConnected,
+  const { callAccepted, setShowVideo, showVideo, callerFullname, callerUsername, outGoingCall, timerRef, cleanupMedia, setCallReceiverFullname2 // ✔️ correct
+, setOutGoingCall, callStartRef, rejectCall, isAudioCall, remoteVideoRef2, currentIsVideo, setCurrentIsVideo, localVideoRef2, localVideoRefForOutgoing, callerProfilePic,
+    setCallTime,
     setIsConnected } = useCall();
   const [selectedReceiverFullname, setSelectedReceiverFullname] = useState("");
   const [message, setMessage] = useState("");
@@ -89,8 +91,13 @@ export default function ChatApp() {
     setShowVideo(false);
     cleanupMedia();
     // alert("Call ended");
-    setOutGoingCall(false); // hide outgoing call component
-    // setVideoDisplay(false); // hide video component
+    timerRef.current = null;
+    callStartRef.current = null;
+    setCallTime(0);
+    setOutGoingCall(false); 
+setIsConnected(false);
+    setCallReceiverFullname2(null);  // ✔️ correct
+
   };
 
 
@@ -339,6 +346,7 @@ export default function ChatApp() {
         media_url: msg.media_url,
         format: msg.format,
         seen: msg.seen,
+        type: msg.type,
         seen_at: msg.seen_at,
         updated_at: msg.updated_at,
         updated: msg.updated,

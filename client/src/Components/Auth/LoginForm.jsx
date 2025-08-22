@@ -12,7 +12,7 @@ const socket = io(`${backendURL}`, {
 });
 
 function LoginForm({ setIsLoggedIn, isLoggedIn }) {
-    const [fcm_token, setFcm_token] = useState(localStorage.getItem("token") || '');
+    const [fcm_token, setFcm_token] = useState(localStorage.getItem("token") || 'kdjfds;jfdskfkdjf');
     const { username, setUsername } = useAuth();
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);

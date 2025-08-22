@@ -438,7 +438,19 @@ function startServer(io) {
                     
                     
                     const messageId = uuidv4(); // ✅ generate unique ID
-                
+                    let defaultSeenState;
+
+                    if (msg.type === "call") {
+                        defaultSeenState = {
+                            seen: true,
+                            seen_at: created_at,
+                        };
+                    } else {
+                        defaultSeenState = {
+                            seen: false,
+                            seen_at: null,
+                        };
+                    }
                     const messagePayload = {
                         from: sender,
                         to: receiver,
@@ -452,9 +464,10 @@ function startServer(io) {
                         created_at,
                         id: messageId,
                         deleted_for: "",
+                        type: msg.type || null,
                         is_deleted_for_everyone: false,
-                        seen_at: null,
-                        seen:false
+                        ...defaultSeenState,
+
                     };
                     
 
@@ -485,7 +498,8 @@ function startServer(io) {
                             format: msg.format || null,
                             media_url: media_url || null,
                             is_voice: msg.is_voice,
-                            seen:false
+                            type: msg.type || null,
+                            ...defaultSeenState  
                         })
                         .then(({ error }) => {
                             if (error) {
@@ -496,7 +510,8 @@ function startServer(io) {
                         });
 
                     let file = isImageUrl(format)
-                    if (msg.message) {
+                    
+                    if (msg.message && msg.type!== 'call') {
                         await sendNotification({
                             receiver,
                             title: senderfullname,

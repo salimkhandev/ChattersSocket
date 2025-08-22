@@ -8,9 +8,7 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
     const [isLocalMinimized, setIsLocalMinimized] = useState(false);
     const [isLocalDragging, setIsLocalDragging] = useState(false);
 
-    const { callReceiverProfilePic, callReceiverFullname2, isConnected } = useCall(); // ✅ get isConnected
-    const [callTime, setCallTime] = useState(0);
-    const timerRef = useRef(null); // ✅ keep timer reference
+    const { callReceiverProfilePic, callReceiverFullname2, isConnected, timerRef, callTime, setCallTime, callStartRef } = useCall(); 
 
     // Remote video/audio play
     useEffect(() => {
@@ -22,18 +20,28 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
     }, [remoteRef]);
 
     // ✅ Timer starts only when isConnected becomes true
+    // Timer effect
     useEffect(() => {
         if (isConnected) {
+            // Reset everything at connection
+            callStartRef.current = Date.now();
+            setCallTime(0);
+
             timerRef.current = setInterval(() => {
-                setCallTime(prev => prev + 1);
+                const diff = Math.floor((Date.now() - callStartRef.current) / 1000);
+                setCallTime(diff);
             }, 1000);
         } else {
             clearInterval(timerRef.current);
-            setCallTime(0); // optional: reset timer if disconnected
+            timerRef.current = null;
+            callStartRef.current = null;
+            setCallTime(0);
         }
 
         return () => clearInterval(timerRef.current);
     }, [isConnected]);
+
+
 
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -42,31 +50,39 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
     };
 
     const handleEndCall = () => {
-        // Format duration before cleanup
         const mins = Math.floor(callTime / 60).toString().padStart(2, "0");
         const secs = (callTime % 60).toString().padStart(2, "0");
         const durationString = `${mins}:${secs}`;
 
-        // Emit message with duration
-        // if (socket) {
-          socket.emit("chat messages", {
-              sender: callerName.callerUsername,
-  receiver: username, // or selectedReceiver if you have that in props
-  message: `Call duration: ${durationString}`,
-  seen: true,                 // still not seen
-  seen_at: new Date().toISOString()   // current time (ISO format)
-});
+        if (callReceiverFullname2?.username) {
+            socket.emit("chat messages", {
+                sender: username?.trim() || "unknown",
+                receiver: callReceiverFullname2?.username?.trim() || "unknown",
+                message: `Call duration: ${durationString}`,
+                type: "call",
+            });
+        } else if (callerName?.callerUsername) {
+            socket.emit("chat messages", {
+                sender: callerName?.callerUsername?.trim() || "unknown",
+                receiver: username?.trim() || "unknown",
+                message: `Call duration: ${durationString}`,
+                type: "call",
+            });
+        } else {
+            console.warn("⚠️ No valid sender/receiver found, message not emitted.");
+        }
 
+        socket.emit("end call", { username });
 
-            socket.emit("end call", { username });
-        // }
-
-
+        // cleanup
         clearInterval(timerRef.current);
         timerRef.current = null;
+        callStartRef.current = null;
         setCallTime(0);
+
         performCallCleanup();
     };
+
 
 
     const toggleLocalVideo = () => {
@@ -95,7 +111,8 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                         <div className="bg-black/30 backdrop-blur-sm rounded-xl px-4 py-3 sm:px-6 sm:py-4 inline-block">
                             <div className="flex items-center space-x-3">
                                 {/* Caller profile pic */}
-                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-green-400">
+
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-green-400">
                                     <img
                                         src={callReceiverFullname2?.name ? callReceiverProfilePic : callerProfilePic}
                                         alt={callerName.callerFullname}
@@ -119,8 +136,8 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                     {/* Local video - Floating window */}
                     <div
                         className={`absolute transition-all duration-300 ease-in-out z-40 ${isLocalMinimized
-                                ? 'top-4 right-4 w-12 h-12 sm:w-16 sm:h-16'
-                                : 'top-20 right-4 sm:top-24 sm:right-6 w-24 h-16 sm:w-32 sm:h-20 md:w-40 md:h-24 lg:w-48 lg:h-28'
+                            ? 'top-4 right-4 w-12 h-12 sm:w-16 sm:h-16'
+                            : 'top-20 right-4 sm:top-24 sm:right-6 w-24 h-16 sm:w-32 sm:h-20 md:w-40 md:h-24 lg:w-48 lg:h-28'
                             } ${isLocalDragging ? 'cursor-move' : 'cursor-pointer'}`}
                         onClick={toggleLocalVideo}
                     >
@@ -190,7 +207,7 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                         <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-green-400/60 shadow-2xl bg-gradient-to-br from-blue-500 to-indigo-600">
                             <img
                                 src={callReceiverFullname2?.name ? callReceiverProfilePic : callerProfilePic}
-                                    alt={callerName.callerFullname}
+                                alt={callerName.callerFullname}
                                 className="w-full h-full object-cover"
                             />
                         </div>
@@ -198,7 +215,7 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                         {/* Caller info */}
                         <div className="text-center space-y-2">
                             <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-bold drop-shadow-lg">
-                                    {callReceiverFullname2?.name ? callReceiverFullname2.name : callerName.callerFullname}
+                                {callReceiverFullname2?.name ? callReceiverFullname2.name : callerName.callerFullname}
                             </h2>
                             <p className="text-blue-200 text-sm sm:text-base">Audio Call</p>
                             <div className="flex items-center justify-center space-x-2 text-green-300">

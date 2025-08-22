@@ -18,6 +18,12 @@ export const CallProvider = ({ children }) => {
     const [callReceiverFullname, setCallReceiverFullname] = useState({})
     const [callReceiverFullname2, setCallReceiverFullname2] = useState({})
     const pc = useRef(null)
+    // In CallContext.js
+    const [callTime, setCallTime] = useState(0);
+    const timerRef = useRef(null);   // will hold interval id
+    const callStartRef = useRef(null); // will hold call start timestamp
+
+
     const [currentIsVideo, setCurrentIsVideo] = useState(false);
     // const [localStream, setLocalStream] = useState(null);
     const localVideoRef2 = useRef(null);
@@ -116,7 +122,11 @@ export const CallProvider = ({ children }) => {
             cleanupMedia,
             pc,
             isConnected,
-            setIsConnected
+            setIsConnected,
+            timerRef,
+            callTime,
+             setCallTime,
+            callStartRef
             
        
         }}>

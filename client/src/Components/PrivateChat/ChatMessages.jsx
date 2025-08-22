@@ -115,7 +115,8 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
 
 
                                             {/* SEEN / UNSEEN STATUS */}
-                                            {msg.from === username && (
+                                        {msg.from === username && msg.type!=='call' && (
+
                                                 msg.seen ? (
                                                     <div className="relative group inline-block">
                                                         <span className="text-[10px] text-blue-600 ml-2">Seen</span>

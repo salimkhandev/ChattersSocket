@@ -29,7 +29,6 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
     }));
 
     const startLocalStream = async (isVideoCall = true) => {
-        console.log("📹 Attempting to access local camera/mic...");
         try {
             setIsAudioCall(!isVideoCall);
             const constraints = isVideoCall
@@ -261,18 +260,12 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
 
 
         return () => socket.off("answer-received");
-    }, [socket,callReceiverFullname,setCallReceiverProfilePic]);
+    }, [socket, callReceiverFullname, setCallReceiverProfilePic, pc,setCallReceiverFullname2]);
 
 
 
-    return (
-        <div className="flex flex-col gap-4 max-w-3xl w-full p-4 mx-auto">
+    return null;
 
-
-            {/* {(callAccepted || showVideo) && currentIsVideo && <VideoDisplay localRef={localVideoRef} remoteRef={remoteVideoRef2} socket={socket} username={username} />} */}
-               
-            </div>
-    )
 })
 
 export default ManualSDPWebRTC;

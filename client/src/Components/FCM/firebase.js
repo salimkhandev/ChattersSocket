@@ -31,7 +31,7 @@ export const generateToken = async () => {
             });
 
             if (token) {
-                console.log("FCM token:", token);
+                // console.log("FCM token:", token);
                 return token;
             } else {
                 console.warn("No registration token available. Request permission to generate one.");

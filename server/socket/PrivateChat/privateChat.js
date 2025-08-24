@@ -6,6 +6,7 @@ const sendNotification =require('../../utils/sendNotification')
 const { v4: uuidv4 } = require('uuid');
 const  isImageUrl  = require('../../utils/isImageUrl');
 const videoCall = require("../Calls/videoCall")
+const autoLogin = require("../AutoLogin/autoLogin")
 
 async function getAllUsers() {
     const { data, error } = await supabase.from("users").select("*");
@@ -48,14 +49,11 @@ async function getAllUsers() {
 }
 
 function startServer(io) {
-    getAllUsers().then((fetched) => {
-
-    });
-
+    getAllUsers()
+    
     io.on("connection", (socket) => {
-        // console.log("A user connected 😊", socket.id);
 
-
+        autoLogin(socket) 
         
         socket.on("edit message", async ({ messageId, newMessage ,sender , receiver}) => {
             function getPakistanISOString() {
@@ -107,7 +105,6 @@ function startServer(io) {
 
                 let existing = message.deleted_for?.trim() || "";
 
-                // Clean up old '{}' values from when it was text[]
                 if (existing === "{}") {
                     existing = "";
                 }
@@ -137,45 +134,6 @@ function startServer(io) {
             }
         });
 
-
-
-        // // DELETE FOR EVERYONE
-        // socket.on("delete for everyone", async ({ username, messageId }) => {
-        //     try {
-        //         // Get the message to verify sender
-        //         const { data: message, error } = await supabase
-        //             .from("messages")
-        //             .select("sender")
-        //             .eq("id", messageId)
-        //             .single();
-
-        //         if (error || !message) {
-        //             console.error("Message not found:", error);
-        //             return;
-        //         }
-
-        //         // Only allow sender to delete for everyone
-        //         if (message.sender !== username) {
-        //             console.warn("Unauthorized delete attempt by", username);
-        //             return;
-        //         }
-
-        //         // Update is_deleted_for_everyone = true
-        //         const { error: updateError } = await supabase
-        //             .from("messages")
-        //             .update({ is_deleted_for_everyone: true })
-        //             .eq("id", messageId);
-
-        //         if (updateError) {
-        //             console.error("Failed to delete for everyone:", updateError);
-        //         } else {
-        //             // Notify both sender and receiver (if needed)
-        //             // io.emit("message deleted for everyone", { messageId });
-        //         }
-        //     } catch (err) {
-        //         console.error("Error in delete for everyone:", err);
-        //     }
-        // });
 
         const cloudinary = require("cloudinary").v2; // Make sure Cloudinary is configured
 
@@ -278,32 +236,14 @@ function startServer(io) {
             }
         });
 
-
         socket.on("username", async ({ username }) => {
             username = username.trim().toLowerCase();
-            (async () => {
-                const { data, error } = await supabase.from("users").select("name,username");
-
-                if (error) {
-                    console.error("❌ Failed to fetch user names:", error.message);
-                    socket.emit("all names", { names: [] });
-                    return;
-                }
-
-                const names = data.map(user => ({
-                    name: user.name,
-                    username: user.username,
-                }));
-
-                socket.emit("all names", { names });
-            })();
-
-
+console.log(`Username😡: ${username}`);
+            // Get all users from Redis
             const allUsers = await redisClient.hGetAll("connectedUsers");
-            // filter on the based of given username ie which is from the client side
             const redisData = allUsers[username] && JSON.parse(allUsers[username]);
 
-            // ✅ Fetch name and profile_pic from Supabase
+            // Fetch name and profile_pic from Supabase
             const { data: userRecord, error } = await supabase
                 .from("users")
                 .select("name, profile_pic")
@@ -322,80 +262,175 @@ function startServer(io) {
             const profilePic = userRecord.profile_pic || null;
 
             if (redisData) {
-                const updatedUser = {
+                // Existing user → update socketId and info
+                redisData.socketId = socket.id;
+                redisData.fName = currentFName;
+                redisData.profilePic = profilePic;
+                await redisClient.hSet("connectedUsers", username, JSON.stringify(redisData));
+            } else {
+                // New user → store in Redis
+                const newUser = {
                     username,
                     fName: currentFName,
-                    profilePic,          // ✅ store profile pic
+                    profilePic,
                     socketId: socket.id,
                 };
+                await redisClient.hSet("connectedUsers", username, JSON.stringify(newUser));
+            }
 
-                // ✅ Update Redis with latest data
-                await redisClient.hSet("connectedUsers", username, JSON.stringify(updatedUser));
+            // Prepare online users list
+            const updatedAllUsers = await redisClient.hGetAll("connectedUsers");
+            const onlineUsers = Object.keys(updatedAllUsers)
+                .map((u) => {
+                    try {
+                        const data = JSON.parse(updatedAllUsers[u]);
+                        return data.socketId
+                            ? { username: data.username, fName: data.fName, profilePic: data.profilePic || null }
+                            : null;
+                    } catch {
+                        return null;
+                    }
+                })
+                .filter(Boolean);
 
-                // ✅ Update local cache
-                allUsers[username] = JSON.stringify(updatedUser);
+            // Fetch unseen messages
+            const { data: unseenMessages, error: unseenErr } = await supabase.rpc("get_unseen_message_counts");
+            const enrichedOnlineUsers = onlineUsers.map((user) => {
+                const userUnseen = unseenMessages?.filter((msg) => msg.sender === user.username) || [];
+                return {
+                    ...user,
+                    sentUnseenMessages: userUnseen.length > 0 ? userUnseen : [{ unseen_count: 0, receiver: null }],
+                };
+            });
+
+            // Emit to everyone
+            io.emit("online users", enrichedOnlineUsers);
+
+            // Notify current socket
+            socket.emit("isLoggedIn", {
+                success: true,
+                message: `User ${username} is allowed to join.`,
+            });
+        });
+
+        // socket.on("username", async ({ username }) => {
+        //     username = username.trim().toLowerCase();
+        //    console.log(`Username😡: ${username}`);
+        //     // (async () => {
+        //     //     const { data, error } = await supabase.from("users").select("name,username");
+
+        //     //     if (error) {
+        //     //         console.error("❌ Failed to fetch user names:", error.message);
+        //     //         socket.emit("all names", { names: [] });
+        //     //         return;
+        //     //     }
+
+        //     //     const names = data.map(user => ({
+        //     //         name: user.name,
+        //     //         username: user.username,
+        //     //     }));
+
+        //     //     socket.emit("all names", { names });
+        //     // })();
+
+
+        //     const allUsers = await redisClient.hGetAll("connectedUsers");
+        //     // filter on the based of given username ie which is from the client side
+        //     const redisData = allUsers[username] && JSON.parse(allUsers[username]);
+
+        //     // ✅ Fetch name and profile_pic from Supabase
+        //     const { data: userRecord, error } = await supabase
+        //         .from("users")
+        //         .select("name, profile_pic")
+        //         .eq("username", username)
+        //         .single();
+
+        //     if (error || !userRecord) {
+        //         socket.emit("isLoggedIn", {
+        //             success: false,
+        //             message: `User "${username}" is not found in the DB.`,
+        //         });
+        //         return;
+        //     }
+
+        //     const currentFName = userRecord.name?.trim();
+        //     const profilePic = userRecord.profile_pic || null;
+
+        //     if (redisData) {
+        //         const updatedUser = {
+        //             username,
+        //             fName: currentFName,
+        //             profilePic,          // ✅ store profile pic
+        //             socketId: socket.id,
+        //         }
+
+        //         // ✅ Update Redis with latest data
+        //         await redisClient.hSet("connectedUsers", username, JSON.stringify(updatedUser));
+
+        //         // ✅ Update local cache
+        //         allUsers[username] = JSON.stringify(updatedUser);
                 
-                const onlineUsers = Object.keys(allUsers)
-                    .map((user) => {
-                        try {
-                            const u = JSON.parse(allUsers[user]);
-                            return u.socketId ? {
-                                username: u.username,
-                                fName: u.fName,
-                                profilePic: u.profilePic || null
-                            } : null;
-                        } catch {
-                            return null;
-                        }
-                    })
-                    .filter(Boolean);
+        //         const onlineUsers = Object.keys(allUsers)
+        //             .map((user) => {
+        //                 try {
+        //                     const u = JSON.parse(allUsers[user]);
+        //                     return u.socketId ? {
+        //                         username: u.username,
+        //                         fName: u.fName,
+        //                         profilePic: u.profilePic || null
+        //                     } : null;
+        //                 } catch {
+        //                     return null;
+        //                 }
+        //             })
+        //             .filter(Boolean);
 
-                const { data: unseenMessages, error } = await supabase.rpc('get_unseen_message_counts');
+        //         const { data: unseenMessages, error } = await supabase.rpc('get_unseen_message_counts');
 
-                if (error) {
-                    console.error("Error fetching unseen message counts:", error.message);
-                } else {
-                    // console.log('✅ unseen message count', unseenMessages);
-                    socket.emit("unseen-message-counts", unseenMessages);
+        //         if (error) {
+        //             console.error("Error fetching unseen message counts:", error.message);
+        //         } else {
+        //             // console.log('✅ unseen message count', unseenMessages);
+        //             socket.emit("unseen-message-counts", unseenMessages);
 
-                    // Now merge unseenMessages into each online user
-                    const enrichedOnlineUsers = onlineUsers.map(user => {
-                        const sentMessages = unseenMessages.filter(
-                            msg => msg.sender === user.username
-                        );
+        //             // Now merge unseenMessages into each online user
+        //             const enrichedOnlineUsers = onlineUsers.map(user => {
+        //                 const sentMessages = unseenMessages.filter(
+        //                     msg => msg.sender === user.username
+        //                 );
 
-                        return {
-                            username: user.username,
-                            fName: user.fName,
-                            profilePic: user.profilePic,
-                            sentUnseenMessages: sentMessages.length > 0
-                                ? sentMessages
-                                : [{ unseen_count: 0, receiver: null }]
-                        };
-                    });
+        //                 return {
+        //                     username: user.username,
+        //                     fName: user.fName,
+        //                     profilePic: user.profilePic,
+        //                     sentUnseenMessages: sentMessages.length > 0
+        //                         ? sentMessages
+        //                         : [{ unseen_count: 0, receiver: null }]
+        //                 };
+        //             });
 
-                    // console.log("✅ enriched online users", enrichedOnlineUsers);
-                    io.emit("online users", enrichedOnlineUsers); // include unseen in online user payload
-                }
+        //             // console.log("✅ enriched online users", enrichedOnlineUsers);
+        //             io.emit("online users", enrichedOnlineUsers); // include unseen in online user payload
+        //         }
 
 
 
-                socket.emit("isLoggedIn", {
-                    success: true,
-                    message: `User ${username} is allowed to join.`,
-                });
+        //         socket.emit("isLoggedIn", {
+        //             success: true,
+        //             message: `User ${username} is allowed to join.`,
+        //         });
 
         
-            } else {
-                socket.emit("isLoggedIn", {
-                    success: false,
-                    message: `User "${username}" is not allowed to join.`,
-                });
+        //     } else {
+        //         socket.emit("isLoggedIn", {
+        //             success: false,
+        //             message: `User "${username}" is not allowed to join.`,
+        //         });
                 
-            }
+        //     }
             
                        
-                    });
+        //             });
 
         socket.on("chat messages", async (msg) => {
             const sender = msg.sender.trim().toLowerCase();
@@ -406,11 +441,7 @@ function startServer(io) {
                 console.log({
                     msg
                 });
-            
-            
-
-            // console.log({msg});
-            
+  
             
             const receiverData = await redisClient.hGet("connectedUsers", receiver);
             const senderData = await redisClient.hGet("connectedUsers", sender);
@@ -630,36 +661,7 @@ function startServer(io) {
                     .eq("receiver", receiver)
                     .eq("seen", false); // only unseen
                     
-                //     // 2. Fetch updated chat history
-                //     const { data: updatedChat, error } = await supabase
-                //     .from("messages")
-                //     .select("*")
-                //     .or(`and(sender.eq.${sender},receiver.eq.${receiver}),and(sender.eq.${receiver},receiver.eq.${sender})`)
-                //     .order("created_at", { ascending: true });
 
-                //     if (error) throw error;
-                    
-                //     // 3. Send updated chat history
-                // const receiverDataRaw = await redisClient.hGet("connectedUsers", receiver);
-                // const senderDataRaw = await redisClient.hGet("connectedUsers", sender);
-
-                // const receiverParsed = receiverDataRaw ? JSON.parse(receiverDataRaw) : null;
-                // const senderParsed = senderDataRaw ? JSON.parse(senderDataRaw) : null;
-
-                // // 4. Emit updated chat to both users
-                // if (senderParsed?.socketId) {
-                //     io.to(senderParsed.socketId).emit("chat history", updatedChat);
-                //     console.log('sender',updatedChat);
-                // }
-
-                // if (receiverParsed?.socketId) {
-                //     io.to(receiverParsed.socketId).emit("chat history", updatedChat);
-                //     console.log('Receiver',updatedChat);
-                    
-                // }
-                    // socket.emit("chat history", updatedChat);
-                    // console.log('Chat history called😂❌❌❌❌❌❌❌😂😂😂😂😂😂😂😂',updatedChat);
-                // console.log('im called');
 
                 await    sendUpdatedChatHistory(io, redisClient, supabase, sender, receiver);
 

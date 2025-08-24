@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Toaster } from "react-hot-toast";
 import LoginForm from "./Components/Auth/LoginForm";
+import SignupForm from "./Components/Auth/SignupForm";
 import GroupChat from "./Components/GroupChat/GroupChat";
 import ChatMessages from './Components/PrivateChat/ChatMessages';
 import MessageInput from "./Components/PrivateChat/MessageInput";
@@ -12,6 +13,8 @@ import { generateToken } from './Components/FCM/firebase'; // adjust the path
 import CallUIPlaceholder from './Components/Call/CallUIPlaceholder';
 import OutGoingVideoCall from './Components/Call/OutGoingVideoCall';
 import OutGoingAudioCall from './Components/Call/OutGoingAudioCall';
+import ForgetPassword from './Components/Auth/ForgetPassword';
+import ResetPassword from './Components/Auth/ResetPassword';
 import VideoCall from './Components/Call/VideoCall';
 import CallRingtone from './Components/Call/CallRingtone';
 import UserProfileUpload from "./Components/PrivateChat/UserProfile";
@@ -20,8 +23,10 @@ import { io } from "socket.io-client";
 import { Video, Phone } from "lucide-react";
 // import AudioCallDisplay from './Components/Call/AudioCallDisplay';
 import VideoDisplay from './Components/Call/VideoDisplay';
-
+import AuthLoader from './Components/Auth/AuthLoader';
+import { Routes, Route } from 'react-router-dom';
 import { useBlock } from "./context/BlockedCallContext";
+// import SignupForm from './Components/Auth/SignupForm';
 
 const backendURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -39,7 +44,9 @@ const socket = io(`${backendURL}`, {
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 2000,
+  withCredentials: true,  // ✅ required for cookies
 });
+
 
 
 export default function ChatApp() {
@@ -55,21 +62,22 @@ export default function ChatApp() {
   const [isTyping, setIsTyping] = useState({});
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [selectedReceiver, setSelectedReceiver] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(null);
   const [isChattingWindowOpen, setIsChattingWindowOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("people"); // or "groups"
   const chatEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const prevChatRef = useRef([]);
-  const { username, setUsername } = useAuth();
+  const { username, setUsername, isLoggedIn, setIsLoggedIn,checkingAuth } = useAuth();
   const webrtcRef = useRef(null);
   // const webrtcRef2 = useRef(null);
   const { blockCaller } = useBlock();
 
-
+  const [page, setPage] = useState(""); // or "forget-password"
+  
   // Add new state
   const [selectedReceiverProfilePic, setSelectedReceiverProfilePic] = useState("");
 
+  
   useEffect(() => {
     if (!socket) return;
 
@@ -239,6 +247,7 @@ setIsConnected(false);
     };
   }, [selectedReceiver]);
   const sendUsernameEvent = () => {
+    socket.connect();
     if (username) {
       socket.emit("username", { username });
 
@@ -369,6 +378,7 @@ setIsConnected(false);
     // 🔌 Register listeners
     // socket.on("isLoggedIn", handleLogin);
     socket.on("chat history", handleChatHistory);
+      // socket.on("online users", setOnlineUsers);
 
     // Send username event to server
     sendUsernameEvent();
@@ -419,15 +429,28 @@ setIsConnected(false);
     }, 1000);
   };
 
-  const logout = () => {
-    localStorage.removeItem("chat_user");
-    setUsername("");
-    setIsLoggedIn(false);
-    setChat([]);
-    setOnlineUsers([]);
-    setSelectedReceiver("");
-    socket.disconnect();
+  const logout = async () => {
+    try {
+      // Call backend to clear cookie
+      await fetch(`${backendURL}/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      // Local cleanup
+      localStorage.removeItem("chat_user");
+      setUsername("");
+      setIsLoggedIn(false);
+      setChat([]);
+      setOnlineUsers([]);
+      setSelectedReceiver("");
+      socket.disconnect();
+
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
   };
+
 
   const closeChat = () => {
     setSelectedReceiver("");
@@ -448,13 +471,50 @@ setIsConnected(false);
       document.removeEventListener('keydown', handleEscKey);
     };
   }, [selectedReceiver]);
+  const refreshOnlineUsers = () => {
+    if (socket) {
+      socket.emit("username", { username });
+      // sendUsernameEvent();
+      socket.connect();
+
+    }
+  
+  };
+  const goHome = () => window.location.href = "/";
+
+  // Get current path
+  const path = window.location.pathname;
+
+  // Check if URL matches /reset-password/:token
+  if (path.startsWith("/reset-password/")) {
+    const token = path.split("/").pop();
+    return <ResetPassword token={token} goHome={goHome} />;
+  }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 relative">
       <Toaster position="top-right" reverseOrder={false} />
+      <AuthLoader socket={socket}/>
+      {checkingAuth && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="text-white text-xl font-semibold">Loading...</div>
+        </div>
+      )}
 
-      {!username || !isLoggedIn ? (
-        <LoginForm isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
+      {(!username || !isLoggedIn) && !checkingAuth ? (
+        <>
+        {/* <LoginForm isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} /> */}
+          {/* <> */}
+            {/* {page === "home" && <HomePage goForget={() => setPage("forget")} />} */}
+          {page === "" && <LoginForm forgetPassword={() => setPage("forget-password")} signup={() => setPage("signup")} isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} socket={socket} /> }
+          {page === "forget-password" && <ForgetPassword goLogin={() => setPage("")} socket={socket} /> }
+          {page === "signup" && <SignupForm isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} LoginForm={()=>setPage("")} socket={socket} /> }
+          {/* </> */}
+        </>
+        
+
+
       ) : (
 
         <div className="w-full max-w-6xl bg-white rounded-xl shadow-xl flex flex-col overflow-hidden h-[calc(100vh-2rem)]">
@@ -480,6 +540,16 @@ setIsConnected(false);
               <LogOut className="w-4 h-4" />
               Logout
             </button>
+              <div className="flex justify-between items-center mb-2">
+               
+                <button
+                  onClick={refreshOnlineUsers}
+                  className="text-sm text-blue-500 hover:text-blue-600 underline"
+                >
+                  Refresh
+                </button>
+              </div>
+
           </div>
           <div className="flex-1 relative overflow-hidden">
             {/* People Tab */}

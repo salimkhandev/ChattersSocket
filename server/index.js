@@ -5,7 +5,11 @@ const groupProfilePics = require('./Routes/group-profile-pics');
 const userLogin = require('./Routes/userLogin');
 const uploadAudio = require('./Routes/uploadAudio');
 const uploadMedia = require('./Routes/uploadMedia');
+const signup = require('./Routes/signup');
+const logout = require('./Routes/logout');
+const forget_password = require('./Routes/forget_password');
 const videoCall=require('./socket/Calls/videoCall')
+const autoLogin =require('./socket/AutoLogin/autoLogin')
 const admin = require('firebase-admin');
 const groupChat = require("./socket/groupChat");
 const { startServer } = require("./socket/PrivateChat/privateChat");
@@ -34,6 +38,9 @@ app.use('/', groupProfilePics);
 app.use('/', userLogin);
 app.use('/', uploadAudio);
 app.use('/', uploadMedia);
+app.use('/', forget_password);
+app.use('/', signup);
+app.use('/', logout);
 // app.use('/', notificationRoutes);
 // Enable CORS - Remove the trailing slash from origin
 
@@ -61,10 +68,15 @@ try {
 
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: "*", methods: ["GET", "POST"] },
+    cors: {
+        origin: "http://localhost:5173", // your frontend URL
+        methods: ["GET", "POST"],
+        credentials: true     // needed if sending cookies
+    },
 });
 
 groupChat(io);
+autoLogin(io);
 startServer(io);
 videoCall(io)
 

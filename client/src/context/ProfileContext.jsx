@@ -25,7 +25,7 @@ export const ProfileProvider = ({ children }) => {
     }, [username]);
 
     return (
-        <ProfileContext.Provider value={{ profilePic }}>
+        <ProfileContext.Provider value={{ profilePic,setProfilePic }}>
             {children}
         </ProfileContext.Provider>
     );

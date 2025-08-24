@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
-
+import { BrowserRouter } from 'react-router-dom';
 import { ProfileProvider } from './context/ProfileContext';
 import { VoiceProvider } from './context/VoiceContext';
 import { AuthProvider } from './context/AuthContext';
@@ -15,6 +15,7 @@ import App from './App';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
+    <BrowserRouter>
     <BlockProvider>
     <CallProvider>
     <UploadProvider>
@@ -30,5 +31,6 @@ createRoot(document.getElementById('root')).render(
     </UploadProvider>
       </CallProvider>
     </BlockProvider>
+  </BrowserRouter>
   </StrictMode>
 );

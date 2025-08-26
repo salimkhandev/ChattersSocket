@@ -21,9 +21,8 @@ const app = express();
 // const notificationRoutes = require('./Routes/notifications');
 // app.use(express.json());
 app.use(cors({
-    origin: ['https://firebase-fcm2.vercel.app',
-        "https://chatters-socket-frontend.vercel.app",
-        'http://localhost:5173'],  // Remove trailing slash
+    origin: "https://chatters-socket-frontend.vercel.app", // your frontend URL
+  // Remove trailing slash
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
@@ -69,12 +68,8 @@ try {
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: [
-            "https://chatters-socket-frontend.vercel.app",
-            "http://localhost:5173",
-            "https://firebase-fcm2.vercel.app"
-        ],
-       methods: ["GET", "POST"],
+        origin: "https://chatters-socket-frontend.vercel.app", // your frontend URL
+        methods: ["GET", "POST"],
         credentials: true     // needed if sending cookies
     },
 });

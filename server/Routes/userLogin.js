@@ -51,7 +51,7 @@ console.log("Login request received for user:", username)
         res.cookie('userToken', token, {
             httpOnly: true,       // safe, cannot be accessed via JS
             sameSite: 'lax',      // safe for localhost
-            secure: false,        // must be false for http://localhost
+            secure: true,        // must be false for http://localhost
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 

@@ -33,7 +33,7 @@ router.post("/forget-password", async (req, res) => {
             
 
         // send email
-        const resetUrl = `http://localhost:5173/reset-password/${token}`;
+        const resetUrl = `https://chatters-socket-frontend.vercel.app/reset-password/${token}`;
         await transporter.sendMail({
             from: '"ChatterSocket Support" <salimeg30@gmail.com>',
             to: email,

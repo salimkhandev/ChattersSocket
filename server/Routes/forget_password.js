@@ -36,7 +36,7 @@ router.post("/forget-password", async (req, res) => {
         const resetUrl = `http://localhost:5173/reset-password/${token}`;
         await transporter.sendMail({
             from: '"ChatterSocket Support" <salimeg30@gmail.com>',
-            to: "salimkhandev@gmail.com",
+            to: email,
             subject: "Reset your here  password",
             html: `<p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`,
         });

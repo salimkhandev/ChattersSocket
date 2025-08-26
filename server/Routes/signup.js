@@ -66,7 +66,7 @@ router.post("/signup", async (req, res) => {
             httpOnly: true,       // safe, cannot be accessed via JS
             sameSite: 'lax',      // safe for localhost
             secure: false,        // must be false for http://localhost
-            maxAge: 3600000       // 1 hour
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
         // return user info only
         res.status(201).json({ message: "User created", user: data });

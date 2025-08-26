@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { io } from "socket.io-client";
-import { UserPlus, Loader2 } from 'lucide-react';
+// import { io } from "socket.io-client";
+import { UserPlus, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { generateToken } from '../FCM/firebase'; // adjust path
 import { Formik, Form, Field, ErrorMessage } from 'formik';
@@ -10,18 +10,18 @@ import * as Yup from 'yup';
 
 const backendURL = import.meta.env.VITE_BACKEND_URL;
 
-const socket = io(`${backendURL}`, {
-    reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 2000,
-});
+// const socket = io(`${backendURL}`, {
+//     reconnection: true,
+//     reconnectionAttempts: Infinity,
+//     reconnectionDelay: 2000,
+// });
 
-export default function LoginForm({ setIsLoggedIn, forgetPassword, signup }) {
-    const { username, setUsername } = useAuth();
+export default function LoginForm({ setIsLoggedIn, forgetPassword, signup, socket }) {
+    const { setUsername } = useAuth();
     const [fcm_token, setFcm_token] = useState(localStorage.getItem("token") || '');
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [showSignup, setShowSignup] = useState(false); // ✅ state to toggle SignupForm
+    const [showPassword, setShowPassword] = useState(false);
 
     // Generate FCM token on mount
     useEffect(() => {
@@ -78,19 +78,16 @@ export default function LoginForm({ setIsLoggedIn, forgetPassword, signup }) {
         password: Yup.string().required("Password is required"),
     });
 
-    // ✅ If toggle to signup, render SignupForm
-    // if (showSignup) {
-    //     return <SignupForm setIsLoggedIn={setIsLoggedIn} socket={socket}/>;
-    // }
-    // if(showForegetPassword){
-    //     <ForgetPassword />
-    // }
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    };
 
     return (
-        <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
-            <div className="bg-white shadow-2xl p-8 rounded-xl w-full max-w-sm text-center animate-fadeIn">
-                <UserPlus className="w-12 h-12 text-indigo-600 mx-auto mb-4" />
-                <h2 className="text-2xl font-semibold text-gray-800 mb-6">Login to Chat</h2>
+        <div className="bg-white shadow-2xl p-6 sm:p-8 lg:p-10 rounded-xl 
+                w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-1xl xl:max-w-2xl text-center animate-fadeIn">
+            {/* <div className="bg-white shadow-2xl p-6 sm:p-8 lg:p-10 rounded-xl w-full max-w-sm sm:max-w-md lg:max-w-2xl xl:max-w-3xl text-center animate-fadeIn"> */}
+                <UserPlus className="w-12 h-12 sm:w-16 sm:h-16 text-indigo-600 mx-auto mb-4 sm:mb-6" />
+                <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-6 sm:mb-8">Login to Chat</h2>
 
                 <Formik
                     initialValues={{ username: "", password: "" }}
@@ -98,41 +95,87 @@ export default function LoginForm({ setIsLoggedIn, forgetPassword, signup }) {
                     onSubmit={handleLogin}
                 >
                     {({ errors, touched }) => (
-                        <Form>
+                        <Form className="space-y-4">
                             {/* Username */}
-                            <Field
-                                name="username"
-                                placeholder="Enter your username"
-                                className={`w-full border border-gray-300 rounded-lg px-4 py-2 mb-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none ${errors.username && touched.username ? "border-red-500" : ""}`}
-                            />
-                            <ErrorMessage name="username" component="div" className="text-red-500 mb-2 text-sm" />
+                            <div>
+                                <Field
+                                    name="username"
+                                    placeholder="Enter your username"
+                                    className={`w-full border rounded-lg px-4 py-3 sm:py-4 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all duration-200 text-sm sm:text-base ${errors.username && touched.username
+                                            ? "border-red-500 bg-red-50"
+                                            : "border-gray-300 hover:border-gray-400"
+                                        }`}
+                                />
+                                <ErrorMessage
+                                    name="username"
+                                    component="div"
+                                    className="text-red-500 mt-1 text-xs sm:text-sm text-left"
+                                />
+                            </div>
 
                             {/* Password */}
-                            <Field
-                                name="password"
-                                type="password"
-                                placeholder="Enter your password"
-                                className={`w-full border border-gray-300 rounded-lg px-4 py-2 mb-4 focus:ring-2 focus:ring-indigo-500 focus:outline-none ${errors.password && touched.password ? "border-red-500" : ""}`}
-                            />
-                            <ErrorMessage name="password" component="div" className="text-red-500 mb-4 text-sm" />
+                            <div>
+                                <div className="relative">
+                                    <Field
+                                        name="password"
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="Enter your password"
+                                        className={`w-full border rounded-lg px-4 py-3 sm:py-4 pr-12 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all duration-200 text-sm sm:text-base ${errors.password && touched.password
+                                                ? "border-red-500 bg-red-50"
+                                                : "border-gray-300 hover:border-gray-400"
+                                            }`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={togglePasswordVisibility}
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none transition-colors duration-200"
+                                        tabIndex={-1}
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="w-5 h-5 sm:w-6 sm:h-6" />
+                                        ) : (
+                                            <Eye className="w-5 h-5 sm:w-6 sm:h-6" />
+                                        )}
+                                    </button>
+                                </div>
+                                <ErrorMessage
+                                    name="password"
+                                    component="div"
+                                    className="text-red-500 mt-1 text-xs sm:text-sm text-left"
+                                />
+                            </div>
 
                             <button
                                 type="submit"
                                 disabled={isLoading || !fcm_token}
-                                className={`w-full py-2 rounded-lg font-medium transition ${!fcm_token || isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 text-white"}`}
+                                className={`w-full py-3 sm:py-4 rounded-lg font-medium transition-all duration-200 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-offset-2 ${!fcm_token || isLoading
+                                        ? "bg-gray-400 cursor-not-allowed text-gray-600"
+                                        : "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500 text-white transform hover:scale-[1.02]"
+                                    }`}
                             >
-                                {isLoading ? <Loader2 className="w-full h-6 animate-spin" /> : <span>Login</span>}
+                                {isLoading ? (
+                                    <div className="flex items-center justify-center">
+                                        <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin mr-2" />
+                                        <span>Logging in...</span>
+                                    </div>
+                                ) : (
+                                    <span>Login</span>
+                                )}
                             </button>
                         </Form>
                     )}
                 </Formik>
 
-                {error && <p className="text-red-500 mt-3 text-sm animate-pulse">{error}</p>}
+                {error && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-red-500 text-xs sm:text-sm animate-pulse">{error}</p>
+                    </div>
+                )}
 
-                <div className="flex justify-between mt-4 text-sm">
+                <div className="flex flex-col sm:flex-row justify-between items-center mt-6 sm:mt-8 space-y-2 sm:space-y-0 text-xs sm:text-sm">
                     <button
                         type="button"
-                        className="text-blue-500 underline"
+                        className="text-blue-500 underline hover:text-blue-600 focus:text-blue-600 focus:outline-none transition-colors duration-200 font-medium"
                         onClick={forgetPassword}
                     >
                         Forgot Password?
@@ -140,13 +183,13 @@ export default function LoginForm({ setIsLoggedIn, forgetPassword, signup }) {
 
                     <button
                         type="button"
-                        className="text-green-500 underline"
+                        className="text-green-500 underline hover:text-green-600 focus:text-green-600 focus:outline-none transition-colors duration-200 font-medium"
                         onClick={signup} // ✅ toggle to SignupForm
                     >
                         Sign Up
                     </button>
                 </div>
             </div>
-        </div>
+        // </div>
     );
 }

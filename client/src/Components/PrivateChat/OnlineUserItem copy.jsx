@@ -35,24 +35,17 @@ const OnlineUserItem = ({
                 }`}
         >
             {/* Avatar or fallback */}
-            <div className="relative">
-                {user.profilePic ? (
-                    <img
-                        src={user.profilePic}
-                        alt="profile"
-                        className="w-10 h-10 rounded-full object-cover border shadow-sm"
-                    />
-                ) : (
-                    <div className="w-10 h-10 bg-indigo-200 text-indigo-800 font-bold flex items-center justify-center rounded-full shadow-sm">
-                        {user.fName?.[0]?.toUpperCase() || "?"}
-                    </div>
-                )}
-
-                {/* Blue dot for online users */}
-                {user.username && (
-                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
-                )}
-            </div>
+            {user.profilePic ? (
+                <img
+                    src={user.profilePic}
+                    alt="profile"
+                    className="w-10 h-10 rounded-full object-cover border shadow-sm"
+                />
+            ) : (
+                <div className="w-10 h-10 bg-indigo-200 text-indigo-800 font-bold flex items-center justify-center rounded-full shadow-sm">
+                    {user.fName?.[0]?.toUpperCase() || "?"}
+                </div>
+            )}
 
             {/* Name and username */}
             <div className="flex-1">

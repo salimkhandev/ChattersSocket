@@ -64,7 +64,7 @@ export default function MediaPreview() {
                 </div>
 
                 <div className="flex flex-col items-start gap-1">
-                    <div className="rounded overflow-hidden border border-gray-200 shadow-sm max-w-xs w-full">
+                    <div className="rounded overflow-hidden border border-gray-200 shadow-sm max-w-[200px] sm:max-w-[250px] w-full">
                         {renderPreview()}
                     </div>
                     <span className="text-[10px] text-gray-400 ml-2">Unseen</span>
@@ -74,7 +74,10 @@ export default function MediaPreview() {
             <div className="break-word items-start justify-between gap-2">
                 <div className="flex items-center gap-2 shrink-0">
                     {uploading && (
-                        <Loader2 className="w-4 h-4 text-primary animate-spin opacity-60" />
+                        <div className="flex items-center gap-1">
+                            <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                            <span className="text-xs text-blue-600 font-medium">Uploading...</span>
+                        </div>
                     )}
                 </div>
             </div>

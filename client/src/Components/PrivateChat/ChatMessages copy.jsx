@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef ,useState} from 'react'
 import { MoreHorizontal, Trash2, Loader2, Mic } from 'lucide-react'; // If you're using Lucide icons
 import VoiceMessagePlayer from './VoiceMessgae/VoiceMessagePlayer';
 import SendingMediaPreview from './SendMedia/SendingMediaPreview'
@@ -14,13 +14,13 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
 
     const { username } = useAuth();
     const { tempVoiceUrl, setTempVoiceUrl, tempUrlAudio } = useVoice();
-    const { localUrl, localFormat, uploading, isModalOpen, setIsModalOpen } = useMedia();
+    const { localUrl, localFormat, uploading ,isModalOpen, setIsModalOpen } = useMedia();
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [tempVoiceUrl, uploading]); // scroll when new chat or temp voice arrives
+    }, [tempVoiceUrl,uploading]); // scroll when new chat or temp voice arrives
 
-
+    
     console.log('📱❌', { username, tempVoiceUrl, tempUrlAudio });
 
 
@@ -58,7 +58,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                         <img
                                             src={msg.sender_profile_pic}
                                             alt="profile"
-
+                                            
                                             className="w-8 h-8 rounded-full object-cover border border-gray-300 shadow-sm"
                                         />
                                     )}
@@ -73,49 +73,49 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                         <div className="flex flex-col items-start gap-1">
 
                                             {/* MEDIA PREVIEW OR DOWNLOAD */}
-                                            {msg.media_url && msg.format && (
-                                                <div className="rounded overflow-hidden border border-gray-200 shadow-sm w-full max-w-[200px] sm:max-w-[250px]">
-                                                    {['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(msg.format.toLowerCase()) ? (
-                                                        <img
-                                                            src={msg.media_url}
-                                                            alt="sent image"
-                                                            onClick={() => setSelectedMedia({ url: msg.media_url, format: msg.format })}
-                                                            className="w-full h-auto max-h-[300px] object-cover cursor-pointer"
-                                                        />
-                                                    ) : ['mp4', 'webm'].includes(msg.format.toLowerCase()) ? (
+                                        {msg.media_url && msg.format && (
+                                            <div className="rounded overflow-hidden border border-gray-200 shadow-sm max-w-xs">
+                                                {['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(msg.format.toLowerCase()) ? (
+                                                    <img
+                                                        src={msg.media_url}
+                                                        alt="sent image"
+                                                        onClick={() => setSelectedMedia({ url: msg.media_url, format: msg.format })}
+                                                        className="w-full h-auto object-cover cursor-pointer"
+                                                    />
+                                                ) : ['mp4', 'webm'].includes(msg.format.toLowerCase()) ? (
                                                         <video
                                                             src={msg.media_url}
                                                             controls
                                                             onClick={() => setSelectedMedia({ url: msg.media_url, format: msg.format })}
-                                                            className="w-full h-auto max-h-[300px] cursor-pointer"
+                                                            className="w-full h-auto cursor-pointer"
                                                         />
 
-                                                    ) : ['mp3', 'wav', 'ogg'].includes(msg.format.toLowerCase()) ? (
-                                                        <audio
-                                                            src={msg.media_url}
-                                                            controls
-                                                            className=" bg-gray-100 rounded"
+                                                ) : ['mp3', 'wav', 'ogg'].includes(msg.format.toLowerCase()) ? (
+                                                    <audio
+                                                        src={msg.media_url}
+                                                        controls
+                                                        className=" bg-gray-100 rounded"
 
-                                                        />
-                                                    ) : (
-                                                        <a
-                                                            href={msg.media_url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="flex items-center gap-2 p-2 bg-gray-100 rounded hover:bg-gray-200 transition"
-                                                            download
-                                                        >
-                                                            <span className="text-sm text-blue-600 underline break-all">
-                                                                {`Download ${msg.format.toUpperCase()}`}
-                                                            </span>
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            )}
+                                                    />
+                                                ) : (
+                                                    <a
+                                                        href={msg.media_url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center gap-2 p-2 bg-gray-100 rounded hover:bg-gray-200 transition"
+                                                        download
+                                                    >
+                                                        <span className="text-sm text-blue-600 underline break-all">
+                                                            {`Download ${msg.format.toUpperCase()}`}
+                                                        </span>
+                                                    </a>
+                                                )}
+                                            </div>
+                                        )}
 
 
                                             {/* SEEN / UNSEEN STATUS */}
-                                            {msg.from === username && msg.type !== 'call' && (
+                                        {msg.from === username && msg.type!=='call' && (
 
                                                 msg.seen ? (
                                                     <div className="relative group inline-block">
@@ -214,7 +214,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
 
                                                     {/* Dropdown menu */}
                                                     <div className="absolute right-0 mt-1 z-20 w-44  bg-white rounded-md shadow-lg py-1 border border-gray-200">
-                                                        {!msg.is_voice && !msg.audio_url && !msg.media_url && (<button
+                                                        {!msg.is_voice && !msg.audio_url &&  !msg.media_url&& (<button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
 
@@ -291,7 +291,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                                     </div>
                                                 </>
                                             )}
-
+                                            
                                         </div>
                                     ) : msg.from !== username && !msg.deleted_for?.split(",").map(s => s.trim()).includes(username) && !msg.is_deleted_for_everyone && (
                                         <div className="relative inline-block">
@@ -372,7 +372,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                 <Loader2 className="absolute top-0 left-0 w-5 h-5 text-primary animate-spin opacity-60" />
                             </div>
                         </div>
-
+                      
 
                         {/* Blurred voice preview */}
                         <div  >
@@ -389,15 +389,15 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                 <div className="my-2 px-4 flex justify-end">
                     {/* <div className="relative flex items-center bg-green-900 gap-3 bg-muted/30 px-3 py-2 rounded-lg"> */}
 
-                    {/* Spinner & Mic */}
+                        {/* Spinner & Mic */}
+                     
+                      
 
-
-
-                    {/* Blurred voice preview */}
-                    <div  >
-                        <SendingMediaPreview />
-                    </div >
-                    {/* <div ref={chatEndRef}></div> */}
+                        {/* Blurred voice preview */}
+                        <div  >
+                           <SendingMediaPreview/>
+                        </div >
+                        {/* <div ref={chatEndRef}></div> */}
 
                 </div>
             )}
@@ -416,4 +416,4 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
     )
 }
 
-export default memo(ChatMessages) // This is to prevent unnecessary re-renders of the component 
+export default memo(ChatMessages) // This is to prevent unnecessary re-renders of the component

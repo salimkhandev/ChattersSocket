@@ -2,7 +2,29 @@ const groups = new Set(); // Store unique group names in memory
 const supabase = require("../config/supabaseClient");
 const redisClient = require("../config/redisConfig");
 function groupChat(io) {
+    const fetchGroups = async (socket) => {
+        try {
+            const { data, error } = await supabase
+                .from("groups")
+                .select("*");
+
+            if (error) {
+                console.error("❌ Failed to fetch groups from DB:", error.message);
+                socket.emit("groups list", []);
+                return;
+            }
+
+            socket.emit("groups list", data);
+        } catch (err) {
+            console.error("❌ Unexpected error fetching groups:", err);
+            socket.emit("groups list", []);
+        }
+    };
+
+
     io.on("connection", (socket) => {
+console.log('from group')
+        fetchGroups(socket);
 
         socket.on("get groups", async () => {
             const { data, error } = await supabase
@@ -18,7 +40,7 @@ function groupChat(io) {
             socket.emit("groups list", data); // includes name + creator
         });
 
-        socket.on("delete group", async ({ groupName, username }) => {
+        socket.on("delete group", async ({ groupID, groupName, username }) => {
             groupName = groupName.trim()
 
             if (!groupName || !username) return;

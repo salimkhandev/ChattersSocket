@@ -165,7 +165,7 @@ export default function UserProfileUpload({ nameLoaded, socket }) {
             //     headers: { "Content-Type": "application/json" },
             //     body: JSON.stringify({ username }),
             // });
-            const res = await fetch(`${backendURL}/upload-profile-pic`, {
+            const res = await fetch(`${backendURL}/delete-profile-pic`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username }),

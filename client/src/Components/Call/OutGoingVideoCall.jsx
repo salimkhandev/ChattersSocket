@@ -81,8 +81,7 @@ export default function OutgoingCallUI({
     }, [socket, audioContext, rejectCall, cleanupMedia]);
 
     const handleCancel = () => {
-
-        performCallCleanup();   
+        performCallCleanup();
         socket.emit("end call", {
             username: username,
             callID: callID
@@ -116,92 +115,20 @@ export default function OutgoingCallUI({
                 <div className="absolute inset-0 bg-black/40 z-10"></div>
             </div>
 
-            {/* Profile section - Right side */}
-            <div className="absolute top-0 right-0 h-full w-full sm:w-96 md:w-80 lg:w-96 z-30 flex flex-col">
+            {/* Main Content - Centered and responsive */}
+            <div className="absolute inset-0 z-30 flex flex-col justify-center items-center px-4 md:px-6 lg:px-8">
                 {/* Profile container */}
-                <div className="flex-1 flex flex-col justify-center items-center px-6 sm:px-8 py-8">
-                    {/* Callee profile */}
-                    <div className="text-center">
-                        <div className="relative mb-6 flex justify-center">
-                            {/* Ripple effects */}
-                            {ripples.map(ripple => (
-                                <div
-                                    key={ripple.id}
-                                    className="absolute border-2 border-white/20 rounded-full"
-                                    style={{
-                                        width: `${120 * ripple.scale}px`,
-                                        height: `${120 * ripple.scale}px`,
-                                        opacity: ripple.opacity,
-                                        transform: "translate(-50%, -50%)",
-                                        left: "50%",
-                                        top: "50%"
-                                    }}
-                                />
-                            ))}
-
-                            {/* Avatar */}
-                            <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-3 border-white/50 shadow-2xl bg-gradient-to-br from-blue-500 to-indigo-600 z-10">
-                                {selectedReceiverProfilePic ? (
-                                    <img
-                                        src={selectedReceiverProfilePic}
-                                        alt={calleeFullname || "Profile"}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-white text-lg sm:text-xl md:text-2xl font-bold">
-                                        {calleeFullname?.charAt(0) || "?"}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Info */}
-                        <div className="space-y-3 mb-8">
-                            <h1 className="text-white text-lg sm:text-xl md:text-2xl font-bold drop-shadow-lg">
-                                {calleeFullname || "Unknown"}
-                            </h1>
-                            <div className="flex items-center justify-center space-x-2 text-blue-200">
-                                <Phone size={14} className="animate-pulse" />
-                                <span className="text-sm sm:text-base drop-shadow">Ranging...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Controls - Bottom right */}
-                <div className="flex-shrink-0 pb-8 sm:pb-12 px-6 sm:px-8">
-                    <div className="flex flex-col items-center space-y-4">
-                        <button
-                            onClick={handleCancel}
-                            className="w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 bg-red-500 rounded-full flex items-center justify-center shadow-xl hover:bg-red-600 hover:scale-110 transition-all duration-200 active:scale-95"
-                        >
-                            <PhoneOff size={20} className="text-white sm:w-6 sm:h-6" />
-                        </button>
-
-                        <div className="flex items-center justify-center space-x-2 text-white/80">
-                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                            <span className="text-xs sm:text-sm drop-shadow">Connecting...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Mobile: Profile overlay for smaller screens */}
-            <div className="sm:hidden absolute inset-0 z-20 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none"></div>
-
-            {/* Mobile: Centered profile for very small screens */}
-            <div className="sm:hidden absolute inset-0 z-30 flex flex-col justify-center items-center px-4 pointer-events-none">
-                <div className="text-center pointer-events-auto">
-                    <div className="relative mb-4 flex justify-center">
-                        {/* Mobile ripples */}
+                <div className="text-center">
+                    <div className="relative mb-6 md:mb-8 flex justify-center">
+                        {/* Ripple effects */}
                         {ripples.map(ripple => (
                             <div
-                                key={`mobile-${ripple.id}`}
-                                className="absolute border-2 border-white/15 rounded-full"
+                                key={ripple.id}
+                                className="absolute border-2 border-white/20 rounded-full"
                                 style={{
-                                    width: `${100 * ripple.scale}px`,
-                                    height: `${100 * ripple.scale}px`,
-                                    opacity: ripple.opacity * 0.7,
+                                    width: `${(window.innerWidth < 640 ? 100 : 120) * ripple.scale}px`,
+                                    height: `${(window.innerWidth < 640 ? 100 : 120) * ripple.scale}px`,
+                                    opacity: ripple.opacity,
                                     transform: "translate(-50%, -50%)",
                                     left: "50%",
                                     top: "50%"
@@ -209,8 +136,8 @@ export default function OutgoingCallUI({
                             />
                         ))}
 
-                        {/* Mobile Avatar */}
-                        <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-white/50 shadow-2xl bg-gradient-to-br from-blue-500 to-indigo-600 z-10">
+                        {/* Avatar */}
+                        <div className="relative w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 rounded-full overflow-hidden border-3 border-white/50 shadow-2xl bg-gradient-to-br from-blue-500 to-indigo-600 z-10">
                             {selectedReceiverProfilePic ? (
                                 <img
                                     src={selectedReceiverProfilePic}
@@ -218,39 +145,39 @@ export default function OutgoingCallUI({
                                     className="w-full h-full object-cover"
                                 />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">
+                                <div className="w-full h-full flex items-center justify-center text-white text-lg md:text-xl lg:text-2xl font-bold">
                                     {calleeFullname?.charAt(0) || "?"}
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Mobile Info */}
-                    <div className="space-y-2 mb-6">
-                        <h1 className="text-white text-lg font-bold drop-shadow-lg">
+                    {/* Info */}
+                    <div className="space-y-2 md:space-y-3 mb-8 md:mb-12">
+                        <h1 className="text-white text-lg md:text-xl lg:text-2xl font-bold drop-shadow-lg max-w-xs md:max-w-md truncate">
                             {calleeFullname || "Unknown"}
                         </h1>
                         <div className="flex items-center justify-center space-x-2 text-blue-200">
-                            <Phone size={12} className="animate-pulse" />
-                            <span className="text-sm drop-shadow">Ranging...</span>
+                            <Phone size={14} className="animate-pulse md:w-4 md:h-4" />
+                            <span className="text-sm md:text-base drop-shadow">Ranging...</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Mobile: Bottom controls */}
-            <div className="sm:hidden absolute bottom-0 left-0 right-0 z-40 pb-8 px-4">
-                <div className="flex flex-col items-center space-y-4">
+            {/* Bottom controls - Fixed at bottom */}
+            <div className="absolute bottom-8 md:bottom-12 left-0 right-0 z-40 px-4">
+                <div className="flex flex-col items-center space-y-3 md:space-y-4">
                     <button
                         onClick={handleCancel}
-                        className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center shadow-xl hover:bg-red-600 hover:scale-110 transition-all duration-200 active:scale-95"
+                        className="w-14 h-14 md:w-16 md:h-16 lg:w-18 lg:h-18 bg-red-500 rounded-full flex items-center justify-center shadow-xl hover:bg-red-600 hover:scale-110 transition-all duration-200 active:scale-95"
                     >
-                        <PhoneOff size={24} className="text-white" />
+                        <PhoneOff size={20} className="text-white md:w-6 md:h-6" />
                     </button>
 
                     <div className="flex items-center justify-center space-x-2 text-white/80">
                         <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                        <span className="text-sm drop-shadow">Connecting...</span>
+                        <span className="text-xs md:text-sm drop-shadow">Connecting...</span>
                     </div>
                 </div>
             </div>

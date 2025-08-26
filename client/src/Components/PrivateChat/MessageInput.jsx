@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useRef } from "react";
-import { Smile, XCircle,Send, Mic, StopCircle } from "lucide-react";
+import { Smile, XCircle, Send, Mic, StopCircle } from "lucide-react";
 
 import VoiceRecorder from "./VoiceMessgae/VoiceRecorder"; // <-- Adjust the path if needed
 import UploadMedia from './SendMedia/UploadMedia'; // adjust path if needed
@@ -18,58 +18,83 @@ const MessageInput = ({
     socket,
     sender,
 }) => {
-    // const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
     const [showStopIcon, setShowStopIcon] = useState(false);
     const [showRecordIcon, setShowRecordIcon] = useState(true);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const recorderRef = useRef();
-    const { localUrl, setLocalUrl, localFormat, setLocalFormat, isModalOpen,setIsModalOpen} = useMedia();
+    const { localUrl, setLocalUrl, localFormat, setLocalFormat, isModalOpen, setIsModalOpen } = useMedia();
 
     const handleStart = () => {
-        recorderRef.current?.startRecording(); 
-        setShowStopIcon(true)
-        setShowRecordIcon(false)
-        // ✅ calls inside child
+        recorderRef.current?.startRecording();
+        setShowStopIcon(true);
+        setShowRecordIcon(false);
     };
+
     const handleStop = () => {
         recorderRef.current?.stopRecording();
-        setShowRecordIcon(false)
-        setShowStopIcon(false)
+        setShowRecordIcon(false);
+        setShowStopIcon(false);
     };
+
+    const closeModal = () => {
+        setLocalFormat(null);
+        setLocalUrl(null);
+        setIsModalOpen(false);
+    };
+
     return (
-        <div className="mt-4 bg-white rounded-lg border shadow-sm relative">
+        <div className="mt-2 sm:mt-4 bg-white rounded-lg border shadow-sm relative">
             {/* Emoji Picker */}
             {showEmojiPicker && (
-                <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-300 rounded-xl shadow-lg p-3 grid grid-cols-6 gap-2 z-50">
+                <div className="absolute bottom-full left-2 sm:right-0 sm:left-auto mb-2 bg-white border border-gray-300 rounded-xl shadow-lg p-2 sm:p-3 grid grid-cols-4 sm:grid-cols-6 gap-1 sm:gap-2 z-50 max-w-xs sm:max-w-none">
                     {emojiList.map((emoji, idx) => (
                         <button
                             key={idx}
-                            className="text-xl hover:scale-125 transition-transform"
+                            className="text-lg sm:text-xl hover:scale-110 sm:hover:scale-125 transition-transform p-1 rounded"
                             onClick={() => {
                                 setMessage((prev) => prev + emoji);
                                 setShowEmojiPicker(false);
-
                             }}
                         >
                             {emoji}
-                            
                         </button>
                     ))}
                 </div>
             )}
 
-            {/* Input & Buttons */}
-            <div className="p-3 flex items-center gap-2">
-            {  !isRecording &&  <input
-                    className="flex-1 px-4 py-2 text-base focus:outline-none"
-                    placeholder="Type a message..."
-                    value={message}
-                    onChange={handleTyping}
-                    onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                />}
+            {/* Media Preview Modal */}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg relative">
+                        <MediaPreview />
+                        <button
+                            onClick={closeModal}
+                            className="absolute -top-2 -right-2 sm:top-2 sm:right-2 p-1 bg-white rounded-full shadow-md hover:shadow-lg transition-shadow"
+                            aria-label="Close preview"
+                        >
+                            <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Main Input Container */}
+            <div className="p-2 sm:p-3 flex items-center gap-1 sm:gap-2">
+                {/* Text Input */}
+                {!isRecording && (
+                    <input
+                        className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base focus:outline-none min-w-0"
+                        placeholder="Type a message..."
+                        value={message}
+                        onChange={handleTyping}
+                        onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                    />
+                )}
+
+                {/* Voice Recording UI */}
                 {isRecording && (
-                    <div className="px-4 pb-3 flex-1 px-12 py-2 text-base focus:outline-none">
+                    <div className="flex-1 px-2 sm:px-3 py-2 min-w-0">
                         <VoiceRecorder
                             socket={socket}
                             sender={sender}
@@ -81,98 +106,76 @@ const MessageInput = ({
                     </div>
                 )}
 
-                {isModalOpen && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-                        <div className="bg-white p-4 rounded-xl max-w-md w-full relative">
-                            <MediaPreview />
+                {/* Action Buttons Container */}
+                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                    {/* Emoji Button */}
+                    {!isRecording && (
+                        <button
+                            type="button"
+                            onClick={() => setShowEmojiPicker((prev) => !prev)}
+                            className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 transition-colors"
+                            title="Insert Emoji"
+                            aria-label="Insert Emoji"
+                        >
+                            <Smile className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" />
+                        </button>
+                    )}
 
-                            <XCircle
-                                onClick={() => {
-                                    setLocalFormat(null);
-                                    setLocalUrl(null);
-                                    setIsModalOpen(false)
-                                }}
-                                className="text-red-500 cursor-pointer absolute top-2 right-2"
-                            />
-                        </div>
-                    {/* </div> */}
+                    {/* Upload Media Button */}
+                    <div className="flex items-center">
+                        <UploadMedia
+                            sender={sender}
+                            receiver={selectedReceiver}
+                            socket={socket}
+                        />
                     </div>
-                )}
 
-                {/* Emoji Button */}
-             { !isRecording &&  <button
-                    type="button"
-                    onClick={() => setShowEmojiPicker((prev) => !prev)}
-                    className="p-2 rounded-full transition-colors"
-                    title="Insert Emoji"
-                >
-                    <Smile className="w-6 relative left-2 h-6 text-gray-500" />
-                </button>}
-                <div className="px-4 py-2">
-                    <UploadMedia
-                        sender={sender}
-                        receiver={selectedReceiver}
-                        socket={socket}
-                        // onOpenPreview={() => setIsMediaModalOpen(true)} // 👈 pass this
-                    />                </div>
-                
+                    {/* Mic Button (Start Recording) */}
+                    {(!isRecording || showRecordIcon) && (
+                        <button
+                            onClick={() => {
+                                setIsRecording(true);
+                                setTimeout(() => handleStart(), 0);
+                            }}
+                            className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 transition-colors"
+                            title="Start Recording"
+                            aria-label="Start Recording"
+                        >
+                            <Mic className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" />
+                        </button>
+                    )}
 
+                    {/* Stop Button (Stop Recording) */}
+                    {isRecording && showStopIcon && (
+                        <button
+                            onClick={() => {
+                                setTimeout(() => handleStop(), 0);
+                            }}
+                            className="p-1.5 sm:p-2 hover:bg-red-50 rounded-full transition-colors"
+                            title="Stop Recording"
+                            aria-label="Stop Recording"
+                        >
+                            <StopCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
+                        </button>
+                    )}
 
-                {/* Voice Button (Toggle Recorder UI) */}
-                {/* Mic Button (Start Recording) */}
-                {!isRecording || showRecordIcon ? (
-                    <button
-                        onClick={() => {
-                            setIsRecording(true);
-                            setTimeout(() => handleStart(), 0);
-                        }}
-                        className="p-2  rounded-full transition-colors"
-                        title="Start Recording"
-                    >
-                        <Mic className="w-6 h-6 relative right-3 text-gray-500" />
-                    </button>
-                ):null}
-
-                {/* Stop Button (Stop Recording) */}
-                {isRecording && showStopIcon && (
-                    <button
-                        onClick={() => {
-                            setTimeout(() => handleStop(), 0);
-                        }}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                        title="Stop Recording"
-                    >
-                        <StopCircle className="w-5 h-5 text-red-500" />
-                    </button>
-                )}
-
-
-                {/* Send Button */}
-               { !isRecording  && <button
-                    onClick={sendMessage}
-                    disabled={!message.trim() || !selectedReceiver}
-                    className={`flex items-center gap-1 px-4 py-2 rounded-lg text-white transition ${message.trim() && selectedReceiver
-                        ? "bg-indigo-600 hover:bg-indigo-700"
-                        : "bg-gray-300 cursor-not-allowed"
-                        }`}
-                >
-                    <Send className="w-4 h-4" />
-                    Send
-                </button>}
-            </div>
-
-            {/* Voice Recorder Panel */}
-            {/* {isRecording && (
-                <div className="px-4 pb-3">
-                    <VoiceRecorder
-                        socket={socket}
-                        sender={sender}
-                        receiver={selectedReceiver}
-                        ref={recorderRef}
-                        onDone={() => setIsRecording(false)}
-                    />
+                    {/* Send Button */}
+                    {!isRecording && (
+                        <button
+                            onClick={sendMessage}
+                            disabled={!message.trim() || !selectedReceiver}
+                            className={`flex items-center gap-1 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-white text-sm sm:text-base font-medium transition-all ${message.trim() && selectedReceiver
+                                    ? "bg-indigo-600 hover:bg-indigo-700 shadow-sm hover:shadow-md"
+                                    : "bg-gray-300 cursor-not-allowed"
+                                }`}
+                            aria-label="Send message"
+                        >
+                            <Send className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span className="hidden xs:inline">Send</span>
+                        </button>
+                    )}
                 </div>
-            )} */}
+            </div>
         </div>
     );
 };

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 
 const backendURL = import.meta.env.VITE_BACKEND_URL;
 
-export default function ResetPassword({ token, goHome }) {
+export default function ResetPassword({ token, goLogin }) {
     const [newPassword, setNewPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
@@ -70,7 +70,7 @@ export default function ResetPassword({ token, goHome }) {
                 </form>
 
                 <button
-                    onClick={goHome}
+                    onClick={goLogin}
                     className="mt-4 text-sm text-blue-500 hover:underline"
                 >
                     Back to Login

@@ -3,7 +3,6 @@ import toast from "react-hot-toast";
 import { Toaster } from "react-hot-toast";
 import LoginForm from "./Components/Auth/LoginForm";
 import SignupForm from "./Components/Auth/SignupForm";
-import LogoutButton from "./Components/Auth/LogoutButton";
 import GroupChat from "./Components/GroupChat/GroupChat";
 import ChatMessages from './Components/PrivateChat/ChatMessages';
 import MessageInput from "./Components/PrivateChat/MessageInput";
@@ -21,7 +20,7 @@ import CallRingtone from './Components/Call/CallRingtone';
 import UserProfileUpload from "./Components/PrivateChat/UserProfile";
 import { useCall } from "./context/CallContext";
 import { io } from "socket.io-client";
-import { Video, Phone, Menu, ArrowLeft } from "lucide-react";
+import { Video, Phone } from "lucide-react";
 // import AudioCallDisplay from './Components/Call/AudioCallDisplay';
 import VideoDisplay from './Components/Call/VideoDisplay';
 import AuthLoader from './Components/Auth/AuthLoader';
@@ -53,7 +52,6 @@ const socket = io(`${backendURL}`, {
 export default function ChatApp() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [nameLoaded, setNameLoaded] = useState(false);  // track when name is ready
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile menu toggle
   const { callAccepted, setShowVideo, showVideo, callerFullname, callerUsername, outGoingCall, timerRef, cleanupMedia, setCallReceiverFullname2 // ✔️ correct
 , setOutGoingCall, callStartRef, rejectCall, isAudioCall, remoteVideoRef2, currentIsVideo, setCurrentIsVideo, localVideoRef2, localVideoRefForOutgoing, callerProfilePic,
     setCallTime,
@@ -459,7 +457,6 @@ setIsConnected(false);
     setChat([]);
     // setShowEmojiPicker(false);
     setIsChattingWindowOpen(false);
-    setIsMobileMenuOpen(false); // Close mobile menu on chat close
   };
 
   useEffect(() => {
@@ -474,16 +471,15 @@ setIsConnected(false);
       document.removeEventListener('keydown', handleEscKey);
     };
   }, [selectedReceiver]);
-  
-  // const refreshOnlineUsers = () => {
-  //   if (socket) {
-  //     socket.emit("username", { username });
-  //     // sendUsernameEvent();
-  //     socket.connect();
+  const refreshOnlineUsers = () => {
+    if (socket) {
+      socket.emit("username", { username });
+      // sendUsernameEvent();
+      socket.connect();
 
-  //   }
+    }
   
-  // };
+  };
   const goLogin = () => window.location.href = "/";
 
   // Get current path
@@ -497,7 +493,8 @@ setIsConnected(false);
 
 
   return (
-    <div className="h-screen w-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 relative">
+    {/* <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 relative"> */}
       <Toaster position="top-right" reverseOrder={false} />
       <AuthLoader socket={socket}/>
       {checkingAuth && (
@@ -507,15 +504,16 @@ setIsConnected(false);
       )}
 
       {(!username || !isLoggedIn) && !checkingAuth ? (
-        <div className="h-full w-full flex items-center justify-center p-4">
+        <>
           {page === "login" && <LoginForm forgetPassword={() => setPage("forget-password")} signup={() => setPage("signup")} isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} socket={socket} /> }
           {page === "forget-password" && <ForgetPassword goLogin={() => setPage("login")} socket={socket} /> }
           {page === "signup" && <SignupForm isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} LoginForm={()=>setPage("login")} socket={socket} /> }
-        </div>
+    
+        </>
         
       ) : (
 
-        <div className="h-full w-full bg-white flex flex-col overflow-hidden">
+        <div className="w-full max-w-6xl bg-white rounded-xl shadow-xl flex flex-col overflow-hidden h-[calc(100vh-2rem)]">
             <CallUIPlaceholder socket={socket} username={username} />
             <CallRingtone/>
             {outGoingCall && currentIsVideo && <OutGoingVideoCall performCallCleanup={performCallCleanup}  socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia}  username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
@@ -524,36 +522,28 @@ setIsConnected(false);
 
 
           {/* Top Navigation Bar */}
-          <div className="bg-white border-b p-3 sm:p-4 flex items-center justify-between shrink-0 z-20">
-            <div className="flex items-center gap-3">
-              {/* Mobile menu button */}
-          
-              
-              <UserProfileUpload nameLoaded={nameLoaded} username={username} socket={socket} />
-            </div>
-            
-            <div className="hidden sm:block">
-              <ToggleTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-            </div>
-            
-            {/* <div className="flex items-center gap-2">
-            
-              <button
-                onClick={logout}
-                className="text-red-500 hover:text-red-600 text-xs sm:text-sm flex items-center gap-1 sm:gap-2"
-              >
-                <LogOut className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
-            </div> */}
-            <LogoutButton logout={logout}/>
-          </div>
-
-          {/* Mobile tabs - only shown on small screens */}
-          <div className="sm:hidden bg-white border-b">
+          <div className="bg-white border-b p-4 flex items-center justify-between shrink-0 z-20">
+            <UserProfileUpload nameLoaded={nameLoaded} username={username} socket={socket} />
             <ToggleTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-          </div>
+            
+            <button
+              onClick={logout}
+              className="text-red-500 hover:text-red-600 text-sm flex items-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+              <div className="flex justify-between items-center mb-2">
+               
+                <button
+                  onClick={refreshOnlineUsers}
+                  className="text-sm text-blue-500 hover:text-blue-600 underline"
+                >
+                  Refresh
+                </button>
+              </div>
 
+          </div>
           <div className="flex-1 relative overflow-hidden">
             {/* People Tab */}
             <div className={`absolute inset-0 w-full h-full transition-all duration-300 ease-in-out transform ${activeTab === "people"
@@ -564,31 +554,19 @@ setIsConnected(false);
               <VideoCall ref={webrtcRef} receiver={selectedReceiver} socket={socket} />
               {(callAccepted || showVideo) ? null :
                 <>
+
                   <div className="w-full h-full flex">
-                    {/* Sidebar - Hidden on mobile when chat is open, except when mobile menu is open */}
-                    <aside className={`
-                      ${selectedReceiver && !isMobileMenuOpen ? 'hidden lg:flex' : 'flex'} 
-                      w-full lg:w-80 bg-white border-r flex-col
-                      ${isMobileMenuOpen && selectedReceiver ? 'absolute inset-0 z-30 bg-white' : ''}
-                    `}>
-                      <div className="p-4 sm:p-5 border-b">
-                        <div className="flex justify-between items-center">
-                          <h2 className="text-lg font-semibold text-indigo-600 flex items-center gap-2">
-                            <Users className="w-5 h-5" />
-                            Online Users
-                          </h2>
-                          {/* Close button for mobile menu */}
-                          {isMobileMenuOpen && selectedReceiver && (
-                            <button
-                              onClick={() => setIsMobileMenuOpen(false)}
-                              className="lg:hidden p-2 rounded-md hover:bg-gray-100"
-                            >
-                              <X className="w-5 h-5" />
-                            </button>
-                          )}
-                        </div>
+                    {/* People content */}
+                    <aside className="w-80 bg-white border-r p-5 flex flex-col">
+                      <div className="flex justify-between items-center">
+                        <h2 className="text-lg font-semibold text-indigo-600 flex items-center gap-2">
+                          <Users className="w-5 h-5" />
+
+                          Online Users
+                        </h2>
+
                       </div>
-                      <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-2">
+                      <div className="flex-1 overflow-y-auto mt-2 space-y-2">
                         <OnlineUserList
                           onlineUsers={onlineUsers}
                           selectedReceiver={selectedReceiver}
@@ -601,83 +579,87 @@ setIsConnected(false);
                         />
                       </div>
                     </aside>
-
-                    {/* Main Chat Area */}
                     {selectedReceiver && (
-                      <main className={`
-                        ${isMobileMenuOpen ? 'hidden lg:flex' : 'flex'}
-                        flex-1 flex-col w-full lg:w-auto
-                      `}>
+                      <main className="flex-1 flex flex-col">
                         <div className="flex flex-col h-full">
-                          {/* Chat Header */}
-                          <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-white">
-                            <h1 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
-                              <span className="text-indigo-600">
+                          <div className="flex items-center justify-between  pt-3 pb-4">
+                            <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                             
+                              <span className="text-indigo-600 ml-8 ">
                                 {onlineUsers.find(u => u.username === selectedReceiver)?.fName || selectedReceiver}
                               </span>
-                            </h1>
+                              </h1>
 
-                            {/* Call buttons */}
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => {
-                                  if (webrtcRef.current) {
-                                    webrtcRef.current.createOffer(true);
-                                    setShowVideo(true);
-                                    setOutGoingCall(true)
-                                  } else {
-                                    console.warn("WebRTC component not ready yet");
-                                  }
-                                }}
-                                className="
-                                 relative group
-                                 w-10 h-10 sm:w-12 sm:h-12
-                                 rounded-full
-                                 bg-gradient-to-br from-blue-500 via-sky-500 to-cyan-500
-                                 shadow-xl shadow-blue-500/30
-                                 flex items-center justify-center
-                                 focus:outline-none focus:ring-4 focus:ring-blue-400/30
-                                 transition-all duration-200 hover:scale-105
-                                              "
-                              >
-                                <Video className="w-4 h-4 sm:w-5 sm:h-5 text-white drop-shadow-lg" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (webrtcRef.current) {
-                                    webrtcRef.current.createOffer(false);
-                                    setShowVideo(true);
-                                    setOutGoingCall(true)
-                                  } else {
-                                    console.warn("WebRTC component not ready yet");
-                                  }
-                                }}
-                                className="
-                                 relative group
-                                 w-10 h-10 sm:w-12 sm:h-12
-                                 rounded-full
-                                 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500
-                                 shadow-xl shadow-green-500/30
-                                 flex items-center justify-center
-                                 focus:outline-none focus:ring-4 focus:ring-green-400/30
-                                 transition-all duration-200 hover:scale-105
-                                              "
-                              >
-                                <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-white drop-shadow-lg" />
-                              </button>
 
-                              <button
-                                onClick={closeChat}
-                                className="p-2 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors ml-2"
-                                title="Close chat"
-                              >
-                                <X className="w-4 h-4 sm:w-5 sm:h-5" />
-                              </button>
-                            </div>
+
+                              {/*  */}
+                              <div className="flex items-center ml-20 gap-2">
+                                <button
+                                  onClick={() => {
+                                    if (webrtcRef.current) {
+                                      webrtcRef.current.createOffer(true);
+                                      setShowVideo(true);
+                                      setOutGoingCall(true)
+                                    } else {
+                                      console.warn("WebRTC component not ready yet");
+                                    }
+                                  }}
+                                  className="
+                                   relative group
+                                   w-[50px] h-[27px]
+                                   rounded-full
+                                   bg-gradient-to-br from-blue-500 via-sky-500 to-cyan-500
+                                   shadow-xl shadow-blue-500/30
+                                   flex items-center justify-center
+                                   focus:outline-none focus:ring-4 focus:ring-blue-400/30
+                                    translate-y-[10px] left-[7px] -top-[6px]
+                                                "
+                                >
+                                  <div className="relative flex items-center justify-center h-full">
+                                    <Video className="w-4 h-4 text-white drop-shadow-lg" />
+
+                                  </div>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (webrtcRef.current) {
+                                      webrtcRef.current.createOffer(false);
+                                      setShowVideo(true);
+                                      setOutGoingCall(true)
+                                    } else {
+                                      console.warn("WebRTC component not ready yet");
+                                    }
+                                  }}
+                                  className="
+                                   relative group
+                                   w-[50px] h-[27px]
+                                   rounded-full
+                                   bg-gradient-to-br from-blue-500 via-sky-500 to-cyan-500
+                                   shadow-xl shadow-blue-500/30
+                                   flex items-center justify-center
+                                   focus:outline-none focus:ring-4 focus:ring-blue-400/30
+                                    translate-y-[10px] left-[7px] -top-[6px]
+                                                "
+                                >
+                                  <div className="relative flex items-center justify-center h-full">
+                                    <Phone className="w-4 h-4 text-white drop-shadow-lg" />
+
+                                  </div>
+                                </button>
                           </div>
 
-                          {/* Messages Area */}
-                          <div className="flex-1 overflow-y-auto bg-gray-50 p-3 sm:p-4 space-y-4">
+
+                            <button
+                              onClick={closeChat}
+                              className="p-2 rounded-full hover:bg-red-50 mr-6 text-gray-400 hover:text-red-500 transition-colors"
+                              title="Close chat"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+
+                          <div className="flex-1 overflow-y-auto rounded-lg bg-gray-50 p-4 border shadow-inner space-y-4">
+
                             <ChatMessages
                               isChatLoading={isChatLoading}
                               chat={chat}
@@ -690,30 +672,16 @@ setIsConnected(false);
                             )}
                             <div className="pb-8" ref={chatEndRef} />
                           </div>
+                          <MessageInput
+                            message={message}
+                            setMessage={setMessage}
+                            sendMessage={sendMessage}
+                            handleTyping={handleTyping}
+                            selectedReceiver={selectedReceiver}
+                            sender={username}                // ✅ Added
+                            socket={socket}
+                          />
 
-                          {/* Message Input */}
-                          <div className="border-t bg-white">
-                            <MessageInput
-                              message={message}
-                              setMessage={setMessage}
-                              sendMessage={sendMessage}
-                              handleTyping={handleTyping}
-                              selectedReceiver={selectedReceiver}
-                              sender={username}
-                              socket={socket}
-                            />
-                          </div>
-                        </div>
-                      </main>
-                    )}
-
-                    {/* Empty state when no chat selected - only show on desktop */}
-                    {!selectedReceiver && (
-                      <main className="hidden lg:flex flex-1 items-center justify-center bg-gray-50">
-                        <div className="text-center">
-                          <MessageSquareMore className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                          <h3 className="text-xl font-semibold text-gray-600 mb-2">Select a conversation</h3>
-                          <p className="text-gray-500">Choose a user from the sidebar to start chatting</p>
                         </div>
                       </main>
                     )}
@@ -727,7 +695,13 @@ setIsConnected(false);
               ? "translate-x-0 opacity-100 z-10"
               : "translate-x-full opacity-0 pointer-events-none z-0"
               }`}>
-              <GroupChat socket={socket} />
+              {/* <GroupChat socket={socket} senderFullName={(user)=>chat.find(user.username=username then return the full name of the username)} username={username} /> */}
+              <GroupChat
+                socket={socket}
+              // getSenderFullname={getSenderFullname}
+
+              />
+
             </div>
           </div>
         </div>

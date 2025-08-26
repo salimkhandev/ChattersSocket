@@ -85,7 +85,6 @@ export default function LoginForm({ setIsLoggedIn, forgetPassword, signup, socke
     return (
         <div className="bg-white shadow-2xl p-6 sm:p-8 lg:p-10 rounded-xl 
                 w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-1xl xl:max-w-2xl text-center animate-fadeIn">
-            {/* <div className="bg-white shadow-2xl p-6 sm:p-8 lg:p-10 rounded-xl w-full max-w-sm sm:max-w-md lg:max-w-2xl xl:max-w-3xl text-center animate-fadeIn"> */}
                 <UserPlus className="w-12 h-12 sm:w-16 sm:h-16 text-indigo-600 mx-auto mb-4 sm:mb-6" />
                 <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-6 sm:mb-8">Login to Chat</h2>
 

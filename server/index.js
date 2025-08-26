@@ -69,7 +69,7 @@ try {
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "chatters-socket-frontend.vercel.app", // your frontend URL
+        origin: "https://chatters-socket-frontend.vercel.app", // your frontend URL
         methods: ["GET", "POST"],
         credentials: true     // needed if sending cookies
     },

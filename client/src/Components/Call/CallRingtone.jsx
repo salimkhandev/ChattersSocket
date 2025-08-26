@@ -22,7 +22,7 @@ export default function CallRingtone() {
     useEffect(() => {
         let audio;
         if (incomingCall && canPlaySound) {
-            audio = new Audio("../../../public/notification/incoming-calll.mp3");
+            audio = new Audio("/notification/incoming-call.mp3");
             audio.loop = true;
             audio.play().catch(() => {
                 console.warn("Autoplay blocked 😒 (no user action yet)");

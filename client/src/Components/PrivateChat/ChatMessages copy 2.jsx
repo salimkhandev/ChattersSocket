@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react'
-import { MoreHorizontal, Trash2, Loader2, Mic } from 'lucide-react'; // If you're using Lucide icons
+import { MoreHorizontal, Trash2, Loader2, Mic, Edit3 } from 'lucide-react'; // If you're using Lucide icons
 import VoiceMessagePlayer from './VoiceMessgae/VoiceMessagePlayer';
 import SendingMediaPreview from './SendMedia/SendingMediaPreview'
 import { useAuth } from '../../context/AuthContext';
@@ -74,20 +74,20 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
 
                                             {/* MEDIA PREVIEW OR DOWNLOAD */}
                                             {msg.media_url && msg.format && (
-                                                <div className="rounded overflow-hidden border border-gray-200 shadow-sm w-full max-w-[200px] sm:max-w-[250px]">
+                                                <div className="rounded overflow-hidden border border-gray-200 shadow-sm max-w-xs">
                                                     {['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(msg.format.toLowerCase()) ? (
                                                         <img
                                                             src={msg.media_url}
                                                             alt="sent image"
                                                             onClick={() => setSelectedMedia({ url: msg.media_url, format: msg.format })}
-                                                            className="w-full h-auto max-h-[300px] object-cover cursor-pointer"
+                                                            className="w-full h-auto object-cover cursor-pointer"
                                                         />
                                                     ) : ['mp4', 'webm'].includes(msg.format.toLowerCase()) ? (
                                                         <video
                                                             src={msg.media_url}
                                                             controls
                                                             onClick={() => setSelectedMedia({ url: msg.media_url, format: msg.format })}
-                                                            className="w-full h-auto max-h-[300px] cursor-pointer"
+                                                            className="w-full h-auto cursor-pointer"
                                                         />
 
                                                     ) : ['mp3', 'wav', 'ogg'].includes(msg.format.toLowerCase()) ? (
@@ -240,7 +240,8 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                                             }}
                                                             className="block w-full text-left px-4 py-1 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
                                                         >
-                                                            ✏️ Edit
+                                                            <Edit3 className="w-3 h-5" />
+                                                            Edit
                                                         </button>)}
 
                                                         <button
@@ -416,4 +417,4 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
     )
 }
 
-export default memo(ChatMessages) // This is to prevent unnecessary re-renders of the component 
+export default memo(ChatMessages) // This is to prevent unnecessary re-renders of the component

@@ -554,8 +554,8 @@ setIsConnected(false);
           {/* Mobile tabs - only shown on small screens */}
           <div className="sm:hidden bg-white border-b">
             <ToggleTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-          </div>
 <InstallPWAButton/>
+          </div>
           <div className="flex-1 relative overflow-hidden">
             {/* People Tab */}
             <div className={`absolute inset-0 w-full h-full transition-all duration-300 ease-in-out transform ${activeTab === "people"

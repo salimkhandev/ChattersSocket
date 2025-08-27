@@ -156,7 +156,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
             pc.current = new RTCPeerConnection({
                 iceServers: [
                     {
-                        urls: ["stun:bn-turn2.xirsys.com"] 
+                        urls: ["stun:bn-turn2.xirsys.com"]
                     },
                     {
                         urls: [

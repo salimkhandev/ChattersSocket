@@ -38,7 +38,7 @@ const EditMessageModal = ({ isOpen, message, onClose, onSave }) => {
             />
 
             {/* Modal */}
-            <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md mx-2 sm:mx-4">
+            <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-[calc(100%-1rem)] max-w-sm sm:max-w-md mx-2 sm:mx-4">
                 <div className="bg-white rounded-lg shadow-lg border border-gray-200 max-h-[90vh] overflow-hidden">
                     {/* Header */}
                     <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">

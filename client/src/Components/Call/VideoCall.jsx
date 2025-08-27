@@ -29,58 +29,33 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
         // cleanupMedia,
     }));
 
-    const startLocalStream = async (isVideoCall = true, mode = cameraMode) => {
+    const startLocalStream = async (isVideoCall = true) => {
         try {
             setIsAudioCall(!isVideoCall);
-
             const constraints = isVideoCall
-                ? { video: { facingMode: mode }, audio: true }
-                : { video: false, audio: true };
+                ? { video: { facingMode: cameraMode }, audio: true }
+                : { video: false, audio: true }
+            const stream = await navigator.mediaDevices.getUserMedia(constraints)
+            // if (localVideoRef.current) localVideoRef.current.srcObject = stream
 
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-            // Attach to local previews
             if (localVideoRef2?.current) {
                 localVideoRef2.current.srcObject = stream;
+
             }
+
             if (localVideoRefForOutgoing?.current) {
                 localVideoRefForOutgoing.current.srcObject = stream;
+
             }
 
-            // 🔥 Replace old tracks in PeerConnection
-            if (pc.current) {
-                const senders = pc.current.getSenders();
 
-                // Replace video track
-                const videoTrack = stream.getVideoTracks()[0];
-                if (videoTrack) {
-                    const videoSender = senders.find(s => s.track && s.track.kind === "video");
-                    if (videoSender) {
-                        await videoSender.replaceTrack(videoTrack);
-                    } else {
-                        pc.current.addTrack(videoTrack, stream);
-                    }
-                }
-
-                // Replace audio track (only if new one exists)
-                const audioTrack = stream.getAudioTracks()[0];
-                if (audioTrack) {
-                    const audioSender = senders.find(s => s.track && s.track.kind === "audio");
-                    if (audioSender) {
-                        await audioSender.replaceTrack(audioTrack);
-                    } else {
-                        pc.current.addTrack(audioTrack, stream);
-                    }
-                }
-            }
-
-            return stream;
+            return stream
         } catch (err) {
             console.error("❌ Error accessing camera/mic:", err);
-            alert("Error accessing camera/mic: " + err.message);
-            throw err;
+            alert('Error accessing camera/mic: ' + err.message)
+            throw err
         }
-    };
+    }
 
 
     useEffect(() => {

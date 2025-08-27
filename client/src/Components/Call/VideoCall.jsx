@@ -6,7 +6,6 @@ import { useCall } from '../../context/CallContext';
 import VideoDisplay from "./VideoDisplay";
 import { useBlock } from "../../context/BlockedCallContext";
 import { useProfile } from "../../context/ProfileContext";
-import { useCall } from "../../context/CallContext";
 
 const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
     // const localVideoRef = useRef(null)

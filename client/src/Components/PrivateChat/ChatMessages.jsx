@@ -8,8 +8,6 @@ import { useMedia } from '../../context/MediaContext';
 import MediaModal from '../PrivateChat/SendMedia/MediaModal'; // adjust the path
 import EditMessageModal from '../PrivateChat/EditMessageModal'; // adjust the path
 
-// Edit Modal Component
-
 function ChatMessages({ isChatLoading, chat, socket, setChat }) {
     const chatEndRef = useRef();
     const prevChatRef = useRef([]);
@@ -114,7 +112,6 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                         <img
                                             src={msg.sender_profile_pic}
                                             alt="profile"
-
                                             className="w-8 h-8 rounded-full object-cover border border-gray-300 shadow-sm"
                                         />
                                     )}
@@ -169,10 +166,8 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                                 </div>
                                             )}
 
-
                                             {/* SEEN / UNSEEN STATUS */}
                                             {msg.from === username && msg.type !== 'call' && (
-
                                                 msg.seen ? (
                                                     <div className="relative group inline-block">
                                                         <span className="text-[10px] text-blue-600 ml-2">Seen</span>
@@ -197,7 +192,6 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                     )}
 
                             </div>
-
 
                             <div className="break-word items-start justify-between gap-2">
                                 <>
@@ -237,7 +231,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                         </span>
                                     )}
 
-                                    {/* Message Options */}
+                                    {/* Message Options - For current user messages */}
                                     {msg.from === username && !msg.deleted_for?.split(",").map(s => s.trim()).includes(username) && !msg.is_deleted_for_everyone ? (
                                         <div className="relative inline-block">
                                             <button
@@ -268,21 +262,24 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                                         )}
                                                     />
 
-                                                    {/* Dropdown menu */}
-                                                    <div className="absolute right-0 bottom-full mb-1 z-20 w-44 bg-white rounded-md shadow-lg py-1 border border-gray-200">
-                                                        {!msg.is_voice && !msg.audio_url && !msg.media_url && msg.type !== 'call' && (<button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setChat(prev =>
-                                                                    prev.map(m => ({ ...m, showOptions: false }))
-                                                                );
-                                                                handleEditMessage(msg.id, msg.message);
-                                                            }}
-                                                            className="block w-full text-left px-4 py-1 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
-                                                        >
-                                                            <Edit3 className="w-3 h-5" />
-                                                            Edit
-                                                        </button>)}
+                                                    {/* Dropdown menu - Mobile responsive positioning */}
+                                                    <div className="absolute bottom-full mb-1 z-20 w-44 bg-white rounded-md shadow-lg py-1 border border-gray-200
+                                                                   left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0">
+                                                        {!msg.is_voice && !msg.audio_url && !msg.media_url && msg.type !== 'call' && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setChat(prev =>
+                                                                        prev.map(m => ({ ...m, showOptions: false }))
+                                                                    );
+                                                                    handleEditMessage(msg.id, msg.message);
+                                                                }}
+                                                                className="block w-full text-left px-4 py-1 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
+                                                            >
+                                                                <Edit3 className="w-3 h-5" />
+                                                                Edit
+                                                            </button>
+                                                        )}
 
                                                         <button
                                                             onClick={(e) => {
@@ -321,7 +318,6 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                                                     media_url: msg.media_url || null,
                                                                     sender: username,
                                                                     receiver: msg.to === username ? msg.from : msg.to
-
                                                                 });
                                                             }}
                                                             className="block w-full text-left px-4 py-1 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 border-t border-gray-100"
@@ -332,7 +328,6 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                                     </div>
                                                 </>
                                             )}
-
                                         </div>
                                     ) : msg.from !== username && !msg.deleted_for?.split(",").map(s => s.trim()).includes(username) && !msg.is_deleted_for_everyone && (
                                         <div className="relative inline-block">
@@ -364,8 +359,9 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                                         )}
                                                     />
 
-                                                    {/* Dropdown menu */}
-                                                    <div className="absolute left-0 bottom-full mb-1 z-20 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200">
+                                                    {/* Dropdown menu - Mobile responsive positioning */}
+                                                    <div className="absolute bottom-full mb-1 z-20 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200
+                                                                   left-1/2 -translate-x-1/2 sm:left-0 sm:right-auto sm:translate-x-0">
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -397,15 +393,13 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                         </div>
                     </div>
 
-                }))
+                })
 
-            }
-            {/* import {Mic, Loader2} from "lucide-react"; */}
+            )}
 
             {tempVoiceUrl && tempUrlAudio && (
                 <div className="my-2 px-4 flex justify-end">
                     <div className="relative flex items-center gap-3 bg-muted/30 px-3 py-2 rounded-lg shadow-md">
-
                         {/* Spinner & Mic */}
                         <div className="flex items-center justify-center">
                             <div className="relative">
@@ -414,32 +408,23 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                             </div>
                         </div>
 
-
                         {/* Blurred voice preview */}
-                        <div  >
+                        <div>
                             <VoiceMessagePlayer audioUrl={tempVoiceUrl} />
-                        </div >
+                        </div>
 
                         {/* Label */}
                         <div ref={chatEndRef}></div>
-                        {/* <div className="text-xs text-muted-foreground">Sending...</div> */}
                     </div>
                 </div>
             )}
+
             {uploading && (
                 <div className="my-2 px-4 flex justify-end">
-                    {/* <div className="relative flex items-center bg-green-900 gap-3 bg-muted/30 px-3 py-2 rounded-lg"> */}
-
-                    {/* Spinner & Mic */}
-
-
-
                     {/* Blurred voice preview */}
-                    <div  >
+                    <div>
                         <SendingMediaPreview />
-                    </div >
-                    {/* <div ref={chatEndRef}></div> */}
-
+                    </div>
                 </div>
             )}
 

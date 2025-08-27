@@ -19,13 +19,25 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
     const { tempVoiceUrl, setTempVoiceUrl, tempUrlAudio } = useVoice();
     const { localUrl, localFormat, uploading, isModalOpen, setIsModalOpen } = useMedia();
 
+    const prevChatRef = useRef([]);
+
     useEffect(() => {
         // Use setTimeout to ensure all messages are rendered first
-        const timer = setTimeout(() => {
-            chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, 100); // Small delay to ensure DOM is updated
+        const prev = prevChatRef.current;
+        const isSame =
+            prev.length === chat.length &&
+            prev.every((msg, i) => msg.message === chat[i]?.message && msg.created_at === chat[i]?.created_at);
 
-        return () => clearTimeout(timer);
+        if (!isSame) {
+            const timer = setTimeout(() => {
+                chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, 100); // Small delay to ensure DOM is updated
+
+            // Update the ref after scrolling
+            prevChatRef.current = chat;
+
+            return () => clearTimeout(timer);
+        }
     }, [chat, tempVoiceUrl, uploading]); // scroll when chat messages change
 
     // Also scroll when component mounts and messages are loaded

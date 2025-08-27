@@ -20,8 +20,24 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
     const { localUrl, localFormat, uploading, isModalOpen, setIsModalOpen } = useMedia();
 
     useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [tempVoiceUrl, uploading]); // scroll when new chat or temp voice arrives
+        // Use setTimeout to ensure all messages are rendered first
+        const timer = setTimeout(() => {
+            chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100); // Small delay to ensure DOM is updated
+
+        return () => clearTimeout(timer);
+    }, [chat, tempVoiceUrl, uploading]); // scroll when chat messages change
+
+    // Also scroll when component mounts and messages are loaded
+    useEffect(() => {
+        if (!isChatLoading && chat.length > 0) {
+            const timer = setTimeout(() => {
+                chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, 100);
+
+            return () => clearTimeout(timer);
+        }
+    }, [isChatLoading, chat.length]);
 
     const handleEditMessage = (messageId, currentText) => {
         setEditModal({

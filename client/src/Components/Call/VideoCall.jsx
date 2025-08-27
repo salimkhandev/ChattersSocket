@@ -93,11 +93,11 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
         }
     };
 
-    useEffect(() => {
-        if (currentIsVideo) {
-            switchCamera();
-        }
-    }, [cameraMode]);
+    // useEffect(() => {
+    //     if (currentIsVideo) {
+    //         switchCamera();
+    //     }
+    // }, [cameraMode]);
 
 
     // const cleanupMedia = () => {

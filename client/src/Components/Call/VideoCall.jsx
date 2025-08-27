@@ -26,7 +26,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
         // make a state for that callReceiverProfilePi
     useImperativeHandle(ref, () => ({
         createOffer,
-        cleanupMedia,
+        // cleanupMedia,
     }));
 
     const startLocalStream = async (isVideoCall = true, mode = cameraMode) => {

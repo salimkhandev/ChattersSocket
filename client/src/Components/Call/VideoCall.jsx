@@ -18,13 +18,12 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
     const [pendingOffer, setPendingOffer] = useState(null);
     const { isBlocked } = useBlock();
     const { profilePic } = useProfile();
-    const { cameraMode, toggleCameraMode } = useCall();
 
 
 
     const { username } = useAuth();
     const { setIncomingCall, callAccepted, showVideo, setCallerUsername, setCallerFullname, localVideoRef2, callID, setCallID, remoteVideoRef2, localVideoRefForOutgoing,
-        setIsAudioCall, currentIsVideo, setCurrentIsVideo, setCallerProfilePic, setCallReceiverProfilePic, callReceiverFullname, setCallReceiverFullname2,pc } = useCall();
+        setIsAudioCall, currentIsVideo, setCurrentIsVideo, setCallerProfilePic, setCallReceiverProfilePic, callReceiverFullname, setCallReceiverFullname2, pc, cameraMode, toggleCameraMode } = useCall();
         // make a state for that callReceiverProfilePi
     useImperativeHandle(ref, () => ({
         createOffer,

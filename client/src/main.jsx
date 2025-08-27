@@ -9,13 +9,11 @@ import { MediaProvider } from './context/MediaContext';
 import { UploadProvider } from './context/UploadContext';
 import { CallProvider } from "./context/CallContext";
 import { BlockProvider } from "./context/BlockedCallContext";
-import { CameraProvider } from "./context/CameraContext";
 
 import App from './App';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <CameraProvider>
     <BlockProvider>
     <CallProvider>
     <UploadProvider>
@@ -31,6 +29,5 @@ createRoot(document.getElementById('root')).render(
     </UploadProvider>
       </CallProvider>
     </BlockProvider>
-    </CameraProvider>
   </StrictMode>
 );

@@ -33,7 +33,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
         try {
             setIsAudioCall(!isVideoCall);
             const constraints = isVideoCall
-                ? { video: { facingMode: cameraMode }, audio: true }
+                ? { video: true, audio: true }   
                 : { video: false, audio: true }
             const stream = await navigator.mediaDevices.getUserMedia(constraints)
             // if (localVideoRef.current) localVideoRef.current.srcObject = stream
@@ -56,13 +56,49 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
             throw err
         }
     }
+    const switchCamera = async () => {
+        try {
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: cameraMode }, // 👈 use cameraMode here
+                audio: true,
+            });
 
+            // Update local video preview
+            if (localVideoRef2.current) {
+                localVideoRef2.current.srcObject = newStream;
+            }
+            if (localVideoRefForOutgoing.current) {
+                localVideoRefForOutgoing.current.srcObject = newStream;
+            }
+
+            // Replace track in PeerConnection
+            const videoTrack = newStream.getVideoTracks()[0];
+            const senders = pc.current?.getSenders() || [];
+            const videoSender = senders.find(s => s.track && s.track.kind === "video");
+            if (videoSender && videoTrack) {
+                await videoSender.replaceTrack(videoTrack);
+            }
+
+            // Stop old tracks (free camera)
+            if (localVideoRef2.current?.srcObject) {
+                localVideoRef2.current.srcObject.getVideoTracks().forEach(t => {
+                    if (t !== videoTrack) t.stop();
+                });
+            }
+
+            console.log("✅ Camera switched");
+
+        } catch (err) {
+            console.error("❌ Error switching camera:", err);
+        }
+    };
 
     useEffect(() => {
         if (currentIsVideo) {
-            startLocalStream(true, cameraMode); 
+            switchCamera();
         }
     }, [cameraMode]);
+
 
     // const cleanupMedia = () => {
 

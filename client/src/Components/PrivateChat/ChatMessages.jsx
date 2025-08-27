@@ -12,12 +12,26 @@ import EditMessageModal from '../PrivateChat/EditMessageModal'; // adjust the pa
 
 function ChatMessages({ isChatLoading, chat, socket, setChat }) {
     const chatEndRef = useRef();
+    const prevChatRef = useRef([]);
     const [selectedMedia, setSelectedMedia] = useState(null);
     const [editModal, setEditModal] = useState({ isOpen: false, messageId: null, currentText: '' });
 
     const { username } = useAuth();
     const { tempVoiceUrl, setTempVoiceUrl, tempUrlAudio } = useVoice();
     const { localUrl, localFormat, uploading, isModalOpen, setIsModalOpen } = useMedia();
+
+    useEffect(() => {
+        const prev = prevChatRef.current;
+        const isSame =
+            prev.length === chat.length &&
+            prev.every((msg, i) => msg.message === chat[i]?.message && msg.created_at === chat[i]?.created_at);
+
+        if (!isSame && chatEndRef.current) {
+            chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+
+        prevChatRef.current = chat;
+    }, [chat]);
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });

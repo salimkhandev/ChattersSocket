@@ -172,7 +172,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
                     },
                 ],
             });
-        }
+        
 
 
             pc.current.ontrack = e => {

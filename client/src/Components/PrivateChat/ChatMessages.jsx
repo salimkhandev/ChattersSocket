@@ -20,24 +20,23 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
     const { localUrl, localFormat, uploading, isModalOpen, setIsModalOpen } = useMedia();
 
     const prevChatRef = useRef([]);
+    const lastMessageCountRef = useRef(0);
 
     useEffect(() => {
-        // Use setTimeout to ensure all messages are rendered first
-        const prev = prevChatRef.current;
-        const isSame =
-            prev.length === chat.length &&
-            prev.every((msg, i) => msg.message === chat[i]?.message && msg.created_at === chat[i]?.created_at);
+        // Only scroll if new messages are added (length increased)
+        // Don't scroll for edits or other changes
+        const shouldScroll = chat.length > lastMessageCountRef.current;
 
-        if (!isSame) {
+        if (shouldScroll) {
             const timer = setTimeout(() => {
                 chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
             }, 100); // Small delay to ensure DOM is updated
 
-            // Update the ref after scrolling
-            prevChatRef.current = chat;
-
             return () => clearTimeout(timer);
         }
+
+        // Update the message count after checking
+        lastMessageCountRef.current = chat.length;
     }, [chat, tempVoiceUrl, uploading]); // scroll when chat messages change
 
     // Also scroll when component mounts and messages are loaded

@@ -140,18 +140,18 @@ setIsConnected(false);
 
 
 
-  useEffect(() => {
-    const prev = prevChatRef.current;
-    const isSame =
-      prev.length === chat.length &&
-      prev.every((msg, i) => msg.message === chat[i]?.message && msg.created_at === chat[i]?.created_at);
+  // useEffect(() => {
+  //   const prev = prevChatRef.current;
+  //   const isSame =
+  //     prev.length === chat.length &&
+  //     prev.every((msg, i) => msg.message === chat[i]?.message && msg.created_at === chat[i]?.created_at);
 
-    if (!isSame && chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+  //   if (!isSame && chatEndRef.current) {
+  //     chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+  //   }
 
-    prevChatRef.current = chat;
-  }, [chat]);
+  //   prevChatRef.current = chat;
+  // }, [chat]);
 
   useEffect(() => {
     if (!socket) return;

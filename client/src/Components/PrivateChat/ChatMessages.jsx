@@ -26,12 +26,15 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
             prev.length === chat.length &&
             prev.every((msg, i) => msg.message === chat[i]?.message && msg.created_at === chat[i]?.created_at);
 
-        if (!isSame && chatEndRef.current) {
-            chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+        if (!isSame && !isChatLoading && chatEndRef.current) {
+            // Use setTimeout to ensure DOM is fully rendered before scrolling
+            setTimeout(() => {
+                chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, 100);
         }
 
         prevChatRef.current = chat;
-    }, [chat]);
+    }, [chat, isChatLoading]);
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });

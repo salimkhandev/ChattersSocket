@@ -538,9 +538,7 @@ setIsConnected(false);
                 {/* Install PWA Button */}
                 <InstallPWAButton />
               </div>
-            <div className="hidden sm:block">
-              <ToggleTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-            </div>
+      
             
             {/* <div className="flex items-center gap-2">
             

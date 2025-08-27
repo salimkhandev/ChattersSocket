@@ -6,6 +6,7 @@ import SignupForm from "./Components/Auth/SignupForm";
 import LogoutButton from "./Components/Auth/LogoutButton";
 import GroupChat from "./Components/GroupChat/GroupChat";
 import ChatMessages from './Components/PrivateChat/ChatMessages';
+import InstallPWAButton from './Components/PWA/InstallPWAButton';
 import MessageInput from "./Components/PrivateChat/MessageInput";
 import OnlineUserList from './Components/PrivateChat/OnlineUserList';
 import ToggleTabs from "./Components/PrivateChat/ToggleTabs";
@@ -27,6 +28,7 @@ import VideoDisplay from './Components/Call/VideoDisplay';
 import AuthLoader from './Components/Auth/AuthLoader';
 // import { Routes, Route } from 'react-router-dom';
 import { useBlock } from "./context/BlockedCallContext";
+
 // import SignupForm from './Components/Auth/SignupForm';
 
 const backendURL = import.meta.env.VITE_BACKEND_URL;
@@ -553,7 +555,7 @@ setIsConnected(false);
           <div className="sm:hidden bg-white border-b">
             <ToggleTabs activeTab={activeTab} setActiveTab={setActiveTab} />
           </div>
-
+<InstallPWAButton/>
           <div className="flex-1 relative overflow-hidden">
             {/* People Tab */}
             <div className={`absolute inset-0 w-full h-full transition-all duration-300 ease-in-out transform ${activeTab === "people"

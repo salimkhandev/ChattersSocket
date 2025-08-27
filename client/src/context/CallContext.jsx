@@ -22,7 +22,18 @@ export const CallProvider = ({ children }) => {
     const [callTime, setCallTime] = useState(0);
     const timerRef = useRef(null);   // will hold interval id
     const callStartRef = useRef(null); // will hold call start timestamp
+    const [cameraMode, setCameraMode] = useState("environment"); // default: front camera
 
+    const toggleCameraMode = () => {
+        // 1. Stop old video tracks
+        if (localVideoRef2.current?.srcObject) {
+            localVideoRef2.current.srcObject.getVideoTracks().forEach(track => track.stop());
+        }
+        if (localVideoRefForOutgoing.current?.srcObject) {
+            localVideoRefForOutgoing.current.srcObject.getVideoTracks().forEach(track => track.stop());
+        }
+        setCameraMode(prev => (prev === "user" ? "environment" : "user"));
+    }
 
     const [currentIsVideo, setCurrentIsVideo] = useState(false);
     // const [localStream, setLocalStream] = useState(null);
@@ -126,7 +137,9 @@ export const CallProvider = ({ children }) => {
             timerRef,
             callTime,
              setCallTime,
-            callStartRef
+            callStartRef,
+            cameraMode, 
+            toggleCameraMode 
             
        
         }}>

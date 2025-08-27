@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useCall } from "../../context/CallContext";
-import { useCamera } from "../../context/CameraContext";
 import { SwitchCamera } from "lucide-react"; // ✅ correct
 
 
@@ -11,8 +10,7 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
     const [isLocalMinimized, setIsLocalMinimized] = useState(false);
     const [isLocalDragging, setIsLocalDragging] = useState(false);
 
-    const { callReceiverProfilePic, callReceiverFullname2, isConnected, timerRef, callTime, setCallTime, callStartRef } = useCall(); 
-    const { toggleCameraMode } = useCamera();
+    const { callReceiverProfilePic, callReceiverFullname2, isConnected, timerRef, callTime, setCallTime, callStartRef, toggleCameraMode } = useCall(); 
 
     // Remote video/audio play
     useEffect(() => {

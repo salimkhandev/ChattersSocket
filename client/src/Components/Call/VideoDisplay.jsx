@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useCall } from "../../context/CallContext";
 import { useCamera } from "../../context/CameraContext";
-import { CameraSwitch } from "lucide-react";
+import { SwitchCamera } from "lucide-react"; // ✅ correct
 
 
 export default function VideoDisplay({ localRef, remoteRef, socket, username, currentIsVideo, callerName,
@@ -193,7 +193,7 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                focus:ring-blue-500/50 transition-all duration-200 hover:scale-110 
                active:scale-95 flex items-center justify-center"
                                 >
-                                    <CameraSwitch className="w-6 h-6 sm:w-7 sm:h-7" />
+                                    <SwitchCamera className="w-6 h-6 sm:w-7 sm:h-7" />
                                 </button>
                             </div>
                             <span className="text-sm drop-shadow">Connected</span>

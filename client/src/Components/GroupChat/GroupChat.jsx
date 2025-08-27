@@ -27,16 +27,16 @@ const GroupChat = ({ socket }) => {
 
     useEffect(() => {
         const prev = prevChatRef.current;
-
+        
         // Check if it's just a message edit (same length, same IDs, same created_at)
-        const isMessageEdit = prev.length === messages.length &&
+        const isMessageEdit = prev.length === messages.length && 
             prev.length > 0 &&
-            prev.every((msg, i) =>
-                messages[i] &&
-                msg.id === messages[i].id &&
+            prev.every((msg, i) => 
+                messages[i] && 
+                msg.id === messages[i].id && 
                 msg.created_at === messages[i].created_at
             );
-
+        
         // Only scroll if it's not a message edit and chat is not loading
         if (!isMessageEdit && !isGroupChatLoading && messagesEndRef.current) {
             // Use setTimeout to ensure DOM is fully rendered before scrolling
@@ -44,7 +44,7 @@ const GroupChat = ({ socket }) => {
                 messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
             }, 100);
         }
-
+        
         prevChatRef.current = messages;
     }, [messages, isGroupChatLoading]);
 

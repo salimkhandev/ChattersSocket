@@ -93,11 +93,11 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
         }
     };
 
-    // useEffect(() => {
-    //     if (currentIsVideo) {
-    //         switchCamera();
-    //     }
-    // }, [cameraMode]);
+    useEffect(() => {
+        if (currentIsVideo) {
+            switchCamera();
+        }
+    }, [cameraMode]);
 
 
     // const cleanupMedia = () => {
@@ -156,19 +156,24 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
             pc.current = new RTCPeerConnection({
                 iceServers: [
                     {
-                        urls: ["stun:bn-turn2.xirsys.com"]
+                        urls: ["stun:ss-turn1.xirsys.com"],
                     },
                     {
+                        username: "UlsB5adXbjcdyp7hLtFAI3ms4mCkN8axoldDl4kl4DuZ3hMeztsRUlQLwlfNyzhRAAAAAGivK2hzYWxpbWVnMTAw",
+                        credential: "d4c71692-835e-11f0-a502-0242ac140004",
                         urls: [
-                            "turn:bn-turn2.xirsys.com:3478?transport=udp",
-                            "turn:bn-turn2.xirsys.com:3478?transport=tcp"
+                            "turn:ss-turn1.xirsys.com:80?transport=udp",
+                            "turn:ss-turn1.xirsys.com:3478?transport=udp",
+                            "turn:ss-turn1.xirsys.com:80?transport=tcp",
+                            "turn:ss-turn1.xirsys.com:3478?transport=tcp",
+                            "turns:ss-turn1.xirsys.com:443?transport=tcp",
+                            "turns:ss-turn1.xirsys.com:5349?transport=tcp",
                         ],
-                        username: "gkFDOpBmrkdYNBvLEQfqs38nbyf-ClCmuyo59o1H-Qj22fjKTpc7_tsBdAJL5Y3eAAAAAGiePClzYWxpbWtoYW4=",
-                        credential: "d2c6c5b2-7946-11f0-863e-0242ac140004"
-                    }
-                ]
-
+                    },
+                ],
             });
+        }
+
 
             pc.current.ontrack = e => {
                 const stream = e.streams[0];

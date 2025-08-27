@@ -5,7 +5,7 @@ import { createContext, useContext, useState } from "react";
 const CameraContext = createContext();
 
 export const CameraProvider = ({ children }) => {
-    const [cameraMode, setCameraMode] = useState("user"); // default: front camera
+    const [cameraMode, setCameraMode] = useState("environment"); // default: front camera
 
     const toggleCameraMode = () => {
         setCameraMode(prev => (prev === "user" ? "environment" : "user"));

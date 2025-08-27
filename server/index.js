@@ -13,7 +13,7 @@ const autoLogin =require('./socket/AutoLogin/autoLogin')
 const admin = require('firebase-admin');
 const groupChat = require("./socket/groupChat");
 const { startServer } = require("./socket/PrivateChat/privateChat");
-
+const rateLimit = require("express-rate-limit");
 const http = require("http");
 const { Server } = require("socket.io");
 const app = express();
@@ -28,6 +28,14 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
+const limiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 100, // limit each IP to 100 requests per windowMs
+    message: "Too many requests from this IP, please try again later.",
+});
+
+// Apply rate limiter to all requests
+app.use(limiter)
 app.use(express.json());
 
 app.get("/", (req, res) => {

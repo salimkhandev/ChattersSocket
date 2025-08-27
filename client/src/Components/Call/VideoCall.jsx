@@ -58,6 +58,13 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
             throw err
         }
     }
+
+    useEffect(() => {
+        if (currentIsVideo) {
+            startLocalStream(true, cameraMode); 
+        }
+    }, [cameraMode]);
+
     const cleanupMedia = () => {
 
         // Stop all local tracks

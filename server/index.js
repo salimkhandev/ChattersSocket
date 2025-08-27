@@ -69,7 +69,9 @@ try {
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "https://chatters-socket-frontend.vercel.app", // your frontend URL
+        origin: ['https://firebase-fcm2.vercel.app',
+            "https://chatters-socket-frontend.vercel.app",
+            'http://localhost:5173'], // your frontend URL
         methods: ["GET", "POST"],
         credentials: true     // needed if sending cookies
     },

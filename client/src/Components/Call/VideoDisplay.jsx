@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useCall } from "../../context/CallContext";
+import { useCamera } from "../../context/CameraContext";
+import { CameraSwitch } from "lucide-react";
+
 
 export default function VideoDisplay({ localRef, remoteRef, socket, username, currentIsVideo, callerName,
     profilePic,
@@ -9,6 +12,7 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
     const [isLocalDragging, setIsLocalDragging] = useState(false);
 
     const { callReceiverProfilePic, callReceiverFullname2, isConnected, timerRef, callTime, setCallTime, callStartRef } = useCall(); 
+    const { toggleCameraMode } = useCamera();
 
     // Remote video/audio play
     useEffect(() => {
@@ -176,6 +180,19 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                         </div>
 
                         {/* Connection indicator */}
+                        {/* Camera Toggle Button */}
+                        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50">
+                            <button
+                                onClick={toggleCameraMode}
+                                className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 
+               text-white rounded-full shadow-lg focus:outline-none focus:ring-4 
+               focus:ring-blue-500/50 transition-all duration-200 hover:scale-110 
+               active:scale-95 flex items-center justify-center"
+                            >
+                                <CameraSwitch className="w-6 h-6 sm:w-7 sm:h-7" />
+                            </button>
+                        </div>
+
                         <div className="flex items-center justify-center mt-4 text-white/80">
                             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2"></div>
                             <span className="text-sm drop-shadow">Connected</span>

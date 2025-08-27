@@ -6,6 +6,7 @@ import { useCall } from '../../context/CallContext';
 import VideoDisplay from "./VideoDisplay";
 import { useBlock } from "../../context/BlockedCallContext";
 import { useProfile } from "../../context/ProfileContext";
+import { useCamera } from "../../context/CameraContext";
 
 const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
     // const localVideoRef = useRef(null)
@@ -17,6 +18,8 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
     const [pendingOffer, setPendingOffer] = useState(null);
     const { isBlocked } = useBlock();
     const { profilePic } = useProfile();
+    const { cameraMode, toggleCameraMode } = useCamera();
+
 
 
     const { username } = useAuth();
@@ -32,7 +35,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
         try {
             setIsAudioCall(!isVideoCall);
             const constraints = isVideoCall
-                ? { video: true, audio: true }   
+                ? { video: { facingMode: cameraMode }, audio: true }
                 : { video: false, audio: true }
             const stream = await navigator.mediaDevices.getUserMedia(constraints)
             // if (localVideoRef.current) localVideoRef.current.srcObject = stream

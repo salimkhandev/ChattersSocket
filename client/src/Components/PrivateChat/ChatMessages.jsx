@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react'
-import { MoreHorizontal, Trash2, Loader2, Mic } from 'lucide-react'; // If you're using Lucide icons
+import { MoreHorizontal, Trash2, Loader2, Mic, Edit3 } from 'lucide-react'; // If you're using Lucide icons
 import VoiceMessagePlayer from './VoiceMessgae/VoiceMessagePlayer';
 import SendingMediaPreview from './SendMedia/SendingMediaPreview'
 import { useAuth } from '../../context/AuthContext';
@@ -240,7 +240,8 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                                             }}
                                                             className="block w-full text-left px-4 py-1 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
                                                         >
-                                                            ✏️ Edit
+                                                            <Edit3 className="w-3 h-5" />
+                                                            Edit
                                                         </button>)}
 
                                                         <button

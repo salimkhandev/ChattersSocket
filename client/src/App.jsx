@@ -533,7 +533,11 @@ setIsConnected(false);
               
               <UserProfileUpload nameLoaded={nameLoaded} username={username} socket={socket} />
             </div>
-            
+              <div className="hidden sm:flex items-center gap-2">
+                <ToggleTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+                {/* Install PWA Button */}
+                <InstallPWAButton />
+              </div>
             <div className="hidden sm:block">
               <ToggleTabs activeTab={activeTab} setActiveTab={setActiveTab} />
             </div>
@@ -554,7 +558,7 @@ setIsConnected(false);
           {/* Mobile tabs - only shown on small screens */}
           <div className="sm:hidden bg-white border-b">
             <ToggleTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-<InstallPWAButton/>
+
           </div>
           <div className="flex-1 relative overflow-hidden">
             {/* People Tab */}

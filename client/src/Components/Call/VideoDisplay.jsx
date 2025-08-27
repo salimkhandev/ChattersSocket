@@ -11,7 +11,7 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
     const [isMobile, setIsMobile] = useState(false);
     const [isLocalExpanded, setIsLocalExpanded] = useState(false);
     const [isRemoteMuted, setIsRemoteMuted] = useState(false);
-    const [isSpeakerOn, setIsSpeakerOn] = useState(false); // false = earpiece, true = loudspeaker
+    const [audioOutput, setAudioOutput] = useState('default'); // 'default' or 'earpiece'
     const [availableAudioDevices, setAvailableAudioDevices] = useState([]);
 
     const { callReceiverProfilePic, callReceiverFullname2, isConnected, timerRef, callTime, setCallTime, callStartRef, toggleCameraMode } = useCall();
@@ -50,42 +50,44 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                     // First, try to play the video
                     await remoteRef.current.play();
 
-                    // Set initial audio routing based on call type and device
-                    if ('setSinkId' in remoteRef.current) {
+                    // For Android Chrome, try to set audio output
+                    if (isMobile && 'setSinkId' in remoteRef.current) {
                         try {
-                            if (!currentIsVideo && !isSpeakerOn) {
-                                // For audio calls, default to earpiece/call speaker
-                                const earpieceDevice = availableAudioDevices.find(device =>
-                                    device.label.toLowerCase().includes('earpiece') ||
-                                    device.label.toLowerCase().includes('receiver') ||
-                                    device.deviceId === 'communications'
-                                );
+                            // Try to route to earpiece/call speaker
+                            const earpieceDevice = availableAudioDevices.find(device =>
+                                device.label.toLowerCase().includes('earpiece') ||
+                                device.label.toLowerCase().includes('receiver') ||
+                                device.deviceId === 'communications'
+                            );
 
-                                if (earpieceDevice) {
-                                    await remoteRef.current.setSinkId(earpieceDevice.deviceId);
-                                    console.log('Audio routed to earpiece:', earpieceDevice.label);
-                                } else {
-                                    // Fallback: try the 'communications' deviceId for call audio
-                                    await remoteRef.current.setSinkId('communications');
-                                    console.log('Audio routed to communications device');
-                                }
+                            if (earpieceDevice) {
+                                await remoteRef.current.setSinkId(earpieceDevice.deviceId);
+                                setAudioOutput('earpiece');
+                                console.log('Audio routed to earpiece:', earpieceDevice.label);
                             } else {
-                                // For video calls or when speaker is on, use default (loudspeaker)
-                                await remoteRef.current.setSinkId('');
-                                console.log('Audio routed to default speaker');
+                                // Fallback: try the 'communications' deviceId for call audio
+                                await remoteRef.current.setSinkId('communications');
+                                setAudioOutput('earpiece');
+                                console.log('Audio routed to communications device');
                             }
                         } catch (sinkError) {
-                            console.warn('Could not set audio output:', sinkError);
+                            console.warn('Could not route to earpiece, using default audio:', sinkError);
                             // Fallback to default audio output
-                            await remoteRef.current.setSinkId('').catch(console.error);
+                            try {
+                                await remoteRef.current.setSinkId('');
+                                setAudioOutput('default');
+                            } catch (defaultError) {
+                                console.error('Could not set default audio output:', defaultError);
+                            }
                         }
                     }
 
-                    // Set volume and audio constraints
-                    if (remoteRef.current) {
+                    // Additional Android-specific audio settings
+                    if (isMobile && remoteRef.current) {
+                        // Set volume to maximum for call audio
                         remoteRef.current.volume = 1.0;
 
-                        // Apply audio constraints for better call quality
+                        // Try to enable noise suppression and echo cancellation
                         const stream = remoteRef.current.srcObject;
                         if (stream && stream.getAudioTracks) {
                             const audioTracks = stream.getAudioTracks();
@@ -108,7 +110,7 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
         };
 
         setupAudioRouting();
-    }, [remoteRef, currentIsVideo, isSpeakerOn, availableAudioDevices]);
+    }, [remoteRef, isMobile, availableAudioDevices]);
 
     // Timer effect
     useEffect(() => {
@@ -136,39 +138,32 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
         return `${mins}:${secs}`;
     };
 
-    const toggleSpeaker = async () => {
-        if (remoteRef.current && 'setSinkId' in remoteRef.current) {
+    const toggleAudioOutput = async () => {
+        if (remoteRef.current && 'setSinkId' in remoteRef.current && isMobile) {
             try {
-                if (isSpeakerOn) {
+                if (audioOutput === 'default') {
                     // Switch to earpiece/call speaker
                     const earpieceDevice = availableAudioDevices.find(device =>
                         device.label.toLowerCase().includes('earpiece') ||
-                        device.label.toLowerCase().includes('receiver') ||
-                        device.deviceId === 'communications'
+                        device.label.toLowerCase().includes('receiver')
                     );
 
                     if (earpieceDevice) {
                         await remoteRef.current.setSinkId(earpieceDevice.deviceId);
+                        setAudioOutput('earpiece');
                     } else {
-                        // Try communications device ID
+                        // Try communications device
                         await remoteRef.current.setSinkId('communications');
+                        setAudioOutput('earpiece');
                     }
-                    setIsSpeakerOn(false);
-                    console.log('Audio switched to earpiece');
                 } else {
-                    // Switch to loudspeaker (default)
+                    // Switch back to default (speaker)
                     await remoteRef.current.setSinkId('');
-                    setIsSpeakerOn(true);
-                    console.log('Audio switched to loudspeaker');
+                    setAudioOutput('default');
                 }
             } catch (error) {
                 console.error('Error switching audio output:', error);
-                // Toggle the state anyway for visual feedback
-                setIsSpeakerOn(!isSpeakerOn);
             }
-        } else {
-            // For browsers that don't support setSinkId, just toggle the visual state
-            setIsSpeakerOn(!isSpeakerOn);
         }
     };
 
@@ -361,20 +356,20 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                             {/* Audio Output Toggle Button - Only show on mobile */}
                             {isMobile && 'setSinkId' in (remoteRef.current || {}) && (
                                 <button
-                                    onClick={toggleSpeaker}
+                                    onClick={toggleAudioOutput}
                                     className={`w-14 h-14 sm:w-16 sm:h-16 backdrop-blur-sm text-white rounded-full shadow-lg border border-white/20
                                              focus:outline-none focus:ring-4 focus:ring-white/30 
                                              transition-all duration-200 hover:scale-105 active:scale-95 
-                                             flex items-center justify-center ${isSpeakerOn
+                                             flex items-center justify-center ${audioOutput === 'earpiece'
                                             ? 'bg-blue-500/80 hover:bg-blue-600/80 active:bg-blue-700/80'
                                             : 'bg-white/20 hover:bg-white/30 active:bg-white/40'
                                         }`}
-                                    title={isSpeakerOn ? "Switch to Earpiece" : "Switch to Loudspeaker"}
+                                    title={audioOutput === 'earpiece' ? "Switch to Speaker" : "Switch to Earpiece"}
                                 >
-                                    {isSpeakerOn ? (
-                                        <Speaker className="w-6 h-6 sm:w-7 sm:h-7" />
-                                    ) : (
+                                    {audioOutput === 'earpiece' ? (
                                         <Phone className="w-6 h-6 sm:w-7 sm:h-7" />
+                                    ) : (
+                                        <Speaker className="w-6 h-6 sm:w-7 sm:h-7" />
                                     )}
                                 </button>
                             )}
@@ -495,24 +490,26 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                     <div className="absolute bottom-0 left-0 right-0 z-50 pb-8 sm:pb-12 px-4">
                         {/* Audio Output and Mute Button for Audio Call */}
                         <div className="flex justify-center items-center space-x-4 mb-6">
-                            {/* Speaker Toggle Button for Audio Calls */}
-                            <button
-                                onClick={toggleSpeaker}
-                                className={`w-14 h-14 sm:w-16 sm:h-16 backdrop-blur-sm text-white rounded-full shadow-lg border border-white/20
-                                         focus:outline-none focus:ring-4 focus:ring-white/30 
-                                         transition-all duration-200 hover:scale-105 active:scale-95 
-                                         flex items-center justify-center ${isSpeakerOn
-                                        ? 'bg-blue-500/80 hover:bg-blue-600/80 active:bg-blue-700/80'
-                                        : 'bg-white/20 hover:bg-white/30 active:bg-white/40'
-                                    }`}
-                                title={isSpeakerOn ? "Switch to Earpiece" : "Switch to Loudspeaker"}
-                            >
-                                {isSpeakerOn ? (
-                                    <Speaker className="w-6 h-6 sm:w-7 sm:h-7" />
-                                ) : (
-                                    <Phone className="w-6 h-6 sm:w-7 sm:h-7" />
-                                )}
-                            </button>
+                            {/* Audio Output Toggle Button - Only show on mobile */}
+                            {isMobile && 'setSinkId' in (remoteRef.current || {}) && (
+                                <button
+                                    onClick={toggleAudioOutput}
+                                    className={`w-14 h-14 sm:w-16 sm:h-16 backdrop-blur-sm text-white rounded-full shadow-lg border border-white/20
+                                             focus:outline-none focus:ring-4 focus:ring-white/30 
+                                             transition-all duration-200 hover:scale-105 active:scale-95 
+                                             flex items-center justify-center ${audioOutput === 'earpiece'
+                                            ? 'bg-blue-500/80 hover:bg-blue-600/80 active:bg-blue-700/80'
+                                            : 'bg-white/20 hover:bg-white/30 active:bg-white/40'
+                                        }`}
+                                    title={audioOutput === 'earpiece' ? "Switch to Speaker" : "Switch to Earpiece"}
+                                >
+                                    {audioOutput === 'earpiece' ? (
+                                        <Phone className="w-6 h-6 sm:w-7 sm:h-7" />
+                                    ) : (
+                                        <Speaker className="w-6 h-6 sm:w-7 sm:h-7" />
+                                    )}
+                                </button>
+                            )}
 
                             {/* Remote Mute Button for Audio Call */}
                             <button

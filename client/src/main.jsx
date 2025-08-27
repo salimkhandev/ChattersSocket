@@ -11,7 +11,12 @@ import { CallProvider } from "./context/CallContext";
 import { BlockProvider } from "./context/BlockedCallContext";
 import App from './App';
 
-createRoot(document.getElementById('root')).render(
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js')
+    .then(reg => console.log('Service Worker registered ✅', reg))
+    .catch(err => console.log('Service Worker registration failed ❌', err));}
+
+ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BlockProvider>
     <CallProvider>

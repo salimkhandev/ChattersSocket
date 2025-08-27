@@ -22,7 +22,7 @@ export const CallProvider = ({ children }) => {
     const [callTime, setCallTime] = useState(0);
     const timerRef = useRef(null);   // will hold interval id
     const callStartRef = useRef(null); // will hold call start timestamp
-    const [cameraMode, setCameraMode] = useState("environment"); // default: front camera
+    const [cameraMode, setCameraMode] = useState("user"); // default: front camera
 
     const toggleCameraMode = () => {
         // 1. Stop old video tracks

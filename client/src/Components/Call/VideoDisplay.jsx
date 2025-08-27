@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useCall } from "../../context/CallContext";
-import { SwitchCamera } from "lucide-react"; // ✅ correct
-
+import { SwitchCamera, Maximize2, PhoneOff } from "lucide-react";
 
 export default function VideoDisplay({ localRef, remoteRef, socket, username, currentIsVideo, callerName,
     profilePic,
@@ -10,6 +9,7 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
     const [isLocalMinimized, setIsLocalMinimized] = useState(false);
     const [isLocalDragging, setIsLocalDragging] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [isLocalExpanded, setIsLocalExpanded] = useState(false);
 
     const { callReceiverProfilePic, callReceiverFullname2, isConnected, timerRef, callTime, setCallTime, callStartRef, toggleCameraMode } = useCall();
 
@@ -34,11 +34,9 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
         }
     }, [remoteRef]);
 
-    // ✅ Timer starts only when isConnected becomes true
     // Timer effect
     useEffect(() => {
         if (isConnected) {
-            // Reset everything at connection
             callStartRef.current = Date.now();
             setCallTime(0);
 
@@ -55,8 +53,6 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
 
         return () => clearInterval(timerRef.current);
     }, [isConnected]);
-
-
 
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -98,31 +94,61 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
         performCallCleanup();
     };
 
-
-
     const toggleLocalVideo = () => {
-        setIsLocalMinimized(!isLocalMinimized);
+        if (isLocalMinimized) {
+            setIsLocalMinimized(false);
+        } else if (isLocalExpanded) {
+            setIsLocalExpanded(false);
+        } else {
+            setIsLocalExpanded(true);
+        }
     };
 
+    const handleRemoteClick = () => {
+        if (isLocalExpanded) {
+            setIsLocalExpanded(false);
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-[43] w-full h-full bg-black overflow-hidden" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh' }}>
             {currentIsVideo ? (
                 <div className="absolute inset-0 w-full h-full bg-black relative overflow-hidden">
-                    {/* Fullscreen Remote Video Background */}
-                    <div className="absolute inset-0 w-full h-full z-10">
+                    {/* Remote Video - Fullscreen when local not expanded, small when local expanded */}
+                    <div
+                        className={`absolute transition-all duration-500 ease-in-out ${isLocalExpanded
+                                ? 'top-4 right-4 w-32 h-24 sm:w-40 sm:h-28 md:w-48 md:h-32 lg:w-56 lg:h-36 z-40 rounded-lg sm:rounded-xl border-2 border-white/30 shadow-2xl cursor-pointer'
+                                : 'inset-0 w-full h-full z-10'
+                            }`}
+                        onClick={isLocalExpanded ? handleRemoteClick : undefined}
+                    >
                         <video
                             ref={remoteRef}
                             autoPlay
                             playsInline
-                            className="w-full h-full object-cover"
+                            className={`w-full h-full object-cover ${isLocalExpanded ? 'rounded-lg sm:rounded-xl' : ''}`}
                         />
-                        {/* Dark overlay for better UI visibility */}
-                        <div className="absolute inset-0 bg-black/20 z-10"></div>
+
+                        {/* Dark overlay for better UI visibility - only when fullscreen */}
+                        {!isLocalExpanded && (
+                            <div className="absolute inset-0 bg-black/20 z-10"></div>
+                        )}
+
+                        {/* Remote video label when minimized */}
+                        {isLocalExpanded && (
+                            <>
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent rounded-lg sm:rounded-xl pointer-events-none"></div>
+                                <div className="absolute bottom-1 left-1 right-1 text-center">
+                                    <span className="text-xs font-medium text-white bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-sm">
+                                        {callReceiverFullname2?.name ? callReceiverFullname2.name : callerName.callerFullname}
+                                    </span>
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     {/* Top overlay - Call info */}
-                    <div className="absolute top-0 left-0 right-0 z-30 p-4 sm:p-6">
+                    <div className={`absolute top-0 left-0 right-0 p-4 sm:p-6 ${isLocalExpanded ? 'z-50' : 'z-30'}`}>
                         <div className="bg-black/30 backdrop-blur-sm rounded-xl px-4 py-3 sm:px-6 sm:py-4 inline-block">
                             <div className="flex items-center space-x-3">
                                 {/* Caller profile pic */}
@@ -147,12 +173,14 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                         </div>
                     </div>
 
-                    {/* Local video - Floating window with increased size */}
+                    {/* Local video - Can be minimized, normal, or expanded to fullscreen */}
                     <div
-                        className={`absolute transition-all duration-300 ease-in-out z-40 ${isLocalMinimized
-                            ? 'top-4 right-4 w-14 h-14 sm:w-18 sm:h-18'
-                            : 'top-20 right-4 sm:top-24 sm:right-6 w-32 h-24 sm:w-40 sm:h-28 md:w-48 md:h-32 lg:w-56 lg:h-36 xl:w-64 xl:h-40'
-                            } ${isLocalDragging ? 'cursor-move' : 'cursor-pointer'}`}
+                        className={`absolute transition-all duration-500 ease-in-out ${isLocalMinimized
+                                ? 'top-4 left-4 w-14 h-14 sm:w-18 sm:h-18 z-40 cursor-pointer'
+                                : isLocalExpanded
+                                    ? 'inset-0 w-full h-full z-30 cursor-pointer'
+                                    : 'top-20 right-4 sm:top-24 sm:right-6 w-32 h-24 sm:w-40 sm:h-28 md:w-48 md:h-32 lg:w-56 lg:h-36 xl:w-64 xl:h-40 z-40 cursor-pointer'
+                            } ${isLocalDragging ? 'cursor-move' : ''}`}
                         onClick={toggleLocalVideo}
                     >
                         <video
@@ -160,18 +188,33 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                             autoPlay
                             playsInline
                             muted
-                            className={`w-full h-full object-cover shadow-2xl border-2 border-white/30 backdrop-blur-sm transition-all duration-300 scale-x-[-1] ${isLocalMinimized ? 'rounded-full' : 'rounded-lg sm:rounded-xl'
+                            className={`w-full h-full object-cover shadow-2xl backdrop-blur-sm transition-all duration-500 scale-x-[-1] ${isLocalMinimized
+                                    ? 'rounded-full border-2 border-white/30'
+                                    : isLocalExpanded
+                                        ? 'rounded-none border-none'
+                                        : 'rounded-lg sm:rounded-xl border-2 border-white/30'
                                 }`}
                         />
 
+                        {/* Video labels and overlays */}
                         {!isLocalMinimized && (
                             <>
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent rounded-lg sm:rounded-xl pointer-events-none"></div>
-                                <div className="absolute bottom-1 left-1 right-1 text-center">
+                                <div className={`absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none ${isLocalExpanded ? '' : 'rounded-lg sm:rounded-xl'
+                                    }`}></div>
+                                <div className={`absolute ${isLocalExpanded ? 'bottom-4 left-4' : 'bottom-1 left-1 right-1'} text-center`}>
                                     <span className="text-xs font-medium text-white bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-sm">
                                         You
                                     </span>
                                 </div>
+
+                                {/* Expand/minimize hint */}
+                                {!isLocalExpanded && (
+                                    <div className="absolute top-1 right-1">
+                                        <div className="w-6 h-6 bg-black/50 rounded-full flex items-center justify-center">
+                                            <Maximize2 className="w-3 h-3 text-white" />
+                                        </div>
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>
@@ -202,9 +245,7 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                                 className="w-16 h-16 sm:w-20 sm:h-20 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-full shadow-2xl focus:outline-none focus:ring-4 focus:ring-red-500/50 transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center"
                                 title="End Call"
                             >
-                                <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8l-4 4-4-4m0 8l4-4 4 4" />
-                                </svg>
+                                <PhoneOff className="w-6 h-6 sm:w-8 sm:h-8" />
                             </button>
                         </div>
 
@@ -270,9 +311,7 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                                 className="w-16 h-16 sm:w-20 sm:h-20 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-full shadow-2xl focus:outline-none focus:ring-4 focus:ring-red-500/50 transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center"
                                 title="End Call"
                             >
-                                <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8l-4 4-4-4m0 8l4-4 4 4" />
-                                </svg>
+                                <PhoneOff className="w-6 h-6 sm:w-8 sm:h-8" />
                             </button>
                         </div>
 

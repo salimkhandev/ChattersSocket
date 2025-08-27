@@ -22,11 +22,18 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
 
     useEffect(() => {
         const prev = prevChatRef.current;
-        const isSame =
-            prev.length === chat.length &&
-            prev.every((msg, i) => msg.message === chat[i]?.message && msg.created_at === chat[i]?.created_at);
 
-        if (!isSame && !isChatLoading && chatEndRef.current) {
+        // Check if it's just a message edit (same length, same IDs, same created_at)
+        const isMessageEdit = prev.length === chat.length &&
+            prev.length > 0 &&
+            prev.every((msg, i) =>
+                chat[i] &&
+                msg.id === chat[i].id &&
+                msg.created_at === chat[i].created_at
+            );
+
+        // Only scroll if it's not a message edit and chat is not loading
+        if (!isMessageEdit && !isChatLoading && chatEndRef.current) {
             // Use setTimeout to ensure DOM is fully rendered before scrolling
             setTimeout(() => {
                 chatEndRef.current?.scrollIntoView({ behavior: "smooth" });

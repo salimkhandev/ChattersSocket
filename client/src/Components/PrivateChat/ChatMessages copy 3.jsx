@@ -244,12 +244,8 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                                         )}
                                                     />
 
-                                                    {/* Dropdown menu - responsive positioning */}
-                                                    <div className={`absolute z-20 w-44 bg-white rounded-md shadow-lg py-1 border border-gray-200 
-                                                        ${window.innerWidth <= 768 ?
-                                                            'left-1/2 transform -translate-x-1/2 bottom-full mb-1' :
-                                                            'right-0 bottom-full mb-1'
-                                                        }`}>
+                                                    {/* Dropdown menu */}
+                                                    <div className="absolute right-0 bottom-full mb-1 z-20 w-44 bg-white rounded-md shadow-lg py-1 border border-gray-200">
                                                         {!msg.is_voice && !msg.audio_url && !msg.media_url && msg.type !== 'call' && (<button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -344,12 +340,8 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                                         )}
                                                     />
 
-                                                    {/* Dropdown menu - responsive positioning */}
-                                                    <div className={`absolute z-20 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200 
-                                                        ${window.innerWidth <= 768 ?
-                                                            'left-1/2 transform -translate-x-1/2 bottom-full mb-1' :
-                                                            'left-0 bottom-full mb-1'
-                                                        }`}>
+                                                    {/* Dropdown menu */}
+                                                    <div className="absolute left-0 bottom-full mb-1 z-20 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200">
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();

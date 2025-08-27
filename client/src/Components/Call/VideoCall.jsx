@@ -59,7 +59,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
     const switchCamera = async () => {
         try {
             const newStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: cameraMode }, // 👈 use cameraMode here
+                video: { facingMode: cameraMode }, 
                 audio: true,
             });
 

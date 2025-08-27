@@ -9,21 +9,8 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
 
     const [isLocalMinimized, setIsLocalMinimized] = useState(false);
     const [isLocalDragging, setIsLocalDragging] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
 
-    const { callReceiverProfilePic, callReceiverFullname2, isConnected, timerRef, callTime, setCallTime, callStartRef, toggleCameraMode } = useCall();
-
-    // Check if device is mobile
-    useEffect(() => {
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth < 1024 && 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices);
-        };
-
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
+    const { callReceiverProfilePic, callReceiverFullname2, isConnected, timerRef, callTime, setCallTime, callStartRef, toggleCameraMode } = useCall(); 
 
     // Remote video/audio play
     useEffect(() => {
@@ -126,7 +113,8 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                         <div className="bg-black/30 backdrop-blur-sm rounded-xl px-4 py-3 sm:px-6 sm:py-4 inline-block">
                             <div className="flex items-center space-x-3">
                                 {/* Caller profile pic */}
-                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-green-400">
+
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-green-400">
                                     <img
                                         src={callReceiverFullname2?.name ? callReceiverProfilePic : callerProfilePic}
                                         alt={callerName.callerFullname}
@@ -147,11 +135,11 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                         </div>
                     </div>
 
-                    {/* Local video - Floating window with increased size */}
+                    {/* Local video - Floating window */}
                     <div
                         className={`absolute transition-all duration-300 ease-in-out z-40 ${isLocalMinimized
-                            ? 'top-4 right-4 w-14 h-14 sm:w-18 sm:h-18'
-                            : 'top-20 right-4 sm:top-24 sm:right-6 w-32 h-24 sm:w-40 sm:h-28 md:w-48 md:h-32 lg:w-56 lg:h-36 xl:w-64 xl:h-40'
+                            ? 'top-4 right-4 w-12 h-12 sm:w-16 sm:h-16'
+                            : 'top-20 right-4 sm:top-24 sm:right-6 w-24 h-16 sm:w-32 sm:h-20 md:w-40 md:h-24 lg:w-48 lg:h-28'
                             } ${isLocalDragging ? 'cursor-move' : 'cursor-pointer'}`}
                         onClick={toggleLocalVideo}
                     >
@@ -176,31 +164,12 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                         )}
                     </div>
 
-                    {/* Control buttons at bottom */}
+                    {/* End Call Button - Bottom center */}
                     <div className="absolute bottom-0 left-0 right-0 z-50 pb-8 sm:pb-12 px-4">
-                        {/* Camera Toggle Button - Only show on mobile devices with camera support */}
-                        {isMobile && (
-                            <div className="flex justify-center mb-6">
-                                <button
-                                    onClick={toggleCameraMode}
-                                    className="w-14 h-14 sm:w-16 sm:h-16 bg-white/20 hover:bg-white/30 active:bg-white/40 
-                                             backdrop-blur-sm text-white rounded-full shadow-lg border border-white/20
-                                             focus:outline-none focus:ring-4 focus:ring-white/30 
-                                             transition-all duration-200 hover:scale-105 active:scale-95 
-                                             flex items-center justify-center"
-                                    title="Switch Camera"
-                                >
-                                    <SwitchCamera className="w-6 h-6 sm:w-7 sm:h-7" />
-                                </button>
-                            </div>
-                        )}
-
-                        {/* End Call Button - Bottom center */}
                         <div className="flex justify-center">
                             <button
                                 onClick={handleEndCall}
                                 className="w-16 h-16 sm:w-20 sm:h-20 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-full shadow-2xl focus:outline-none focus:ring-4 focus:ring-red-500/50 transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center"
-                                title="End Call"
                             >
                                 <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8l-4 4-4-4m0 8l4-4 4 4" />
@@ -209,8 +178,22 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                         </div>
 
                         {/* Connection indicator */}
+                        {/* Camera Toggle Button */}
+                      
+
                         <div className="flex items-center justify-center mt-4 text-white/80">
                             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2"></div>
+                            <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50">
+                                <button
+                                    onClick={toggleCameraMode}
+                                    className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 
+               text-white rounded-full shadow-lg focus:outline-none focus:ring-4 
+               focus:ring-blue-500/50 transition-all duration-200 hover:scale-110 
+               active:scale-95 flex items-center justify-center"
+                                >
+                                    <SwitchCamera className="w-6 h-6 sm:w-7 sm:h-7" />
+                                </button>
+                            </div>
                             <span className="text-sm drop-shadow">Connected</span>
                         </div>
                     </div>
@@ -268,7 +251,6 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
                             <button
                                 onClick={handleEndCall}
                                 className="w-16 h-16 sm:w-20 sm:h-20 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-full shadow-2xl focus:outline-none focus:ring-4 focus:ring-red-500/50 transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center"
-                                title="End Call"
                             >
                                 <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8l-4 4-4-4m0 8l4-4 4 4" />

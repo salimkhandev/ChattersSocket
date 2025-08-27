@@ -122,13 +122,13 @@ const MessageInput = ({
                     )}
 
                     {/* Upload Media Button */}
-                    <div className="flex items-center">
+                   {!isRecording && <div className="flex items-center">
                         <UploadMedia
                             sender={sender}
                             receiver={selectedReceiver}
                             socket={socket}
                         />
-                    </div>
+                    </div>}
 
                     {/* Mic Button (Start Recording) */}
                     {(!isRecording || showRecordIcon) && (

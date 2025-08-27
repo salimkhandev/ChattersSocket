@@ -521,7 +521,7 @@ const GroupChat = ({ socket }) => {
                                                                                 groupName: selectedGroup
                                                                             });
                                                                         }}
-                                                                        className="block w-full text-left px-3 md:px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 border-t border-gray-100"
+                                                                        className="block w-full text-left px-3 md:px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 border-t  border-gray-100"
                                                                     >
                                                                         <Trash2 className="w-3 h-3" />
                                                                         <span>Delete for everyone</span>

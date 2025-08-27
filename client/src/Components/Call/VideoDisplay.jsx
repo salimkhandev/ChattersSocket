@@ -181,20 +181,21 @@ export default function VideoDisplay({ localRef, remoteRef, socket, username, cu
 
                         {/* Connection indicator */}
                         {/* Camera Toggle Button */}
-                        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50">
-                            <button
-                                onClick={toggleCameraMode}
-                                className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 
-               text-white rounded-full shadow-lg focus:outline-none focus:ring-4 
-               focus:ring-blue-500/50 transition-all duration-200 hover:scale-110 
-               active:scale-95 flex items-center justify-center"
-                            >
-                                <CameraSwitch className="w-6 h-6 sm:w-7 sm:h-7" />
-                            </button>
-                        </div>
+                      
 
                         <div className="flex items-center justify-center mt-4 text-white/80">
                             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2"></div>
+                            <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50">
+                                <button
+                                    onClick={toggleCameraMode}
+                                    className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 
+               text-white rounded-full shadow-lg focus:outline-none focus:ring-4 
+               focus:ring-blue-500/50 transition-all duration-200 hover:scale-110 
+               active:scale-95 flex items-center justify-center"
+                                >
+                                    <CameraSwitch className="w-6 h-6 sm:w-7 sm:h-7" />
+                                </button>
+                            </div>
                             <span className="text-sm drop-shadow">Connected</span>
                         </div>
                     </div>

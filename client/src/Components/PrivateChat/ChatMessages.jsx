@@ -19,36 +19,9 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
     const { tempVoiceUrl, setTempVoiceUrl, tempUrlAudio } = useVoice();
     const { localUrl, localFormat, uploading, isModalOpen, setIsModalOpen } = useMedia();
 
-    const prevChatRef = useRef([]);
-    const lastMessageCountRef = useRef(0);
-
     useEffect(() => {
-        // Only scroll if new messages are added (length increased)
-        // Don't scroll for edits or other changes
-        const shouldScroll = chat.length > lastMessageCountRef.current;
-
-        if (shouldScroll) {
-            const timer = setTimeout(() => {
-                chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-            }, 100); // Small delay to ensure DOM is updated
-
-            return () => clearTimeout(timer);
-        }
-
-        // Update the message count after checking
-        lastMessageCountRef.current = chat.length;
-    }, [chat, tempVoiceUrl, uploading]); // scroll when chat messages change
-
-    // Also scroll when component mounts and messages are loaded
-    useEffect(() => {
-        if (!isChatLoading && chat.length > 0) {
-            const timer = setTimeout(() => {
-                chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-            }, 100);
-
-            return () => clearTimeout(timer);
-        }
-    }, [isChatLoading, chat.length]);
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [tempVoiceUrl, uploading]); // scroll when new chat or temp voice arrives
 
     const handleEditMessage = (messageId, currentText) => {
         setEditModal({
@@ -271,12 +244,8 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                                         )}
                                                     />
 
-                                                    {/* Dropdown menu - responsive positioning */}
-                                                    <div className={`absolute z-20 w-44 bg-white rounded-md shadow-lg py-1 border border-gray-200 
-                                                        ${window.innerWidth <= 768 ?
-                                                            'left-1/2 transform -translate-x-1/2 bottom-full mb-1' :
-                                                            'right-0 bottom-full mb-1'
-                                                        }`}>
+                                                    {/* Dropdown menu */}
+                                                    <div className="absolute right-0 bottom-full mb-1 z-20 w-44 bg-white rounded-md shadow-lg py-1 border border-gray-200">
                                                         {!msg.is_voice && !msg.audio_url && !msg.media_url && msg.type !== 'call' && (<button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -371,12 +340,8 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                                         )}
                                                     />
 
-                                                    {/* Dropdown menu - responsive positioning */}
-                                                    <div className={`absolute z-20 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200 
-                                                        ${window.innerWidth <= 768 ?
-                                                            'left-1/2 transform -translate-x-1/2 bottom-full mb-1' :
-                                                            'left-0 bottom-full mb-1'
-                                                        }`}>
+                                                    {/* Dropdown menu */}
+                                                    <div className="absolute left-0 bottom-full mb-1 z-20 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200">
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();

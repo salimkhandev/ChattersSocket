@@ -147,16 +147,18 @@ const MessageInput = ({
 
                     {/* Stop Button (Stop Recording) */}
                     {isRecording && showStopIcon && (
-                        <button
-                            onClick={() => {
-                                setTimeout(() => handleStop(), 0);
-                            }}
-                            className="p-1.5 sm:p-2 hover:bg-red-50 rounded-full transition-colors"
-                            title="Stop Recording"
-                            aria-label="Stop Recording"
-                        >
-                            <StopCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
-                        </button>
+                        <div className="flex justify-left w-full">
+                            <button
+                                onClick={() => {
+                                    setTimeout(() => handleStop(), 0);
+                                }}
+                                className="ml-8 sm:ml-12 md:ml-16 p-1.5 sm:p-2 hover:bg-red-50 rounded-full transition-colors"
+                                title="Stop Recording"
+                                aria-label="Stop Recording"
+                            >
+                                <StopCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
+                            </button>
+                        </div>
                     )}
 
                     {/* Send Button */}

@@ -232,6 +232,12 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                                 ) : msg.is_voice && msg.audio_url ? (
                                                     <VoiceMessagePlayer audioUrl={msg.audio_url} />
 
+                                                ) : msg.updated && msg.from == username ? (
+                                                    <p className="break-words">
+                                                        {msg.message}
+                                                         <span className="text-xs text-gray-500 italic mr-2 opacity-80"> Edited</span>
+
+                                                    </p>
                                                 ) : (
                                                     <p className="break-words">{msg.message}</p>
                                                 )}

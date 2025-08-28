@@ -1,0 +1,26 @@
+What’s going on in your code
+importScripts(...)
+
+This pulls in Firebase’s JavaScript SDK inside your service worker (firebase-messaging-sw.js).
+
+Service workers run separately from your web page and can respond to push events even if your site isn’t open.
+
+firebase.initializeApp(...)
+
+Initializes your Firebase app inside the service worker using your project’s config.
+
+firebase.messaging()
+
+Gets the Firebase Cloud Messaging instance.
+
+messaging.onBackgroundMessage(...)
+
+This is the event listener for background messages — these are push messages received when your page is not active (minimized or closed).
+
+payload contains the data you sent from your backend with sendNotification.
+
+self.registration.showNotification(...)
+
+This is the actual line that makes the notification pop up in the OS notification tray.
+
+Uses the title, body, icon, badge, and image from the FCM payload.

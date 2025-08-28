@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useVoice } from "../../../context/VoiceContext";
+import { StopCircle } from "lucide-react";
 
 export default function AudioRecordingVisualizer({
   variant = "classic", // "classic", "modern", "minimal", "pulse"
@@ -7,7 +8,7 @@ export default function AudioRecordingVisualizer({
 }) {
   const [bars, setBars] = useState([]);
   const [recordingTime, setRecordingTime] = useState(0);
-  const {  stopRecording} = useVoice();
+  const { stopRecording } = useVoice();
 
   // Size configurations
   const sizes = {
@@ -20,15 +21,15 @@ export default function AudioRecordingVisualizer({
 
   // Recording visualizer variants
   const variants = {
-   
     classic: {
       colors: "bg-gray-400",
       containerBg: "bg-gray-50/90 backdrop-blur-sm border border-gray-200",
       borderRadius: "rounded-lg",
       shadow: "shadow-md shadow-gray-200",
-      glowColor: "shadow-gray-400/20"
+      glowColor: "shadow-gray-400/20",
+      stopBtnBg: "bg-red-500 hover:bg-red-600",
+      stopBtnText: "text-white"
     },
-  
   };
 
   const currentVariant = variants[variant];
@@ -116,6 +117,10 @@ export default function AudioRecordingVisualizer({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleStopRecording = () => {
+    stopRecording();
+  };
+
   return (
     <div className={`
       relative inline-flex items-center gap-4
@@ -163,14 +168,22 @@ export default function AudioRecordingVisualizer({
         ))}
       </div>
 
-      {/* Status text (always shows recording) */}
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <span className={variant === 'modern' ? 'text-cyan-400' : 'text-red-600'}>
+      {/* Status text and Stop button */}
+      <div className="flex items-center gap-3">
+        <span className={`text-sm font-medium ${variant === 'modern' ? 'text-cyan-400' : 'text-red-600'}`}>
           Recording...
         </span>
-      </div>
 
-      
+        {/* Stop button */}
+        <button
+          onClick={handleStopRecording}
+          className="p-1.5 sm:p-2 hover:bg-red-50 rounded-full transition-colors"
+          title="Stop Recording"
+          aria-label="Stop Recording"
+        >
+          <StopCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
+        </button>
+      </div>
     </div>
   );
 }

@@ -7,10 +7,11 @@ import AudioWaveIcon from "./AudioWaveIcon";
 import { useVoice } from '../../../context/VoiceContext';
 const backendURL = import.meta.env.VITE_BACKEND_URL;
 
-const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecording }, ref) => {
-    const [recording, setRecording] = useState(false);
+const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecording}, ref) => {
     const [uploading, setUploading] = useState(false);
-    const mediaRecorderRef = useRef(null);
+    // const [recording, setRecording] = useState(false);
+    // const mediaRecorderRef = useRef(null);
+    // const intervalRef = useRef(null);
     const audioChunksRef = useRef([]);
     const waveformRef = useRef(null);
     const waveSurferRef = useRef(null);
@@ -18,10 +19,9 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [recordTime, setRecordTime] = useState(0);
-    const intervalRef = useRef(null);
+    // const [recordTime, setRecordTime] = useState(0);
     const [audioBlob, setAudioBlob] = useState(null);
-    const { tempVoiceUrl, setTempVoiceUrl, setTempUrlAudio } = useVoice();
+    const { tempVoiceUrl, setTempVoiceUrl, setTempUrlAudio, recording, setRecording, mediaRecorderRef, intervalRef } = useVoice();
 
     const playSendSound = () => {
         const audio = new Audio('/notification/Sending-Message-Sound.mp3');
@@ -58,7 +58,7 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
 
     const startRecording = async () => {
         intervalRef.current = setInterval(() => {
-            setRecordTime(prev => prev + 1);
+            // setRecordTime(prev => prev + 1);
         }, 1000);
 
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -78,21 +78,21 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
 
         mediaRecorderRef.current.start();
         setRecording(true);
-        setRecordTime(0);
+        // setRecordTime(0);
     };
 
-    const stopRecording = () => {
-        if (mediaRecorderRef.current) {
-            mediaRecorderRef.current.stop();
-            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    // const stopRecording = () => {
+        // if (mediaRecorderRef.current) {
+        //     mediaRecorderRef.current.stop();
+        //     mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
 
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-                intervalRef.current = null;
-            }
-        }
-        setRecording(false);
-    };
+        //     if (intervalRef.current) {
+        //         clearInterval(intervalRef.current);
+        //         intervalRef.current = null;
+        //     }
+        // }
+        // setRecording(false);
+    // };
 
     const sendMessage = async () => {
         if (!audioBlob) return;
@@ -125,7 +125,7 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
         setTempUrlAudio(null);
         setTempVoiceUrl(null);
         setAudioBlob(null);
-        setRecordTime(0);
+        // setRecordTime(0);
         if (waveSurferRef.current) {
             waveSurferRef.current.destroy();
             waveSurferRef.current = null;
@@ -185,7 +185,7 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
 
     useImperativeHandle(ref, () => ({
         startRecording,
-        stopRecording,
+        // stopRecording, // Comment this out since we're using useVoice hook instead      
     }));
 
     const formatTime = (time) => {

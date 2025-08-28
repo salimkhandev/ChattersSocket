@@ -18,7 +18,7 @@ const MessageInput = ({
     socket,
     sender,
 }) => {
-    const [showStopIcon, setShowStopIcon] = useState(false);
+    // const [showStopIcon, setShowStopIcon] = useState(false);
     const [showRecordIcon, setShowRecordIcon] = useState(true);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
@@ -27,15 +27,15 @@ const MessageInput = ({
 
     const handleStart = () => {
         recorderRef.current?.startRecording();
-        setShowStopIcon(true);
+        // setShowStopIcon(true);
         setShowRecordIcon(false);
     };
 
-    const handleStop = () => {
-        recorderRef.current?.stopRecording();
-        setShowRecordIcon(false);
-        setShowStopIcon(false);
-    };
+    // const handleStop = () => {
+    //     recorderRef.current?.stopRecording();
+    //     setShowRecordIcon(false);
+    //     setShowStopIcon(false);
+    // };
 
     const closeModal = () => {
         setLocalFormat(null);
@@ -146,7 +146,7 @@ const MessageInput = ({
                     )}
 
                     {/* Stop Button (Stop Recording) */}
-                    {isRecording && showStopIcon && (
+                    {/* {isRecording && showStopIcon && (
                         <button
                             onClick={() => {
                                 setTimeout(() => handleStop(), 0);
@@ -157,7 +157,7 @@ const MessageInput = ({
                         >
                             <StopCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
                         </button>
-                    )}
+                    )} */}
 
                     {/* Send Button */}
                     {!isRecording && (

@@ -201,7 +201,7 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
     return (
         <div className="w-full max-w-2xl mx-auto">
             {recording ? (
-                // Recording State
+                //   here the time of recording should be shown
                 <div className="flex items-center justify-between w-full px-2">
                     <AudioWaveIcon />
                     {/* <div className="text-sm text-gray-700 font-medium ml-auto">
@@ -220,7 +220,7 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
                     {/* Waveform Container */}
                     <div className="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4">
                         <div ref={waveformRef} className="w-full h-[50px] mb-3" />
-
+                        
                         {/* Time Display */}
                         <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 font-mono">
                             <span className="bg-white px-2 py-1 rounded">{formatTime(currentTime)}</span>
@@ -261,10 +261,11 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
                         <button
                             onClick={sendMessage}
                             disabled={uploading}
-                            className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 flex-1 sm:flex-none ${uploading
+                            className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 flex-1 sm:flex-none ${
+                                uploading
                                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                     : 'bg-green-600 hover:bg-green-700 text-white hover:shadow-md'
-                                }`}
+                            }`}
                         >
                             {uploading ? (
                                 <>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useVoice } from "../../../context/VoiceContext";
 
 export default function AudioRecordingVisualizer({
   variant = "classic", // "classic", "modern", "minimal", "pulse"
@@ -6,6 +7,7 @@ export default function AudioRecordingVisualizer({
 }) {
   const [bars, setBars] = useState([]);
   const [recordingTime, setRecordingTime] = useState(0);
+  const {  stopRecording} = useVoice();
 
   // Size configurations
   const sizes = {

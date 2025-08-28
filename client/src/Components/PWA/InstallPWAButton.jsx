@@ -53,7 +53,7 @@ const InstallPWAButton = () => {
     if (isInstalled) return null; // hide button if already installed
 
     return (
-        <div className="fixed bottom-5 right-5 z-50">
+        <div className="fixed bottom-20 right-5 z-50">
             {deferredPrompt ? (
                 <button
                     onClick={handleInstall}

@@ -1,4 +1,4 @@
-import { MoreHorizontal, MoreVertical, Plus, Send, Smile, Trash2, Users, X, ArrowLeft, Edit3 } from "lucide-react";
+import { MoreHorizontal, MoreVertical, Plus, Send, Smile, Trash2, Users, X, ArrowLeft, Edit3, ChevronDown } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import GroupProfile from './GroupProfile';
@@ -21,32 +21,88 @@ const GroupChat = ({ socket }) => {
     const [allGroups, setAllGroups] = useState([]);
     const [showSidebar, setShowSidebar] = useState(true);
     const [editModal, setEditModal] = useState({ isOpen: false, messageId: null, currentText: '' });
+    const [showScrollButton, setShowScrollButton] = useState(false);
 
     const messagesEndRef = useRef(null);
     const prevChatRef = useRef([]);
+    const messagesContainerRef = useRef(null);
+
+    // Enhanced scroll position check function with debugging
+    const checkScrollPosition = () => {
+        if (messagesContainerRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+            const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+            const shouldShowButton = !isNearBottom && scrollHeight > clientHeight;
+
+            console.log('Scroll Debug:', {
+                scrollTop,
+                scrollHeight,
+                clientHeight,
+                isNearBottom,
+                shouldShowButton,
+                currentShowScrollButton: showScrollButton
+            });
+
+            setShowScrollButton(shouldShowButton);
+        }
+    };
+
+    const scrollToBottom = () => {
+        console.log('scrollToBottom called'); // Debug log
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+            // Hide the button immediately after scrolling
+            setTimeout(() => {
+                setShowScrollButton(false);
+            }, 500);
+        }
+    };
+
+    // Fixed scroll event listener with proper dependencies
+    useEffect(() => {
+        const container = messagesContainerRef.current;
+        if (container) {
+            container.addEventListener('scroll', checkScrollPosition);
+            // Initial check when container is available
+            checkScrollPosition();
+            return () => container.removeEventListener('scroll', checkScrollPosition);
+        }
+    }, [selectedGroup]); // Re-run when group changes
+
+    // Check scroll position when messages change
+    useEffect(() => {
+        if (messages.length > 0 && !isGroupChatLoading) {
+            // Small delay to ensure DOM is updated
+            setTimeout(() => {
+                checkScrollPosition();
+            }, 100);
+        }
+    }, [messages, isGroupChatLoading]);
 
     useEffect(() => {
         const prev = prevChatRef.current;
-        
+
         // Check if it's just a message edit (same length, same IDs, same created_at)
-        const isMessageEdit = prev.length === messages.length && 
+        const isMessageEdit = prev.length === messages.length &&
             prev.length > 0 &&
-            prev.every((msg, i) => 
-                messages[i] && 
-                msg.id === messages[i].id && 
+            prev.every((msg, i) =>
+                messages[i] &&
+                msg.id === messages[i].id &&
                 msg.created_at === messages[i].created_at
             );
-        
+
         // Only scroll if it's not a message edit and chat is not loading
         if (!isMessageEdit && !isGroupChatLoading && messagesEndRef.current) {
-            // Use setTimeout to ensure DOM is fully rendered before scrolling
-            setTimeout(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-            }, 100);
+            // Auto-scroll only if user was already at bottom (scroll button not showing)
+            if (!showScrollButton) {
+                setTimeout(() => {
+                    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+                }, 100);
+            }
         }
-        
+
         prevChatRef.current = messages;
-    }, [messages, isGroupChatLoading]);
+    }, [messages, isGroupChatLoading, showScrollButton]);
 
     useEffect(() => {
         socket.on("group delete success", ({ groupName }) => {
@@ -365,7 +421,7 @@ const GroupChat = ({ socket }) => {
 
             {/* Chat Area */}
             <div className={`${showSidebar ? 'hidden md:flex' : 'flex'
-                } flex-1 flex-col bg-gray-50 w-full`}>
+                } flex-1 flex-col bg-gray-50 w-full relative`}>
                 {selectedGroup ? (
                     <>
                         {/* Header */}
@@ -385,7 +441,11 @@ const GroupChat = ({ socket }) => {
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-3 md:p-4">
+                        <div
+                            ref={messagesContainerRef}
+                            className="flex-1 overflow-y-auto p-3 md:p-4"
+                            style={{ minHeight: '200px' }}
+                        >
                             {isGroupChatLoading ? (
                                 <div className="flex items-center justify-center h-full">
                                     <p className="text-gray-500 text-sm md:text-base">Loading messages...</p>
@@ -609,6 +669,35 @@ const GroupChat = ({ socket }) => {
                             )}
                             <div className="p-3 md:p-5" ref={messagesEndRef} />
                         </div>
+
+                     
+
+                        {/* Scroll to bottom button - Fixed positioning */}
+                        {showScrollButton && (
+                            <div
+                                className="fixed bottom-20 right-4 md:right-6 z-[9999] pointer-events-auto"
+                                style={{ zIndex: 9999 }}
+                            >
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        console.log('Scroll button clicked!'); // Debug log
+                                        scrollToBottom();
+                                    }}
+                                    className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110 cursor-pointer"
+                                    title="Scroll to bottom"
+                                    aria-label="Scroll to bottom of messages"
+                                    style={{
+                                        zIndex: 9999,
+                                        pointerEvents: 'auto',
+                                        position: 'relative'
+                                    }}
+                                >
+                                    <ChevronDown className="w-5 h-5" />
+                                </button>
+                            </div>
+                        )}
 
                         {/* Input Area */}
                         <ChatInput onSend={(text) => {

@@ -23,7 +23,6 @@ function groupChat(io) {
 
 
     io.on("connection", (socket) => {
-console.log('from group')
         fetchGroups(socket);
 
         socket.on("get groups", async () => {

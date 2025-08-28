@@ -83,6 +83,7 @@ function GroupProfile({ groupID, groupName, setGroupName, socket, created_by }) 
                     initialQuality: 0.8
                 };
                 fileToUpload = await imageCompression(file, options);
+                
             }
 
             const formData = new FormData();
@@ -101,7 +102,7 @@ function GroupProfile({ groupID, groupName, setGroupName, socket, created_by }) 
 
             const data = await response.json();
             console.log("Upload response:", data);
-            
+
             // The profilePicUrl should be the complete Supabase URL
             if (data?.profilePicUrl) {
                 setProfilePic(data.profilePicUrl);

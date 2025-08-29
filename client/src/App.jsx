@@ -507,7 +507,7 @@ setIsConnected(false);
           <img
             src="/icons/loading.gif"
             alt="Loading..."
-            className="w-20 h-20 object-contain"
+            className="w-20 h-20 sm:w-32 sm:h-32 md:w-40 md:h-40 object-contain"
           />
         </div>
 

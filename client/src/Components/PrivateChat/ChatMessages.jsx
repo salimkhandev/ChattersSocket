@@ -89,7 +89,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
     console.log('📱❌', { username, tempVoiceUrl, tempUrlAudio });
 
     return (
-        <div  className="relative h-[100%]">
+        <div  className="relative flex-1">
             <div
                 // ref={chatContainerRef}
                 // className="h-full bg-tranparent overflow-y-auto"

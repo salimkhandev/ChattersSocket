@@ -107,7 +107,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
         <div className="relative h-full">
             <div
                 ref={chatContainerRef}
-                className="h-full overflow-y-auto"
+                // className="h-full bg-tranparent overflow-y-auto"
             >
                 {isChatLoading ? (
                     <p className="text-center text-gray-400 italic">Loading chat...</p>

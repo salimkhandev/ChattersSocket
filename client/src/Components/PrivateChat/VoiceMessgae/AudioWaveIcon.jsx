@@ -12,7 +12,7 @@ export default function AudioRecordingVisualizer({
   // Mobile-first responsive configurations with enhanced desktop sizes
   const sizes = {
     sm: {
-      barCount: 6,
+      barCount: 10,
       minHeight: 2,
       maxHeight: 12,
       width: 2,
@@ -20,7 +20,7 @@ export default function AudioRecordingVisualizer({
       padding: "4px 6px"
     },
     md: {
-      barCount: 10,
+      barCount: 14,
       minHeight: 3,
       maxHeight: 20,
       width: 3,
@@ -28,7 +28,7 @@ export default function AudioRecordingVisualizer({
       padding: "6px 10px"
     },
     lg: {
-      barCount: 20, // Increased for desktop
+      barCount: 25, // Increased for desktop
       minHeight: 6,  // Increased min height
       maxHeight: 40, // Increased max height
       width: 4,      // Wider bars
@@ -103,15 +103,14 @@ export default function AudioRecordingVisualizer({
   };
 
   return (
-    <div className="
-      relative flex items-center gap-2 sm:gap-3 lg:gap-4
-      bg-gray-50/90 backdrop-blur-sm border border-gray-200
-      rounded-lg lg:rounded-xl shadow-md shadow-gray-200
-      transition-all duration-300
-      w-full min-w-0 
-      overflow-hidden
-    "
-      style={{ padding: config.padding }}>
+ <div className="
+  relative flex items-center gap-2 sm:gap-3 lg:gap-4
+  transition-all duration-300
+  w-full min-w-0 
+  overflow-hidden
+"
+  style={{ padding: config.padding, backgroundColor: "transparent" }}>
+
 
       {/* Recording indicator */}
       <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">

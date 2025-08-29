@@ -22,7 +22,7 @@ import CallRingtone from './Components/Call/CallRingtone';
 import UserProfileUpload from "./Components/PrivateChat/UserProfile";
 import { useCall } from "./context/CallContext";
 import { io } from "socket.io-client";
-import { Video, Phone, Menu, ArrowLeft } from "lucide-react";
+import { Video, Phone, Menu, ArrowLeft, WifiOff } from "lucide-react";
 // import AudioCallDisplay from './Components/Call/AudioCallDisplay';
 import VideoDisplay from './Components/Call/VideoDisplay';
 import AuthLoader from './Components/Auth/AuthLoader';
@@ -461,8 +461,37 @@ setIsConnected(false);
     setChat([]);
     // setShowEmojiPicker(false);
     setIsChattingWindowOpen(false);
-    setIsMobileMenuOpen(false); // Close mobile menu on chat close
+    setIsMobileMenuOpen(false);
   };
+
+  useEffect(() => {
+    const handleDisconnect = ({ disconnected_username }) => {
+      // Show toast notification
+    
+
+      // Close chat if the disconnected user is the selected receiver
+      if (disconnected_username === selectedReceiver) {
+        closeChat();
+        toast(`${disconnected_username} went offline`, {
+          icon: <WifiOff className="w-5 h-5 text-white" />,
+          style: {
+            background: "#333",
+            color: "#fff",
+          },
+          duration: 3000,
+        });
+      }
+    };
+
+    socket.on("disconnected-user", handleDisconnect);
+
+    return () => {
+      socket.off("disconnected-user", handleDisconnect);
+    };
+  }, [selectedReceiver]);
+
+
+
 
   useEffect(() => {
     const handleEscKey = (event) => {

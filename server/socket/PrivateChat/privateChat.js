@@ -712,6 +712,9 @@ socket.on("typing", async (status) => {
             });
 
             if (!username) return;
+            io.emit("disconnected-user", { disconnected_username: username });
+            console.log('dicoonnecteed',username);
+            
 
             // 🔄 Fetch Redis data for this user
             const redisData = allUsers[username] && JSON.parse(allUsers[username]);

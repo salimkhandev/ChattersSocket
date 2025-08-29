@@ -1,5 +1,22 @@
-/* html,
+/* Prevent mobile zoom on input focus */
+input,
+textarea,
+select {
+    font-size: 16px !important;
+}
+
+/* Prevent overscroll bounce on iOS */
 body {
-    overflow-y: hidden;
-    height: 100%;
-} */
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure full height on mobile browsers */
+html,
+body,
+#root {
+    height: 100vh;
+    height: 100dvh;
+    /* Dynamic viewport height for modern browsers */
+    overflow: hidden;
+}

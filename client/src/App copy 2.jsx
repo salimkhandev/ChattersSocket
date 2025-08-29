@@ -499,7 +499,7 @@ setIsConnected(false);
 
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex flex-col overflow-hidden">
+    <div className="h-screen w-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex flex-col overflow-hidden">
       <Toaster position="top-right" reverseOrder={false} />
       <AuthLoader socket={socket}/>
       {checkingAuth && (

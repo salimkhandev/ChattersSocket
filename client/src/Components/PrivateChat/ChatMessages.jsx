@@ -89,7 +89,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
     console.log('📱❌', { username, tempVoiceUrl, tempUrlAudio });
 
     return (
-        <div  className="relative h-full">
+        <div  className="relative h-[100%]">
             <div
                 // ref={chatContainerRef}
                 // className="h-full bg-tranparent overflow-y-auto"
@@ -448,7 +448,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
             </div>
 
             {/* Scroll to bottom button */}
-            {/* { (
+            { (
                 <button
                     onClick={scrollToBottom}
                     className="fixed bottom-20 right-4 z-30 bg-green-500 hover:bg-green-600 text-white rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110"
@@ -456,7 +456,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                 >
                     <ChevronDown className="w-5 h-5" />
                 </button>
-            )} */}
+            )}
 
             {selectedMedia && (
                 <MediaModal

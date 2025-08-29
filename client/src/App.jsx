@@ -504,8 +504,13 @@ setIsConnected(false);
       <AuthLoader socket={socket}/>
       {checkingAuth && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="text-white text-xl font-semibold">Loading...</div>
+          <img
+            src="/icons/loading.gif"
+            alt="Loading..."
+            className="w-20 h-20 object-contain"
+          />
         </div>
+
       )}
 
       {(!username || !isLoggedIn) && !checkingAuth ? (

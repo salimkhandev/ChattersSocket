@@ -11,39 +11,63 @@ import { CallProvider } from "./context/CallContext";
 import { BlockProvider } from "./context/BlockedCallContext";
 import App from './App';
 
+// Service Worker registration
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/service-worker.js')
     .then(reg => console.log('Service Worker registered ✅', reg))
-    .catch(err => console.log('Service Worker registration failed ❌', err));}
-// Add this to your app's root component or audio manager
+    .catch(err => console.log('Service Worker registration failed ❌', err));
+}
+
+// Audio context unlock for mobile devices
 const unlockAudioContext = async () => {
   try {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     await audioContext.resume();
     audioContext.close();
+    console.log('Audio context unlocked for mobile');
   } catch (error) {
     console.log('Audio unlock failed:', error);
   }
 };
 
-// Call this on any user interaction (tap, scroll, etc.)
-<StrictMode>
+// Setup audio unlock listeners for mobile
+const setupAudioUnlock = () => {
+  const events = ['touchstart', 'touchend', 'mousedown', 'keydown'];
+
+  const unlockHandler = () => {
+    unlockAudioContext();
+    // Remove listeners after first interaction
+    events.forEach(event => {
+      document.removeEventListener(event, unlockHandler);
+    });
+  };
+
+  // Add listeners for various user interactions
+  events.forEach(event => {
+    document.addEventListener(event, unlockHandler, { once: true });
+  });
+};
+
+// Initialize audio unlock setup
+setupAudioUnlock();
+
+// Render the React app
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
     <BlockProvider>
-    <CallProvider>
-    <UploadProvider>
-        <MediaProvider>
-        <AuthProvider>
-    < ProfileProvider>
-      <VoiceProvider>
-          <App />
-      </VoiceProvider>  
-    </ ProfileProvider>
-        </AuthProvider>
-        </MediaProvider>
-    </UploadProvider>
+      <CallProvider>
+        <UploadProvider>
+          <MediaProvider>
+            <AuthProvider>
+              <ProfileProvider>
+                <VoiceProvider>
+                  <App />
+                </VoiceProvider>
+              </ProfileProvider>
+            </AuthProvider>
+          </MediaProvider>
+        </UploadProvider>
       </CallProvider>
     </BlockProvider>
   </StrictMode>
-document.addEventListener('touchstart', unlockAudioContext, { once: true });
- createRoot(document.getElementById('root')).render(
 );

@@ -20,27 +20,12 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
     const { tempVoiceUrl, setTempVoiceUrl, tempUrlAudio } = useVoice();
     const { localUrl, localFormat, uploading, isModalOpen, setIsModalOpen } = useMedia();
 
-    // Scroll position check function
-    const checkScrollPosition = () => {
-        if (chatContainerRef.current) {
-            const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-            const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-            setShowScrollButton(!isNearBottom);
-        }
-    };
+
 
     const scrollToBottom = () => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
-    // Add scroll event listener
-    useEffect(() => {
-        const container = chatContainerRef.current;
-        if (container) {
-            container.addEventListener('scroll', checkScrollPosition);
-            return () => container.removeEventListener('scroll', checkScrollPosition);
-        }
-    }, []);
 
     useEffect(() => {
         const prev = prevChatRef.current;
@@ -104,9 +89,9 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
     console.log('📱❌', { username, tempVoiceUrl, tempUrlAudio });
 
     return (
-        <div className="relative h-full">
+        <div  className="relative h-full">
             <div
-                ref={chatContainerRef}
+                // ref={chatContainerRef}
                 // className="h-full bg-tranparent overflow-y-auto"
             >
                 {isChatLoading ? (
@@ -132,6 +117,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                                     ? "bg-green-200 text-gray-900"
                                     : "bg-white text-gray-900 border"
                                     }`}
+                                ref={chatContainerRef}
                             >
                                 {/* Message content */}
                                 <div className="text-xs text-gray-500 mb-1">
@@ -462,7 +448,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
             </div>
 
             {/* Scroll to bottom button */}
-            {showScrollButton && (
+            { (
                 <button
                     onClick={scrollToBottom}
                     className="fixed bottom-20 right-4 z-30 bg-green-500 hover:bg-green-600 text-white rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110"

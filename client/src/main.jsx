@@ -15,9 +15,19 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/service-worker.js')
     .then(reg => console.log('Service Worker registered ✅', reg))
     .catch(err => console.log('Service Worker registration failed ❌', err));}
+// Add this to your app's root component or audio manager
+const unlockAudioContext = async () => {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    await audioContext.resume();
+    audioContext.close();
+  } catch (error) {
+    console.log('Audio unlock failed:', error);
+  }
+};
 
- createRoot(document.getElementById('root')).render(
-  <StrictMode>
+// Call this on any user interaction (tap, scroll, etc.)
+<StrictMode>
     <BlockProvider>
     <CallProvider>
     <UploadProvider>
@@ -34,4 +44,6 @@ if ('serviceWorker' in navigator) {
       </CallProvider>
     </BlockProvider>
   </StrictMode>
+document.addEventListener('touchstart', unlockAudioContext, { once: true });
+ createRoot(document.getElementById('root')).render(
 );

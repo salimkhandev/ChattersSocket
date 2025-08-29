@@ -196,32 +196,13 @@ export default function CallUIPlaceholder({ socket, username }) {
                             </button>
                         </div>
 
-                        {/* Additional info */}
                        
                     </div>
 
-                    {/* Subtle glow effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-xl -z-10"></div>
+             
                 </div>
             </div>
 
-            {/* Quick action swipe indicator (mobile) */}
-            <div className="absolute bottom-8 left-0 right-0 sm:hidden">
-                <div className="flex justify-center space-x-8">
-                    <div className="flex flex-col items-center text-white/60">
-                        <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mb-2">
-                            <PhoneOff size={20} />
-                        </div>
-                        <span className="text-xs">Decline</span>
-                    </div>
-                    <div className="flex flex-col items-center text-white/60">
-                        <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mb-2">
-                            <Phone size={20} />
-                        </div>
-                        <span className="text-xs">Accept</span>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 }

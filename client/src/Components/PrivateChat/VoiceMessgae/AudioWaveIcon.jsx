@@ -3,47 +3,42 @@ import { useVoice } from "../../../context/VoiceContext";
 import { StopCircle } from "lucide-react";
 
 export default function AudioRecordingVisualizer({
-  variant = "classic", // "classic", "modern", "minimal", "pulse"
-  size = "md" // "sm", "md", "lg"
+  size = "md",
+  recTime = 0
 }) {
   const [bars, setBars] = useState([]);
-  const [recordingTime, setRecordingTime] = useState(0);
   const { stopRecording } = useVoice();
 
-  // Size configurations
+  // Mobile-first responsive configurations with enhanced desktop sizes
   const sizes = {
-    sm: { barCount: 12, minHeight: 3, maxHeight: 20, width: 3, gap: 2, padding: "8px 12px" },
-    md: { barCount: 16, minHeight: 4, maxHeight: 32, width: 4, gap: 3, padding: "12px 16px" },
-    lg: { barCount: 20, minHeight: 5, maxHeight: 40, width: 5, gap: 4, padding: "16px 20px" }
+    sm: {
+      barCount: 6,
+      minHeight: 2,
+      maxHeight: 12,
+      width: 2,
+      gap: 1,
+      padding: "4px 6px"
+    },
+    md: {
+      barCount: 10,
+      minHeight: 3,
+      maxHeight: 20,
+      width: 3,
+      gap: 2,
+      padding: "6px 10px"
+    },
+    lg: {
+      barCount: 20, // Increased for desktop
+      minHeight: 6,  // Increased min height
+      maxHeight: 40, // Increased max height
+      width: 4,      // Wider bars
+      gap: 3,        // More gap
+      padding: "12px 16px" // More padding
+    }
   };
 
   const config = sizes[size];
 
-  // Recording visualizer variants
-  const variants = {
-    classic: {
-      colors: "bg-gray-400",
-      containerBg: "bg-gray-50/90 backdrop-blur-sm border border-gray-200",
-      borderRadius: "rounded-lg",
-      shadow: "shadow-md shadow-gray-200",
-      glowColor: "shadow-gray-400/20",
-      stopBtnBg: "bg-red-500 hover:bg-red-600",
-      stopBtnText: "text-white"
-    },
-  };
-
-  const currentVariant = variants[variant];
-
-  // Recording timer (always running when component is mounted)
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setRecordingTime(prev => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  // Generate realistic recording-style bars
   useEffect(() => {
     const generateBars = () => {
       return Array.from({ length: config.barCount }).map((_, i) => {
@@ -56,7 +51,6 @@ export default function AudioRecordingVisualizer({
           height: Math.floor(baseHeight * (0.3 + Math.random() * 0.7)),
           targetHeight: 0,
           animationSpeed: 0.8 + Math.random() * 0.4,
-          intensity: Math.random(),
           lastUpdate: Date.now()
         };
       });
@@ -65,7 +59,7 @@ export default function AudioRecordingVisualizer({
     setBars(generateBars());
   }, [config.barCount, config.minHeight, config.maxHeight]);
 
-  // Realistic audio recording simulation (always active)
+  // Audio recording animation
   useEffect(() => {
     const interval = setInterval(() => {
       setBars(prevBars =>
@@ -73,26 +67,20 @@ export default function AudioRecordingVisualizer({
           const now = Date.now();
           const timeDelta = (now - bar.lastUpdate) / 1000;
 
-          // Simulate realistic audio input patterns
           const centerDistance = Math.abs(i - config.barCount / 2) / (config.barCount / 2);
           const baseIntensity = 1 - centerDistance * 0.4;
 
-          // Random spikes and valleys like real audio
           let newTargetHeight;
           if (Math.random() < 0.15) {
-            // Sudden spike
             newTargetHeight = config.maxHeight * baseIntensity * (0.7 + Math.random() * 0.3);
           } else if (Math.random() < 0.1) {
-            // Drop to minimum
             newTargetHeight = config.minHeight;
           } else {
-            // Normal variation
             newTargetHeight = config.minHeight +
               (config.maxHeight - config.minHeight) * baseIntensity *
               (0.3 + Math.random() * 0.4);
           }
 
-          // Smooth interpolation towards target
           const currentHeight = bar.height;
           const diff = newTargetHeight - currentHeight;
           const newHeight = currentHeight + (diff * bar.animationSpeed * timeDelta * 8);
@@ -105,83 +93,70 @@ export default function AudioRecordingVisualizer({
           };
         })
       );
-    }, 50); // 20fps for smooth animation
+    }, 50);
 
     return () => clearInterval(interval);
   }, [config]);
-
-  // Format recording time
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const handleStopRecording = () => {
     stopRecording();
   };
 
   return (
-    <div className={`
-      relative inline-flex items-center gap-4
-      ${currentVariant.containerBg}
-      ${currentVariant.borderRadius}
-      ${currentVariant.shadow}
-      ${currentVariant.glowColor}
+    <div className="
+      relative flex items-center gap-2 sm:gap-3 lg:gap-4
+      bg-gray-50/90 backdrop-blur-sm border border-gray-200
+      rounded-lg lg:rounded-xl shadow-md shadow-gray-200
       transition-all duration-300
-    `}
+      w-full min-w-0 
+      overflow-hidden
+    "
       style={{ padding: config.padding }}>
 
-      {/* Recording indicator (always visible) */}
-      <div className="flex items-center gap-2">
-        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-        <span className="text-sm font-medium text-red-600 min-w-[40px]">
-          {formatTime(recordingTime)}
+      {/* Recording indicator */}
+      <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">
+        <div className="w-2 h-2 lg:w-3 lg:h-3 bg-red-500 rounded-full animate-pulse"></div>
+        <span className="text-xs lg:text-sm font-medium text-red-600 min-w-[25px] lg:min-w-[35px]">
+          {recTime}
         </span>
       </div>
 
       {/* Waveform bars */}
-      <div className="flex items-center justify-center" style={{
+      <div className="flex items-center justify-center flex-1 min-w-0" style={{
         height: `${config.maxHeight}px`,
-        minWidth: `${(config.width + config.gap) * config.barCount}px`
+        minWidth: `${Math.min((config.width + config.gap) * config.barCount, 200)}px`
       }}>
         {bars.map((bar, i) => (
           <div
             key={bar.id}
-            className={`
-              ${currentVariant.colors}
-              ${currentVariant.borderRadius === "rounded-full" ? "rounded-full" : "rounded-sm"}
+            className="
+              bg-gray-400 rounded-sm lg:rounded
               transition-all duration-75 ease-out
               opacity-100
-            `}
+            "
             style={{
               width: `${config.width}px`,
               height: `${bar.height}px`,
               marginLeft: i === 0 ? 0 : `${config.gap}px`,
-              transformOrigin: "center center",
-              boxShadow: bar.height > config.minHeight * 1.5 ?
-                `0 0 ${Math.floor(bar.height / 8)}px ${currentVariant.colors.includes('red') ? '#ef4444' :
-                  currentVariant.colors.includes('blue') ? '#3b82f6' :
-                    currentVariant.colors.includes('emerald') ? '#10b981' : '#6b7280'}40` : 'none'
+              transformOrigin: "center center"
             }}
           />
         ))}
       </div>
 
-      {/* Status text and Stop button */}
-      <div className="flex items-center gap-3">
-        <span className={`text-sm font-medium ${variant === 'modern' ? 'text-cyan-400' : 'text-red-600'}`}>
+      {/* Status and Stop button */}
+      <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">
+        <span className="text-xs lg:text-sm font-medium text-red-600 whitespace-nowrap hidden xs:block lg:block">
           Recording...
         </span>
 
-        {/* Stop button */}
         <button
           onClick={handleStopRecording}
-          className="p-1.5 sm:p-2 hover:bg-red-50 rounded-full transition-colors"
+          className="p-1 lg:p-2 hover:bg-red-50 rounded-full transition-colors touch-manipulation flex-shrink-0"
           title="Stop Recording"
           aria-label="Stop Recording"
         >
-          <StopCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
+          <StopCircle className="w-4 h-4 lg:w-5 lg:h-5 text-red-500" />
         </button>
       </div>
     </div>

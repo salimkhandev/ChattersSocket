@@ -7,7 +7,7 @@ import AudioWaveIcon from "./AudioWaveIcon";
 import { useVoice } from '../../../context/VoiceContext';
 const backendURL = import.meta.env.VITE_BACKEND_URL;
 
-const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecording}, ref) => {
+const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecording }, ref) => {
     const [uploading, setUploading] = useState(false);
     // const [recording, setRecording] = useState(false);
     // const mediaRecorderRef = useRef(null);
@@ -19,7 +19,7 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
-    // const [recordTime, setRecordTime] = useState(0);
+    const [recordTime, setRecordTime] = useState(0);
     const [audioBlob, setAudioBlob] = useState(null);
     const { tempVoiceUrl, setTempVoiceUrl, setTempUrlAudio, recording, setRecording, mediaRecorderRef, intervalRef } = useVoice();
 
@@ -58,7 +58,7 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
 
     const startRecording = async () => {
         intervalRef.current = setInterval(() => {
-            // setRecordTime(prev => prev + 1);
+            setRecordTime(prev => prev + 1);
         }, 1000);
 
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -78,20 +78,20 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
 
         mediaRecorderRef.current.start();
         setRecording(true);
-        // setRecordTime(0);
+        setRecordTime(0);
     };
 
     // const stopRecording = () => {
-        // if (mediaRecorderRef.current) {
-        //     mediaRecorderRef.current.stop();
-        //     mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    // if (mediaRecorderRef.current) {
+    //     mediaRecorderRef.current.stop();
+    //     mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
 
-        //     if (intervalRef.current) {
-        //         clearInterval(intervalRef.current);
-        //         intervalRef.current = null;
-        //     }
-        // }
-        // setRecording(false);
+    //     if (intervalRef.current) {
+    //         clearInterval(intervalRef.current);
+    //         intervalRef.current = null;
+    //     }
+    // }
+    // setRecording(false);
     // };
 
     const sendMessage = async () => {
@@ -125,7 +125,7 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
         setTempUrlAudio(null);
         setTempVoiceUrl(null);
         setAudioBlob(null);
-        // setRecordTime(0);
+        setRecordTime(0);
         if (waveSurferRef.current) {
             waveSurferRef.current.destroy();
             waveSurferRef.current = null;
@@ -189,21 +189,20 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
     }));
 
     const formatTime = (time) => {
-        const minutes = Math.floor(time / 60)
-            .toString()
-            .padStart(2, '0');
+        const minutes = Math.floor(time / 60);  // no padStart
         const seconds = Math.floor(time % 60)
             .toString()
-            .padStart(2, '0');
+            .padStart(2, '0'); // keep 2 digits
         return `${minutes}:${seconds}`;
     };
+
 
     return (
         <div className="w-full max-w-2xl mx-auto">
             {recording ? (
                 //   here the time of recording should be shown
                 <div className="flex items-center justify-between w-full px-2">
-                    <AudioWaveIcon />
+                    <AudioWaveIcon recTime={formatTime(recordTime)} />
                     {/* <div className="text-sm text-gray-700 font-medium ml-auto">
                          {formatTime(recordTime)}
                     </div> */}
@@ -220,7 +219,7 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
                     {/* Waveform Container */}
                     <div className="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4">
                         <div ref={waveformRef} className="w-full h-[50px] mb-3" />
-                        
+
                         {/* Time Display */}
                         <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 font-mono">
                             <span className="bg-white px-2 py-1 rounded">{formatTime(currentTime)}</span>
@@ -261,11 +260,10 @@ const VoiceRecorder = forwardRef(({ socket, sender, receiver, onDone, setIsRecor
                         <button
                             onClick={sendMessage}
                             disabled={uploading}
-                            className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 flex-1 sm:flex-none ${
-                                uploading
+                            className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 flex-1 sm:flex-none ${uploading
                                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                     : 'bg-green-600 hover:bg-green-700 text-white hover:shadow-md'
-                            }`}
+                                }`}
                         >
                             {uploading ? (
                                 <>

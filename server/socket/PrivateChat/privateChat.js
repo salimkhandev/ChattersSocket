@@ -712,8 +712,7 @@ socket.on("typing", async (status) => {
             });
 
             if (!username) return;
-            io.emit("disconnected-user", { disconnected_username: username });
-            console.log('dicoonnecteed',username);
+         
             
 
             // 🔄 Fetch Redis data for this user
@@ -784,8 +783,10 @@ socket.on("typing", async (status) => {
                     };
                 });
 
-                // ✅ Emit updated list
+                  
                 io.emit("online users", enrichedOnlineUsers);
+                io.emit("disconnected-user", { disconnected_username: username });
+                console.log('dicoonnecteed', username);
             }
         });
 

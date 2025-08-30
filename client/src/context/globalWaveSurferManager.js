@@ -1,6 +1,7 @@
 // context/globalWaveSurferManager.js
 
 let currentWaveSurfer = null;
+let listeners = [];
 
 export function setCurrentWaveSurfer(newInstance) {
     if (
@@ -8,9 +9,21 @@ export function setCurrentWaveSurfer(newInstance) {
         currentWaveSurfer !== newInstance &&
         currentWaveSurfer.isPlaying()
     ) {
-        currentWaveSurfer.pause();      // ⏸ Stop previous one
-        // currentWaveSurfer.seekTo(0);    // ⏮ Optional: Reset to start
+        currentWaveSurfer.pause();
+        notifyListeners(currentWaveSurfer, false); 
     }
 
     currentWaveSurfer = newInstance;
+    notifyListeners(newInstance, true);
+}
+
+export function onWaveSurferChange(listener) {
+    listeners.push(listener);
+    return () => {
+        listeners = listeners.filter(l => l !== listener);
+    };
+}
+
+function notifyListeners(ws, isPlaying) {
+    listeners.forEach(listener => listener(ws, isPlaying));
 }

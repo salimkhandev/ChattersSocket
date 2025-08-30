@@ -2,7 +2,7 @@
 import { Play, Square } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import { setCurrentWaveSurfer } from '../../../context/globalWaveSurferManager';
+import { setCurrentWaveSurfer, onWaveSurferChange } from '../../../context/globalWaveSurferManager';
 
 export default function VoiceMessagePlayer({ audioUrl }) {
     const waveformRef = useRef(null);
@@ -11,7 +11,6 @@ export default function VoiceMessagePlayer({ audioUrl }) {
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
-
 
     useEffect(() => {
         if (!waveformRef.current || !audioUrl) return;
@@ -31,8 +30,7 @@ export default function VoiceMessagePlayer({ audioUrl }) {
         waveSurferRef.current.load(audioUrl);
 
         waveSurferRef.current.on('ready', () => {
-            setIsLoading(false); // Audio is ready
-
+            setIsLoading(false);
             setDuration(waveSurferRef.current.getDuration());
 
             waveSurferRef.current.on('audioprocess', () => {
@@ -41,28 +39,29 @@ export default function VoiceMessagePlayer({ audioUrl }) {
                 }
             });
 
-            waveSurferRef.current.on('interaction', () => {
-                setTimeout(() => {
-                    setCurrentTime(waveSurferRef.current.getCurrentTime());
-                }, 50);
-            });
-
             waveSurferRef.current.on('finish', () => {
                 setIsPlaying(false);
                 setCurrentTime(waveSurferRef.current.getDuration());
             });
         });
 
+        // 🔄 listen for global changes
+        const unsubscribe = onWaveSurferChange((ws, playing) => {
+            if (ws !== waveSurferRef.current) {
+                // another audio started → reset this one
+                setIsPlaying(false);
+            }
+        });
 
         return () => {
-            waveSurferRef.current.destroy();
+            unsubscribe();
+            waveSurferRef.current?.destroy();
         };
     }, [audioUrl]);
 
     const togglePlay = () => {
         if (!waveSurferRef.current) return;
 
-        // Inform global manager — it will stop others
         if (!waveSurferRef.current.isPlaying()) {
             setCurrentWaveSurfer(waveSurferRef.current);
         }
@@ -71,22 +70,24 @@ export default function VoiceMessagePlayer({ audioUrl }) {
         setIsPlaying(prev => !prev);
     };
 
-    const formatTime = time => {
+    const formatTime = (time) => {
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     };
 
     return (
-        <div className="flex items-center gap-2 bg-gray-100 px-3 pb-2  rounded-lg shadow-sm w-[250px]">
+        <div className="flex items-center gap-2 bg-gray-100 px-3 pb-2 rounded-lg shadow-sm w-[250px]">
             {isLoading ? (
                 <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full" />
             ) : (
-                <button onClick={togglePlay} className="text-blue-600 hover:text-blue-800 p-1 rounded">
+                <button
+                    onClick={togglePlay}
+                    className="text-blue-600 hover:text-blue-800 p-1 rounded"
+                >
                     {isPlaying ? <Square size={16} /> : <Play size={16} />}
                 </button>
             )}
-
 
             <div className="flex-1">
                 <div ref={waveformRef} className="w-full pt-5 overflow-hidden" />

@@ -76,7 +76,7 @@ export default function MediaPreview() {
                     {uploading && (
                         <div className="flex items-center gap-1">
                             <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
-                            <span className="text-xs text-blue-600 font-medium">Uploading...</span>
+                            <span className="text-xs text-blue-600 font-medium">Sending...</span>
                         </div>
                     )}
                 </div>

@@ -9,6 +9,7 @@ import { MediaProvider } from './context/MediaContext';
 import { UploadProvider } from './context/UploadContext';
 import { CallProvider } from "./context/CallContext";
 import { BlockProvider } from "./context/BlockedCallContext";
+import { OnlineUsersProvider } from "./context/OnlineUsersContext";
 import App from './App';
 
 if ('serviceWorker' in navigator) {
@@ -19,6 +20,7 @@ if ('serviceWorker' in navigator) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
+    <OnlineUsersProvider>
     <BlockProvider>
       <CallProvider>
         <UploadProvider>
@@ -34,5 +36,6 @@ createRoot(document.getElementById('root')).render(
         </UploadProvider>
       </CallProvider>
     </BlockProvider>
+    </OnlineUsersProvider>
   </StrictMode>
 );

@@ -7,6 +7,8 @@ const { v4: uuidv4 } = require('uuid');
 const  isImageUrl  = require('../../utils/isImageUrl');
 const videoCall = require("../Calls/videoCall")
 const autoLogin = require("../AutoLogin/autoLogin")
+const {getChatPeers }= require("./chatPeers")
+const cloudinary = require("cloudinary").v2; 
 
 async function getAllUsers() {
     const { data, error } = await supabase.from("users").select("*");
@@ -39,7 +41,7 @@ async function getAllUsers() {
             await redisClient.hSet(
                 "connectedUsers",
                 user.username.trim().toLowerCase(),
-                JSON.stringify({ username: user.username.trim().toLowerCase(), fName: user.name.trim(), socketId: null })
+                JSON.stringify({id:user.id, username: user.username.trim().toLowerCase(), fName: user.name.trim(), socketId: null })
             );
             // console.log(`Stored ${user.username.trim().toLowerCase()} in redis`);
         }
@@ -135,7 +137,6 @@ function startServer(io) {
         });
 
 
-        const cloudinary = require("cloudinary").v2; // Make sure Cloudinary is configured
 
         socket.on("delete for everyone", async ({ sender,receiver, messageId, audio_url, media_url}) => {
             try {
@@ -237,6 +238,16 @@ function startServer(io) {
         });
 
         socket.on("username", async ({ username }) => {
+
+
+            const peers = await getChatPeers({ supabase, redisClient, username});
+            socket.emit("chatPeers", peers);
+
+
+
+//             console.log('😡😡😡😡😡😡',peers);
+// ````````````````````````````````````````````````````````````````````````````
+
             username = username.trim().toLowerCase();
 console.log(`Username😡: ${username}`);
             // Get all users from Redis
@@ -285,7 +296,7 @@ console.log(`Username😡: ${username}`);
                     try {
                         const data = JSON.parse(updatedAllUsers[u]);
                         return data.socketId
-                            ? { username: data.username, fName: data.fName, profilePic: data.profilePic || null }
+                            ? {id:data.id,isOnline:true, username: data.username, fName: data.fName, profilePic: data.profilePic || null }
                             : null;
                     } catch {
                         return null;
@@ -304,6 +315,8 @@ console.log(`Username😡: ${username}`);
             });
 
             // Emit to everyone
+            // console.log('Enriched online users', JSON.stringify(enrichedOnlineUsers, null, 2));
+            
             io.emit("online users", enrichedOnlineUsers);
 
             // Notify current socket
@@ -313,131 +326,20 @@ console.log(`Username😡: ${username}`);
             });
         });
 
-        // socket.on("username", async ({ username }) => {
-        //     username = username.trim().toLowerCase();
-        //    console.log(`Username😡: ${username}`);
-        //     // (async () => {
-        //     //     const { data, error } = await supabase.from("users").select("name,username");
 
-        //     //     if (error) {
-        //     //         console.error("❌ Failed to fetch user names:", error.message);
-        //     //         socket.emit("all names", { names: [] });
-        //     //         return;
-        //     //     }
-
-        //     //     const names = data.map(user => ({
-        //     //         name: user.name,
-        //     //         username: user.username,
-        //     //     }));
-
-        //     //     socket.emit("all names", { names });
-        //     // })();
-
-
-        //     const allUsers = await redisClient.hGetAll("connectedUsers");
-        //     // filter on the based of given username ie which is from the client side
-        //     const redisData = allUsers[username] && JSON.parse(allUsers[username]);
-
-        //     // ✅ Fetch name and profile_pic from Supabase
-        //     const { data: userRecord, error } = await supabase
-        //         .from("users")
-        //         .select("name, profile_pic")
-        //         .eq("username", username)
-        //         .single();
-
-        //     if (error || !userRecord) {
-        //         socket.emit("isLoggedIn", {
-        //             success: false,
-        //             message: `User "${username}" is not found in the DB.`,
-        //         });
-        //         return;
-        //     }
-
-        //     const currentFName = userRecord.name?.trim();
-        //     const profilePic = userRecord.profile_pic || null;
-
-        //     if (redisData) {
-        //         const updatedUser = {
-        //             username,
-        //             fName: currentFName,
-        //             profilePic,          // ✅ store profile pic
-        //             socketId: socket.id,
-        //         }
-
-        //         // ✅ Update Redis with latest data
-        //         await redisClient.hSet("connectedUsers", username, JSON.stringify(updatedUser));
-
-        //         // ✅ Update local cache
-        //         allUsers[username] = JSON.stringify(updatedUser);
-                
-        //         const onlineUsers = Object.keys(allUsers)
-        //             .map((user) => {
-        //                 try {
-        //                     const u = JSON.parse(allUsers[user]);
-        //                     return u.socketId ? {
-        //                         username: u.username,
-        //                         fName: u.fName,
-        //                         profilePic: u.profilePic || null
-        //                     } : null;
-        //                 } catch {
-        //                     return null;
-        //                 }
-        //             })
-        //             .filter(Boolean);
-
-        //         const { data: unseenMessages, error } = await supabase.rpc('get_unseen_message_counts');
-
-        //         if (error) {
-        //             console.error("Error fetching unseen message counts:", error.message);
-        //         } else {
-        //             // console.log('✅ unseen message count', unseenMessages);
-        //             socket.emit("unseen-message-counts", unseenMessages);
-
-        //             // Now merge unseenMessages into each online user
-        //             const enrichedOnlineUsers = onlineUsers.map(user => {
-        //                 const sentMessages = unseenMessages.filter(
-        //                     msg => msg.sender === user.username
-        //                 );
-
-        //                 return {
-        //                     username: user.username,
-        //                     fName: user.fName,
-        //                     profilePic: user.profilePic,
-        //                     sentUnseenMessages: sentMessages.length > 0
-        //                         ? sentMessages
-        //                         : [{ unseen_count: 0, receiver: null }]
-        //                 };
-        //             });
-
-        //             // console.log("✅ enriched online users", enrichedOnlineUsers);
-        //             io.emit("online users", enrichedOnlineUsers); // include unseen in online user payload
-        //         }
-
-
-
-        //         socket.emit("isLoggedIn", {
-        //             success: true,
-        //             message: `User ${username} is allowed to join.`,
-        //         });
-
-        
-        //     } else {
-        //         socket.emit("isLoggedIn", {
-        //             success: false,
-        //             message: `User "${username}" is not allowed to join.`,
-        //         });
-                
-        //     }
-            
-                       
-        //             });
 
         socket.on("chat messages", async (msg) => {
+
+            
+            
             const sender = msg.sender.trim().toLowerCase();
             const receiver = msg.receiver.trim().toLowerCase();
             const format = msg.format;
             const media_url = msg.media_url;
             
+            // const senderPeers = await getChatPeers({ supabase, redisClient, username: sender });
+            // socket.emit("chatPeers", senderPeers);
+
                 console.log({
                     msg
                 });
@@ -513,13 +415,57 @@ console.log(`Username😡: ${username}`);
                         io.to(senderParsed.socketId).emit("chat message", messagePayload);
                         // console.log('to sender',messagePayload);
                     }
-                
-                    
+                    // get sender and receiver IDs from users table
+                    const { data: senderUser } = await supabase
+                        .from("users")
+                        .select("id")
+                        .eq("username", sender)
+                        .single();
+
+                    const { data: receiverUser } = await supabase
+                        .from("users")
+                        .select("id")
+                        .eq("username", receiver)
+                        .single();
+
+                    const senderId = senderUser.id;
+                    const receiverId = receiverUser.id;
+
+                    // always keep user1_id < user2_id for uniqueness
+                    const user1 = Math.min(senderId, receiverId);
+                    const user2 = Math.max(senderId, receiverId);
+
+                    // try to find an existing conversation
+                    let { data: conversation } = await supabase
+                        .from("conversations")
+                        .select("conversation_id")
+                        .eq("user1_id", user1)
+                        .eq("user2_id", user2)
+                        .single();
+
+                    if (!conversation) {
+                        // if not exists, create one
+                        const { data: newConv, error: convError } = await supabase
+                            .from("conversations")
+                            .insert({ user1_id: user1, user2_id: user2 })
+                            .select("conversation_id")
+                            .single();
+
+                        if (convError) {
+                            console.error("❌ Error creating conversation:", convError.message);
+                            return;
+                        }
+                        conversation = newConv;
+                    }
+
+                    const conversationId = conversation.conversation_id;
+
                    
                     supabase
                         .from("messages")
                         .insert({
                             id:messageId,
+                            conversation_id: conversationId, 
                             sender,
                             receiver,
                             message: msg.message,
@@ -663,7 +609,7 @@ console.log(`Username😡: ${username}`);
                     
 
 
-                await    sendUpdatedChatHistory(io, redisClient, supabase, sender, receiver);
+                await  sendUpdatedChatHistory(io, redisClient, supabase, sender, receiver);
 
    
 
@@ -701,6 +647,7 @@ socket.on("typing", async (status) => {
         socket.on("disconnect", async () => {
             const allUsers = await redisClient.hGetAll("connectedUsers");
 
+           
             // Find the disconnected username by socketId
             const username = Object.keys(allUsers).find((key) => {
                 try {
@@ -738,6 +685,7 @@ socket.on("typing", async (status) => {
                     username,
                     fName: currentFName,
                     profilePic,
+                    isOnline: false,
                     socketId: null, // ❌ mark as disconnected
                 };
 
@@ -753,6 +701,7 @@ socket.on("typing", async (status) => {
                             const u = JSON.parse(updatedUsers[user]);
                             return u.socketId
                                 ? {
+                                    isOnline: true,
                                     username: u.username,
                                     fName: u.fName,
                                     profilePic: u.profilePic || null,

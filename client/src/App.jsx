@@ -9,6 +9,7 @@ import ChatMessages from './Components/PrivateChat/ChatMessages';
 import InstallPWAButton from './Components/PWA/InstallPWAButton';
 import MessageInput from "./Components/PrivateChat/MessageInput";
 import OnlineUserList from './Components/PrivateChat/OnlineUserList';
+import ChatPeersList from './Components/PrivateChat/ChatPeers/ChatPeersList';
 import ToggleTabs from "./Components/PrivateChat/ToggleTabs";
 import { useAuth } from "./context/AuthContext";
 import { generateToken } from './Components/FCM/firebase'; // adjust the path
@@ -28,6 +29,9 @@ import VideoDisplay from './Components/Call/VideoDisplay';
 import AuthLoader from './Components/Auth/AuthLoader';
 // import { Routes, Route } from 'react-router-dom';
 import { useBlock } from "./context/BlockedCallContext";
+import SidebarToggle from './Components/PrivateChat/SideBarToggle';
+
+// In your JSX, replace the current <aside> section with:
 
 // import SignupForm from './Components/Auth/SignupForm';
 
@@ -65,6 +69,7 @@ export default function ChatApp() {
   const [chat, setChat] = useState([]);
   const [isTyping, setIsTyping] = useState({});
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [chatPeers, setChatPeers] = useState([]);
   const [selectedReceiver, setSelectedReceiver] = useState("");
   const [isChattingWindowOpen, setIsChattingWindowOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("people"); // or "groups"
@@ -125,6 +130,17 @@ setIsConnected(false);
       setSelectedReceiverProfilePic(""); // reset if no receiver
     }
   }, [selectedReceiver, onlineUsers, localVideoRef2]);
+
+  useEffect(() => {
+    if (selectedReceiver) {
+      const foundUser = chatPeers.find(u => u.username === selectedReceiver);
+      setSelectedReceiverFullname(foundUser?.fName || selectedReceiver);
+      setSelectedReceiverProfilePic(foundUser?.profilePic || ""); // ✅ store profile pic
+    } else {
+      setSelectedReceiverFullname("");
+      setSelectedReceiverProfilePic(""); // reset if no receiver
+    }
+  }, [selectedReceiver, chatPeers, localVideoRef2]);
 
 
   useEffect(() => {
@@ -304,6 +320,7 @@ setIsConnected(false);
       });
 
       socket.on("online users", setOnlineUsers);
+      socket.on("chatPeers", setChatPeers);
 
     }
   }
@@ -447,6 +464,7 @@ setIsConnected(false);
       setIsLoggedIn(false);
       setChat([]);
       setOnlineUsers([]);
+      setChatPeers([]);
       setSelectedReceiver("");
       socket.disconnect();
 
@@ -594,41 +612,21 @@ setIsConnected(false);
                 <>
                   <div className="w-full h-full flex">
                     {/* Sidebar - Hidden on mobile when chat is open, except when mobile menu is open */}
-                    <aside className={`
-                      ${selectedReceiver && !isMobileMenuOpen ? 'hidden lg:flex' : 'flex'} 
-                      w-full lg:w-80 bg-white border-r flex-col
-                      ${isMobileMenuOpen && selectedReceiver ? 'absolute inset-0 z-30 bg-white' : ''}
-                    `}>
-                      <div className="p-4 sm:p-5 border-b">
-                        <div className="flex justify-between items-center">
-                          <h2 className="text-lg font-semibold text-indigo-600 flex items-center gap-2">
-                            <Users className="w-5 h-5" />
-                            Online Users
-                          </h2>
-                          {/* Close button for mobile menu */}
-                          {isMobileMenuOpen && selectedReceiver && (
-                            <button
-                              onClick={() => setIsMobileMenuOpen(false)}
-                              className="lg:hidden p-2 rounded-md hover:bg-gray-100"
-                            >
-                              <X className="w-5 h-5" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-2">
-                        <OnlineUserList
-                          onlineUsers={onlineUsers}
-                          selectedReceiver={selectedReceiver}
-                          setSelectedReceiver={setSelectedReceiver}
-                          setIsChattingWindowOpen={setIsChattingWindowOpen}
-                          setIsChatLoading={setIsChatLoading}
-                          getMessagesHistory={getMessagesHistory}
-                          isTyping={isTyping}
-                          isChattingWindowOpen={isChattingWindowOpen}
-                        />
-                      </div>
-                    </aside>
+                      <SidebarToggle
+                        chatPeers={chatPeers}
+                        onlineUsers={onlineUsers}
+                        selectedReceiver={selectedReceiver}
+                        setSelectedReceiver={setSelectedReceiver}
+                        setIsChattingWindowOpen={setIsChattingWindowOpen}
+                        setIsChatLoading={setIsChatLoading}
+                        getMessagesHistory={getMessagesHistory}
+                        isTyping={isTyping}
+                        isChattingWindowOpen={isChattingWindowOpen}
+                        isMobileMenuOpen={isMobileMenuOpen}
+                        setIsMobileMenuOpen={setIsMobileMenuOpen}
+                        ChatPeersList={ChatPeersList}
+                        OnlineUserList={OnlineUserList}
+                      />
 
                     {/* Main Chat Area */}
                     {selectedReceiver && (

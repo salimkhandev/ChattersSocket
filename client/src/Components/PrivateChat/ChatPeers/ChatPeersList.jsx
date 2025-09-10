@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useEffect } from "react";
-import OnlineUserItem from "./OnlineUserItem";
-import { useAuth } from "../../context/AuthContext";
-import { useOnlineUsers } from "../../context/OnlineUsersContext";
+import React from "react";
+import ChatPeersItem from "./ChatPeersItem";
+import { useAuth } from "../../../context/AuthContext";
 
-const OnlineUserList = ({
-    onlineUsers,
+const ChatPeersList = ({
+    chatPeers,
     selectedReceiver,
     setSelectedReceiver,
     setIsChattingWindowOpen,
@@ -16,11 +15,8 @@ const OnlineUserList = ({
     isChattingWindowOpen,
 }) => {
     const { username} = useAuth();
-    const { setOnlineUsers } = useOnlineUsers();
-    useEffect(() => {
-        setOnlineUsers(onlineUsers); // store in context
-    }, [onlineUsers]);
-    const filteredUsers = onlineUsers
+
+    const filteredUsers = chatPeers
         .filter((u) => u.username !== username)
         .sort((a, b) => a.username.localeCompare(b.username));
 
@@ -30,10 +26,9 @@ const OnlineUserList = ({
                 <p className="text-sm text-gray-400 italic">No one else is online</p>
             )}
             {filteredUsers.map((user, idx) => (
-                <OnlineUserItem
+                <ChatPeersItem
                     key={idx}
                     user={user}
-                    onlineUsers={onlineUsers}
                     selectedReceiver={selectedReceiver}
                     setSelectedReceiver={setSelectedReceiver}
                     setIsChattingWindowOpen={setIsChattingWindowOpen}
@@ -47,4 +42,4 @@ const OnlineUserList = ({
     );
 };
 
-export default React.memo(OnlineUserList);
+export default React.memo(ChatPeersList);

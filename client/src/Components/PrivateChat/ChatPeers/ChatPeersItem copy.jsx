@@ -1,12 +1,12 @@
 "use client";
 
-import React,{useEffect} from "react";
-import { useAuth } from "../../context/AuthContext";
+import React from "react";
+import { useAuth } from "../../../context/AuthContext";
+import { useOnlineUsers } from "../../../context/OnlineUsersContext";
 
-const OnlineUserItem = ({
+const ChatPeersItem = ({
     user,
     selectedReceiver,
-    onlineUsers,
     setSelectedReceiver,
     setIsChattingWindowOpen,
     setIsChatLoading,
@@ -14,13 +14,14 @@ const OnlineUserItem = ({
     isTyping,
     isChattingWindowOpen,
 }) => {
-    const { username} = useAuth();
+    const { username } = useAuth();
+    const { onlineUsers } = useOnlineUsers();
 
-
-    const unseen = user.sentUnseenMessages?.find(
+    // unseen count from unseenMessages array
+    const unseen = user.unseenCount || 0;
+    const unseenOnline = onlineUsers.sentUnseenMessages?.find(
         (m) => m.receiver === username
     )?.unseen_count;
-
     const handleClick = () => {
         setSelectedReceiver(user.username);
         setIsChattingWindowOpen(true);
@@ -36,11 +37,11 @@ const OnlineUserItem = ({
                     : "hover:bg-gray-100"
                 }`}
         >
-            {/* Avatar or fallback */}
+            {/* Avatar */}
             <div className="relative">
-                {user.profilePic ? (
+                {user.profile_pic ? (
                     <img
-                        src={user.profilePic}
+                        src={user.profile_pic}
                         alt="profile"
                         className="w-10 h-10 rounded-full object-cover border shadow-sm"
                     />
@@ -50,10 +51,10 @@ const OnlineUserItem = ({
                     </div>
                 )}
 
-                {/* Blue dot for online users */}
-                {user.username && (
-                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
-                )}
+                {/* Online indicator */}
+                {onlineUsers.map((u,idx)=>u.isOnline && u.username==user.username && (
+                    <span key={idx} className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+                ))}
             </div>
 
             {/* Name and username */}
@@ -68,14 +69,21 @@ const OnlineUserItem = ({
                 )}
             </div>
 
-            {/* Unread badge */}
-            {unseen > 0 && selectedReceiver !== user.username && (
+            {/* Unseen messages badge */}
+            {unseenOnline > 0 &&
+                selectedReceiver !== user.username &&
+                onlineUsers?.some((u) => u.username === user.username) ? (
+                <div className="bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow">
+                    {unseenOnline}
+                </div>
+            ) : unseen > 0 && selectedReceiver !== user.username ? (
                 <div className="bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow">
                     {unseen}
                 </div>
-            )}
+            ) : null}
+
         </div>
     );
 };
 
-export default React.memo(OnlineUserItem);
+export default React.memo(ChatPeersItem);

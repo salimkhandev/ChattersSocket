@@ -14,20 +14,19 @@ const ChatPeersList = ({
     isTyping,
     isChattingWindowOpen,
 }) => {
-    const { username} = useAuth();
+    const { username } = useAuth();
 
-    const filteredUsers = chatPeers
-        .filter((u) => u.username !== username)
-        .sort((a, b) => a.username.localeCompare(b.username));
+    // Filter out current user but maintain the order from backend (ordered by recent messages)
+    const filteredUsers = chatPeers.filter((u) => u.username !== username);
 
     return (
         <div>
             {filteredUsers.length === 0 && (
-                <p className="text-sm text-gray-400 italic">No one else is online</p>
+                <p className="text-sm text-gray-400 italic">No conversations yet</p>
             )}
             {filteredUsers.map((user, idx) => (
                 <ChatPeersItem
-                    key={idx}
+                    key={user.id || idx} // Use user.id as key for better performance
                     user={user}
                     selectedReceiver={selectedReceiver}
                     setSelectedReceiver={setSelectedReceiver}

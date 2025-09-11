@@ -90,7 +90,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
 
     return (
         <div  className="relative flex-1">
-            <div
+            <div    
                 // ref={chatContainerRef}
                 // className="h-full bg-tranparent overflow-y-auto"
             >

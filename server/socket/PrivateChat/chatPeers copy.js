@@ -5,7 +5,7 @@ async function getChatPeers({ supabase, redisClient, username }) {
             .from("users")
             .select("id")
             .eq("username", username)
-            .single();
+            .single();  
 
         if (userError) {
             console.error("Error fetching user data:", userError);
@@ -42,51 +42,14 @@ async function getChatPeers({ supabase, redisClient, username }) {
 
         console.log("Found conversations:", conversations.length);
 
-        // Step 3: Get latest messages for all conversations in one query
-        const conversationIds = conversations.map(c => c.conversation_id);
-
-        const { data: allMessages, error: messagesError } = await supabase
-            .from("messages")
-            .select("conversation_id, created_at")
-            .in("conversation_id", conversationIds)
-            .order("created_at", { ascending: false });
-
-        if (messagesError) {
-            console.error("Error fetching messages:", messagesError);
-        }
-
-        // Step 4: Create a map of conversation_id to latest message timestamp
-        const latestMessageMap = {};
-        if (allMessages) {
-            allMessages.forEach(msg => {
-                // Only keep the first (latest) message for each conversation
-                if (!latestMessageMap[msg.conversation_id]) {
-                    latestMessageMap[msg.conversation_id] = msg.created_at;
-                }
-            });
-        }
-
-        // Step 5: Sort conversations by latest message timestamp (most recent first)
-        const sortedConversations = conversations.sort((a, b) => {
-            const timeA = latestMessageMap[a.conversation_id];
-            const timeB = latestMessageMap[b.conversation_id];
-
-            // Handle null/undefined timestamps (conversations with no messages go to the end)
-            if (!timeA && !timeB) return 0;
-            if (!timeA) return 1;
-            if (!timeB) return -1;
-
-            return new Date(timeB) - new Date(timeA);
-        });
-
-        // Step 6: Get all peer IDs (maintaining sorted order)
-        const peerIds = sortedConversations.map(convo =>
+        // Step 3: Get all peer IDs
+        const peerIds = conversations.map(convo =>
             convo.user1_id === userId ? convo.user2_id : convo.user1_id
         );
 
-        console.log("Peer IDs (ordered by recent messages):", peerIds);
+        console.log("Peer IDs:", peerIds);
 
-        // Step 7: Fetch all peer details in one query
+        // Step 4: Fetch all peer details in one query
         const { data: peersData, error: peersError } = await supabase
             .from("users")
             .select("id, username, name, profile_pic")
@@ -98,7 +61,7 @@ async function getChatPeers({ supabase, redisClient, username }) {
             return;
         }
 
-        // Step 8: Fetch online users from Redis
+        // Step 5: Fetch online users from Redis
         let onlineUsersMap = {};
         try {
             const connectedUsers = await redisClient.hGetAll("connectedUsers");
@@ -120,7 +83,8 @@ async function getChatPeers({ supabase, redisClient, username }) {
             // Continue without online status if Redis fails
         }
 
-        // Step 9: Fetch unseen message counts
+        // Step 6: Fetch unseen message counts
+        // Step 6: Fetch unseen message counts
         let unseenMessagesData = [];
         try {
             const { data, error: unseenError } = await supabase
@@ -135,8 +99,8 @@ async function getChatPeers({ supabase, redisClient, username }) {
             console.error("RPC error:", rpcError);
         }
 
-        // Step 10: Combine all data (maintaining the sorted order from Step 5)
-        const peers = sortedConversations.map(convo => {
+        // Step 7: Combine all data
+        const peers = conversations.map(convo => {
             const peerId = convo.user1_id === userId ? convo.user2_id : convo.user1_id;
             const peer = peersData.find(p => p.id === peerId);
 
@@ -157,12 +121,11 @@ async function getChatPeers({ supabase, redisClient, username }) {
                 fName: peer.name,
                 profile_pic: peer.profile_pic,
                 isOnline: !!onlineUsersMap[peer.id],
-                unseenCount: unseenForPeer ? unseenForPeer.unseen_count : 0,
-                lastMessageTime: latestMessageMap[convo.conversation_id] || null
+                unseenCount: unseenForPeer ? unseenForPeer.unseen_count : 0
             };
         }).filter(peer => peer !== null);
 
-        console.log("Final Peers (ordered by recent messages):", JSON.stringify(peers, null, 2));
+        console.log("Final Peers:", JSON.stringify(peers, null, 2));
         return peers;
 
     } catch (error) {

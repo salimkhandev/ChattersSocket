@@ -552,7 +552,10 @@ console.log(`Username😡: ${username}`);
                     message: `User ${receiver} is not allowed to join.`,
                 });
             }
-       
+
+            const peers = await getChatPeers({ supabase, redisClient, username:sender });
+            socket.emit("chatPeers", peers);
+
         });
 
 

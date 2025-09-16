@@ -1,35 +1,35 @@
+import { Phone, Video, WifiOff } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import toast from "react-hot-toast";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
+import { io } from "socket.io-client";
+import ForgetPassword from './Components/Auth/ForgetPassword';
 import LoginForm from "./Components/Auth/LoginForm";
-import SignupForm from "./Components/Auth/SignupForm";
 import LogoutButton from "./Components/Auth/LogoutButton";
+import ResetPassword from './Components/Auth/ResetPassword';
+import SignupForm from "./Components/Auth/SignupForm";
+import CallRingtone from './Components/Call/CallRingtone';
+import CallUIPlaceholder from './Components/Call/CallUIPlaceholder';
+import OutGoingAudioCall from './Components/Call/OutGoingAudioCall';
+import OutGoingVideoCall from './Components/Call/OutGoingVideoCall';
+import VideoCall from './Components/Call/VideoCall';
+import { generateToken } from './Components/FCM/firebase'; // adjust the path
 import GroupChat from "./Components/GroupChat/GroupChat";
 import ChatMessages from './Components/PrivateChat/ChatMessages';
-import InstallPWAButton from './Components/PWA/InstallPWAButton';
+import ChatPeersList from './Components/PrivateChat/ChatPeers/ChatPeersList';
 import MessageInput from "./Components/PrivateChat/MessageInput";
 import OnlineUserList from './Components/PrivateChat/OnlineUserList';
-import ChatPeersList from './Components/PrivateChat/ChatPeers/ChatPeersList';
 import ToggleTabs from "./Components/PrivateChat/ToggleTabs";
-import { useAuth } from "./context/AuthContext";
-import { generateToken } from './Components/FCM/firebase'; // adjust the path
-import CallUIPlaceholder from './Components/Call/CallUIPlaceholder';
-import OutGoingVideoCall from './Components/Call/OutGoingVideoCall';
-import OutGoingAudioCall from './Components/Call/OutGoingAudioCall';
-import ForgetPassword from './Components/Auth/ForgetPassword';
-import ResetPassword from './Components/Auth/ResetPassword';
-import VideoCall from './Components/Call/VideoCall';
-import CallRingtone from './Components/Call/CallRingtone';
 import UserProfileUpload from "./Components/PrivateChat/UserProfile";
+import InstallPWAButton from './Components/PWA/InstallPWAButton';
+import { useAuth } from "./context/AuthContext";
 import { useCall } from "./context/CallContext";
-import { io } from "socket.io-client";
-import { Video, Phone, Menu, ArrowLeft, WifiOff } from "lucide-react";
 // import AudioCallDisplay from './Components/Call/AudioCallDisplay';
-import VideoDisplay from './Components/Call/VideoDisplay';
 import AuthLoader from './Components/Auth/AuthLoader';
+import VideoDisplay from './Components/Call/VideoDisplay';
 // import { Routes, Route } from 'react-router-dom';
-import { useBlock } from "./context/BlockedCallContext";
 import SidebarToggle from './Components/PrivateChat/SideBarToggle';
+import { useBlock } from "./context/BlockedCallContext";
+import { useMedia } from './context/MediaContext';
 
 // In your JSX, replace the current <aside> section with:
 
@@ -38,9 +38,7 @@ import SidebarToggle from './Components/PrivateChat/SideBarToggle';
 const backendURL = import.meta.env.VITE_BACKEND_URL;
 
 import {
-  LogOut,
   MessageSquareMore,
-  Users,
   X
 } from "lucide-react";
 
@@ -57,6 +55,7 @@ const socket = io(`${backendURL}`, {
 
 
 export default function ChatApp() {
+  const { chat, setChat } = useMedia();
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [nameLoaded, setNameLoaded] = useState(false);  // track when name is ready
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile menu toggle
@@ -66,7 +65,8 @@ export default function ChatApp() {
     setIsConnected } = useCall();
   const [selectedReceiverFullname, setSelectedReceiverFullname] = useState("");
   const [message, setMessage] = useState("");
-  const [chat, setChat] = useState([]);
+  const [pendingMessages, setPendingMessages] = useState([]); // {id, to, message, created_at}
+  // const [chat, setChat] = useState([]);
   const [isTyping, setIsTyping] = useState({});
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [chatPeers, setChatPeers] = useState([]);
@@ -75,8 +75,7 @@ export default function ChatApp() {
   const [activeTab, setActiveTab] = useState("people"); // or "groups"
   const chatEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
-  const prevChatRef = useRef([]);
-  const { username, setUsername, isLoggedIn, setIsLoggedIn,checkingAuth } = useAuth();
+  const { username, setUsername, setSocket, isLoggedIn, setIsLoggedIn, checkingAuth } = useAuth();
   const webrtcRef = useRef(null);
   // const webrtcRef2 = useRef(null);
   const { blockCaller } = useBlock();
@@ -89,6 +88,7 @@ export default function ChatApp() {
   
   useEffect(() => {
     if (!socket) return;
+    setSocket(socket);
 
     socket.on("call-started", () => {
       setIsConnected(true); // timer starts
@@ -120,27 +120,34 @@ setIsConnected(false);
 
 
 
+  // Improve usability: robustly resolve selected receiver's name and profile pic
   useEffect(() => {
-    if (selectedReceiver) {
-      const foundUser = onlineUsers.find(u => u.username === selectedReceiver);
-      setSelectedReceiverFullname(foundUser?.fName || selectedReceiver);
-      setSelectedReceiverProfilePic(foundUser?.profilePic || ""); // ✅ store profile pic
-    } else {
-      setSelectedReceiverFullname("");
-      setSelectedReceiverProfilePic(""); // reset if no receiver
-    }
-  }, [selectedReceiver, onlineUsers, localVideoRef2]);
+    const normalized = selectedReceiver?.trim().toLowerCase();
 
-  useEffect(() => {
-    if (selectedReceiver) {
-      const foundUser = chatPeers.find(u => u.username === selectedReceiver);
-      setSelectedReceiverFullname(foundUser?.fName || selectedReceiver);
-      setSelectedReceiverProfilePic(foundUser?.profilePic || ""); // ✅ store profile pic
-    } else {
+    if (!normalized) {
       setSelectedReceiverFullname("");
-      setSelectedReceiverProfilePic(""); // reset if no receiver
+      setSelectedReceiverProfilePic("");
+      document.title = "ChatterSocket";
+      return;
     }
-  }, [selectedReceiver, chatPeers, localVideoRef2]);
+
+    // Prefer chatPeers (sorted by recent), fallback to onlineUsers; case-insensitive match
+    const matchFromPeers = chatPeers.find(u => u.username?.toLowerCase() === normalized);
+    const matchFromOnline = onlineUsers.find(u => u.username?.toLowerCase() === normalized);
+    const resolved = matchFromPeers || matchFromOnline;
+
+    const displayName = resolved?.fName || selectedReceiver;
+    const displayPic = resolved?.profilePic || resolved?.profile_pic || "";
+    document.title = `Chat with ${displayName} • ChatterSocket`;
+    document.title = `Chat with ${displayName} • ChatterSocket`;
+
+    setSelectedReceiverFullname(displayName);
+    setSelectedReceiverProfilePic(displayPic);
+
+    // Small UX touch: reflect active chat in the tab title also add an icon to diaplay
+
+    document.title = `Chat with ${displayName} • ChatterSocket`;
+  }, [selectedReceiver, chatPeers, onlineUsers]);
 
 
   useEffect(() => {
@@ -156,29 +163,16 @@ setIsConnected(false);
 
 
 
-  // useEffect(() => {
-  //   const prev = prevChatRef.current;
-  //   const isSame =
-  //     prev.length === chat.length &&
-  //     prev.every((msg, i) => msg.message === chat[i]?.message && msg.created_at === chat[i]?.created_at);
-
-  //   if (!isSame && chatEndRef.current) {
-  //     chatEndRef.current.scrollIntoView({ behavior: "smooth" });
-  //   }
-
-  //   prevChatRef.current = chat;
-  // }, [chat]);
-
   useEffect(() => {
     if (!socket) return;
 
     // When call is rejected
-    const handleCallRejected = ({ rejectedByFullname,callID }) => {
-    if (rejectedByFullname != 'you') {  console.log(`${rejectedByFullname} rejected your call`);
-      toast.error(`${rejectedByFullname} rejected your call 😢`);}
+    const handleCallRejected = ({ rejectedByFullname, callID }) => {
+      if (rejectedByFullname != 'you') {
+        console.log(`${rejectedByFullname} rejected your call`);
+        toast.error(`${rejectedByFullname} rejected your call 😢`);
+      }
       performCallCleanup(callID);
-    
-
 
     };
 
@@ -201,7 +195,7 @@ setIsConnected(false);
       socket.off("call-rejected", handleCallRejected);
       socket.off("call-accepted", handleCallAccepted);
     };
-  }, [socket, setShowVideo,outGoingCall]);
+  }, [socket, setShowVideo, outGoingCall]);
 
 
 
@@ -274,6 +268,21 @@ setIsConnected(false);
 
 
       socket.on("chat message", (msg) => {
+        // Clear matching pending message if it's ours
+        if (msg.from === username) {
+          setPendingMessages((prev) => {
+            // try to match by to + message text; if not found, drop oldest
+            const idx = prev.findIndex(p => p.to === msg.to && p.message === msg.message);
+            if (idx === -1) {
+              // take elmnts from index one till the end
+              return prev.slice(1);
+            }
+            const next = [...prev];
+            // start at index one and remove one element ie that element
+            next.splice(idx, 1);
+            return next;
+          });
+        }
         if (msg.from !== username) {
           const notificationSound = new Audio("/notification/notification-sound.mp3");
           notificationSound.volume = 0.3
@@ -418,11 +427,21 @@ setIsConnected(false);
     if (!message.trim() || !selectedReceiver) {
       return alert("❌ Please select a user and write a message");
     }
+    // set pending before emit
+    const tempId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+    const pending = {
+      id: tempId,
+      to: selectedReceiver,
+      message: message.trim(),
+      created_at: new Date().toISOString(),
+    };
+    setPendingMessages((prev) => [...prev, pending]);
     socket.emit('username', { username })
     socket.emit("chat messages", {
       sender: username,
       receiver: selectedReceiver,
       message: message.trim(),
+      clientTempId: tempId,
     });
 
     setMessage("");
@@ -475,6 +494,8 @@ setIsConnected(false);
 
 
   const closeChat = () => {
+    // clear the pendingmessages
+    setPendingMessages([]);
     setSelectedReceiver("");
     setChat([]);
     // setShowEmojiPicker(false);
@@ -548,7 +569,7 @@ setIsConnected(false);
   return (
     <div className="fixed inset-0 w-full h-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex flex-col overflow-hidden">
       <Toaster position="top-right" reverseOrder={false} />
-      <AuthLoader socket={socket}/>
+      <AuthLoader socket={socket} />
       {checkingAuth && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
           <img
@@ -562,19 +583,19 @@ setIsConnected(false);
 
       {(!username || !isLoggedIn) && !checkingAuth ? (
         <div className="h-full w-full flex items-center justify-center p-4">
-          {page === "login" && <LoginForm forgetPassword={() => setPage("forget-password")} signup={() => setPage("signup")} isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} socket={socket} /> }
-          {page === "forget-password" && <ForgetPassword goLogin={() => setPage("login")} socket={socket} /> }
-          {page === "signup" && <SignupForm isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} LoginForm={()=>setPage("login")} socket={socket} /> }
+          {page === "login" && <LoginForm forgetPassword={() => setPage("forget-password")} signup={() => setPage("signup")} isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} socket={socket} />}
+          {page === "forget-password" && <ForgetPassword goLogin={() => setPage("login")} socket={socket} />}
+          {page === "signup" && <SignupForm isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} LoginForm={() => setPage("login")} socket={socket} />}
         </div>
         
       ) : (
 
         <div className="h-full w-full bg-white flex flex-col overflow-hidden">
             <CallUIPlaceholder socket={socket} username={username} />
-            <CallRingtone/>
-            {outGoingCall && currentIsVideo && <OutGoingVideoCall performCallCleanup={performCallCleanup}  socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia}  username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
-            {outGoingCall && !currentIsVideo && <OutGoingAudioCall performCallCleanup={performCallCleanup} socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia}  username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
-            {(callAccepted || showVideo) && <VideoDisplay performCallCleanup={performCallCleanup} callerUsername={callerUsername} currentIsVideo={currentIsVideo} profilePic={selectedReceiverProfilePic} callerProfilePic={callerProfilePic} callerName={callerFullname} socket={socket} username={username} localRef={localVideoRef2} remoteRef={remoteVideoRef2}  />}
+          <CallRingtone />
+          {outGoingCall && currentIsVideo && <OutGoingVideoCall performCallCleanup={performCallCleanup} socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia} username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
+          {outGoingCall && !currentIsVideo && <OutGoingAudioCall performCallCleanup={performCallCleanup} socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia} username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
+          {(callAccepted || showVideo) && <VideoDisplay performCallCleanup={performCallCleanup} callerUsername={callerUsername} currentIsVideo={currentIsVideo} profilePic={selectedReceiverProfilePic} callerProfilePic={callerProfilePic} callerName={callerFullname} socket={socket} username={username} localRef={localVideoRef2} remoteRef={remoteVideoRef2} />}
 
 
           {/* Top Navigation Bar */}
@@ -591,7 +612,7 @@ setIsConnected(false);
                 <InstallPWAButton />
             </div>
          
-            <LogoutButton logout={logout}/>
+            <LogoutButton logout={logout} />
           </div>
 
           {/* Mobile tabs - only shown on small screens */}
@@ -625,6 +646,7 @@ setIsConnected(false);
                         isMobileMenuOpen={isMobileMenuOpen}
                         setIsMobileMenuOpen={setIsMobileMenuOpen}
                         ChatPeersList={ChatPeersList}
+
                         OnlineUserList={OnlineUserList}
                       />
 
@@ -639,7 +661,7 @@ setIsConnected(false);
                           <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-white">
                             <h1 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
                               <span className="text-indigo-600">
-                                {onlineUsers.find(u => u.username === selectedReceiver)?.fName || selectedReceiver}
+                                {onlineUsers.find(u => u.username === selectedReceiver)?.fName || selectedReceiverFullname}
                               </span>
                             </h1>
 
@@ -709,6 +731,7 @@ setIsConnected(false);
                               chat={chat}
                               socket={socket}
                               setChat={setChat}
+                              pendingMessages={pendingMessages}
                             />
 
                             {isTyping.typer === selectedReceiver && (
@@ -761,3 +784,8 @@ setIsConnected(false);
     </div>
   );
 }
+
+
+
+
+

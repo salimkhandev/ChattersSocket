@@ -1,7 +1,10 @@
 "use client";
 
-import React from "react";
+import { MoreVertical } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "../../../context/AuthContext";
+import { useMedia } from '../../../context/MediaContext';
 import { useOnlineUsers } from "../../../context/OnlineUsersContext";
 
 const ChatPeersItem = ({
@@ -14,12 +17,15 @@ const ChatPeersItem = ({
     isTyping,
     isChattingWindowOpen,
 }) => {
-    const { username } = useAuth();
+    const { setChat } = useMedia();
+    const { username, id, socket } = useAuth();
     const { onlineUsers } = useOnlineUsers();
+    const [showMenu, setShowMenu] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const menuRef = useRef(null);
 
     // unseen count from unseenMessages array
-    // unseen from server/user object
-    // unseen from server/user object
     let baseUnseen = user.unseenCount || 0;
 
     // find peer in onlineUsers
@@ -32,19 +38,83 @@ const ChatPeersItem = ({
 
     // always prefer unseenOnline if it's defined
     if (typeof unseenOnline === "number") {
-        baseUnseen = unseenOnline;   // replace permanently
-        user.unseenCount = unseenOnline; // update user object itself
+        baseUnseen = unseenOnline;
+        user.unseenCount = unseenOnline;
     }
 
     const unseen = baseUnseen;
 
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setShowMenu(false);
+            }
+        };
 
+        if (showMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showMenu]);
 
     const handleClick = () => {
+        setChat([]);
         setSelectedReceiver(user.username);
         setIsChattingWindowOpen(true);
         setIsChatLoading(true);
         getMessagesHistory({ sender: username, receiver: user.username });
+    };
+
+    const handleDeleteChat = async () => {
+
+        if (isDeleting) return;
+
+        setIsDeleting(true);
+        setShowDeleteModal(false);
+        setShowMenu(false);
+
+        try {
+            socket.emit('deleteChat', {
+                conversationId: user.conversation_id,
+                userId: id
+            });
+
+            console.log('user.conversation_id', user.conversation_id);
+            console.log('id', id);
+
+            socket.off('deleteChatError');
+
+            socket.on('deleteChatError', (error) => {
+                console.error('Error deleting chat:', error);
+                alert('Failed to delete chat. Please try again.');
+                setIsDeleting(false);
+            });
+
+        } catch (error) {
+            console.error('Error deleting chat:', error);
+            alert('Failed to delete chat. Please try again.');
+            setIsDeleting(false);
+        }
+    };
+
+    const handleRemoveClick = (e) => {
+        e.stopPropagation();
+        setShowMenu(false);
+        setShowDeleteModal(true);
+    };
+
+    const handleMenuClick = (e) => {
+        e.stopPropagation();
+        setShowMenu(!showMenu);
+    };
+
+    // Add this function to handle the dropdown menu area
+    const handleMenuAreaClick = (e) => {
+        e.stopPropagation();
     };
 
     return (
@@ -94,8 +164,58 @@ const ChatPeersItem = ({
                 </div>
             )}
 
+            {/* Three dots menu */}
+            <div className="relative" ref={menuRef} onClick={handleMenuAreaClick}>
+                <button
+                    onClick={handleMenuClick}
+                    className="p-1 rounded-full hover:bg-gray-200 transition-colors opacity-0 group-hover:opacity-100"
+                >
+                    <MoreVertical className="w-4 h-4 text-gray-500" />
+                </button>
 
+                {/* Dropdown menu */}
+                {showMenu && (
+                    <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[120px]">
+                        <button
+                            onClick={handleRemoveClick}
+                            disabled={isDeleting}
+                            className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isDeleting ? 'Deleting...' : 'Remove'}
+                        </button>
+                    </div>
+                )}
+            </div>
 
+            {/* Custom Delete Confirmation Modal */}
+            {showDeleteModal && createPortal(
+                <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4 relative" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="font-bold text-lg mb-2">
+                            Remove '{user.fName}'
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                            Are you sure you want to remove this chat? This action cannot be undone.
+                        </p>
+                        <div className="flex justify-end gap-2">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setShowDeleteModal(false); }}
+                                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteChat(); }}
+                                disabled={isDeleting}
+                                className="px-4 py-2 rounded bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50"
+                            >
+                                {isDeleting ? 'Removing...' : 'Remove'}
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
         </div>
     );
 };

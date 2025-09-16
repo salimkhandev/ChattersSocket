@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import { useAuth } from "../../context/AuthContext";
-import { useMedia } from "../../context/MediaContext";
+import { useAuth } from "../../../context/AuthContext";
+import { useOnlineUsers } from "../../../context/OnlineUsersContext";
 
-const OnlineUserItem = ({
+const ChatPeersItem = ({
     user,
     selectedReceiver,
     setSelectedReceiver,
@@ -14,16 +14,33 @@ const OnlineUserItem = ({
     isTyping,
     isChattingWindowOpen,
 }) => {
-    const { username} = useAuth();
-    const { setChat } = useMedia();
+    const { username } = useAuth();
+    const { onlineUsers } = useOnlineUsers();
 
+    // unseen count from unseenMessages array
+    // unseen from server/user object
+    // unseen from server/user object
+    let baseUnseen = user.unseenCount || 0;
 
-    const unseen = user.sentUnseenMessages?.find(
+    // find peer in onlineUsers
+    const peer = onlineUsers.find((u) => u.username === user.username);
+
+    // unseen from online state
+    const unseenOnline = peer?.sentUnseenMessages?.find(
         (m) => m.receiver === username
     )?.unseen_count;
 
+    // always prefer unseenOnline if it's defined
+    if (typeof unseenOnline === "number") {
+        baseUnseen = unseenOnline;   // replace permanently
+        user.unseenCount = unseenOnline; // update user object itself
+    }
+
+    const unseen = baseUnseen;
+
+
+
     const handleClick = () => {
-        setChat([]);
         setSelectedReceiver(user.username);
         setIsChattingWindowOpen(true);
         setIsChatLoading(true);
@@ -34,15 +51,15 @@ const OnlineUserItem = ({
         <div
             onClick={handleClick}
             className={`group cursor-pointer p-3 rounded-lg flex items-center gap-4 transition-all ${selectedReceiver === user.username
-                    ? "bg-indigo-100 text-indigo-700 font-semibold shadow-sm"
-                    : "hover:bg-gray-100"
+                ? "bg-indigo-100 text-indigo-700 font-semibold shadow-sm"
+                : "hover:bg-gray-100"
                 }`}
         >
-            {/* Avatar or fallback */}
+            {/* Avatar */}
             <div className="relative">
-                {user.profilePic ? (
+                {user.profile_pic ? (
                     <img
-                        src={user.profilePic}
+                        src={user.profile_pic}
                         alt="profile"
                         className="w-10 h-10 rounded-full object-cover border shadow-sm"
                     />
@@ -52,10 +69,10 @@ const OnlineUserItem = ({
                     </div>
                 )}
 
-                {/* Blue dot for online users */}
-                {user.username && (
-                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
-                )}
+                {/* Online indicator */}
+                {onlineUsers.map((u, idx) => u.isOnline && u.username == user.username && (
+                    <span key={idx} className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+                ))}
             </div>
 
             {/* Name and username */}
@@ -70,14 +87,17 @@ const OnlineUserItem = ({
                 )}
             </div>
 
-            {/* Unread badge */}
+            {/* Unseen messages badge */}
             {unseen > 0 && selectedReceiver !== user.username && (
                 <div className="bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow">
                     {unseen}
                 </div>
             )}
+
+
+
         </div>
     );
 };
 
-export default React.memo(OnlineUserItem);
+export default React.memo(ChatPeersItem);

@@ -8,9 +8,10 @@ export const MediaProvider = ({ children }) => {
     const [localFormat, setLocalFormat] = useState(null);   // e.g., webm, mp3, mp4, etc.
     const [uploading, setUploading] = useState(false);
     const [isModalOpen,setIsModalOpen]=useState(false)
-    
+    const [chat, setChat] = useState([]);
+
     return (
-        <MediaContext.Provider value={{ localUrl, setLocalUrl, uploading, setUploading, localFormat, isModalOpen, setIsModalOpen, setLocalFormat }}>
+        <MediaContext.Provider value={{ localUrl, setLocalUrl, uploading, setUploading, localFormat, isModalOpen, setIsModalOpen, setLocalFormat, chat, setChat }}>
             {children}
         </MediaContext.Provider>
     );

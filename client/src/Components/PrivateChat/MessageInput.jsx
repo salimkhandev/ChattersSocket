@@ -1,11 +1,11 @@
 'use client';
-import React, { useState, useRef } from "react";
-import { Smile, XCircle, Send, Mic, StopCircle } from "lucide-react";
+import { Mic, Send, Smile, XCircle } from "lucide-react";
+import React, { useRef, useState } from "react";
 
-import VoiceRecorder from "./VoiceMessgae/VoiceRecorder"; // <-- Adjust the path if needed
-import UploadMedia from './SendMedia/UploadMedia'; // adjust path if needed
 import { useMedia } from "../../context/MediaContext";
 import MediaPreview from './SendMedia/MediaPreview';
+import UploadMedia from './SendMedia/UploadMedia'; // adjust path if needed
+import VoiceRecorder from "./VoiceMessgae/VoiceRecorder"; // <-- Adjust the path if needed
 
 const emojiList = ["😀", "😂", "😍", "😎", "👍", "🙏", "🎉", "💯", "❤️", "🔥", "🤔", "🙌"];
 
@@ -23,7 +23,7 @@ const MessageInput = ({
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const recorderRef = useRef();
-    const { localUrl, setLocalUrl, localFormat, setLocalFormat, isModalOpen, setIsModalOpen } = useMedia();
+    const { setLocalUrl, setLocalFormat, isModalOpen, setIsModalOpen } = useMedia();
 
     const handleStart = () => {
         recorderRef.current?.startRecording();
@@ -31,11 +31,7 @@ const MessageInput = ({
         setShowRecordIcon(false);
     };
 
-    // const handleStop = () => {
-    //     recorderRef.current?.stopRecording();
-    //     setShowRecordIcon(false);
-    //     setShowStopIcon(false);
-    // };
+
 
     const closeModal = () => {
         setLocalFormat(null);
@@ -44,7 +40,7 @@ const MessageInput = ({
     };
 
     return (
-        <div className="mt-2 sm:mt-4 bg-white rounded-lg border shadow-sm relative">
+        <div className="mt-0 bg-white rounded-lg border shadow-sm relative">
             {/* Emoji Picker */}
             {showEmojiPicker && (
                 <div className="absolute bottom-full left-2 sm:right-0 sm:left-auto mb-2 bg-white border border-gray-300 rounded-xl shadow-lg p-2 sm:p-3 grid grid-cols-4 sm:grid-cols-6 gap-1 sm:gap-2 z-50 max-w-xs sm:max-w-none">
@@ -145,21 +141,7 @@ const MessageInput = ({
                         </button>
                     )}
 
-                    {/* Stop Button (Stop Recording) */}
-                    {/* {isRecording && showStopIcon && (
-                        <button
-                            onClick={() => {
-                                setTimeout(() => handleStop(), 0);
-                            }}
-                            className="p-1.5 sm:p-2 hover:bg-red-50 rounded-full transition-colors"
-                            title="Stop Recording"
-                            aria-label="Stop Recording"
-                        >
-                            <StopCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
-                        </button>
-                    )} */}
 
-                    {/* Send Button */}
                     {!isRecording && (
                         <button
                             onClick={sendMessage}

@@ -1,24 +1,23 @@
-import { memo, useEffect, useRef, useState } from 'react'
-import { MoreHorizontal, Trash2, Loader2, Mic, Edit3, X, ChevronDown } from 'lucide-react';
-import VoiceMessagePlayer from './VoiceMessgae/VoiceMessagePlayer';
-import SendingMediaPreview from './SendMedia/SendingMediaPreview'
+import { Edit3, Loader2, Mic, MoreHorizontal, Trash2 } from 'lucide-react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useVoice } from '../../context/VoiceContext';
 import { useMedia } from '../../context/MediaContext';
-import MediaModal from '../PrivateChat/SendMedia/MediaModal'; // adjust the path
+import { useVoice } from '../../context/VoiceContext';
 import EditMessageModal from '../PrivateChat/EditMessageModal'; // adjust the path
+import MediaModal from '../PrivateChat/SendMedia/MediaModal'; // adjust the path
+import SendingMediaPreview from './SendMedia/SendingMediaPreview';
+import VoiceMessagePlayer from './VoiceMessgae/VoiceMessagePlayer';
 
-function ChatMessages({ isChatLoading, chat, socket, setChat }) {
+function ChatMessages({ isChatLoading, chat, socket, setChat, pendingMessages = [] }) {
     const chatEndRef = useRef();
     const prevChatRef = useRef([]);
     const chatContainerRef = useRef();
     const [selectedMedia, setSelectedMedia] = useState(null);
     const [editModal, setEditModal] = useState({ isOpen: false, messageId: null, currentText: '' });
-    const [showScrollButton, setShowScrollButton] = useState(false);
 
     const { username } = useAuth();
-    const { tempVoiceUrl, setTempVoiceUrl, tempUrlAudio } = useVoice();
-    const { localUrl, localFormat, uploading, isModalOpen, setIsModalOpen } = useMedia();
+    const { tempVoiceUrl, tempUrlAudio } = useVoice();
+    const { uploading } = useMedia();
 
 
 
@@ -86,7 +85,6 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
         }
     };
 
-    console.log('📱❌', { username, tempVoiceUrl, tempUrlAudio });
 
     return (
         <div  className="relative flex-1">
@@ -444,11 +442,25 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                     </div>
                 )}
 
+                {/* Pending text messages (optimistic UI) */}
+                {pendingMessages.length > 0 && pendingMessages.map((p) => (
+                    <div key={p.id} className="my-2 px-4 flex justify-end">
+                        <div className="relative flex items-center gap-3 bg-green-100 px-3 py-2 rounded-lg shadow-sm border border-green-200">
+                            <div className="flex items-center justify-center">
+                                <Loader2 className="w-4 h-4 text-green-600 animate-spin" />
+                            </div>
+                            <div className="text-sm text-gray-800 break-words max-w-xs">
+                                {p.message}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
                 <div ref={chatEndRef} className="h-1" />
             </div>
 
             {/* Scroll to bottom button */}
-            { (
+            {/* { (
                 <button
                     onClick={scrollToBottom}
                     className="fixed bottom-20 right-4 z-30 bg-green-500 hover:bg-green-600 text-white rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110"
@@ -456,7 +468,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat }) {
                 >
                     <ChevronDown className="w-5 h-5" />
                 </button>
-            )}
+            )} */}
 
             {selectedMedia && (
                 <MediaModal

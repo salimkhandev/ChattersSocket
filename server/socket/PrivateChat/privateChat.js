@@ -7,7 +7,9 @@ const { v4: uuidv4 } = require('uuid');
 const  isImageUrl  = require('../../utils/isImageUrl');
 const videoCall = require("../Calls/videoCall")
 const autoLogin = require("../AutoLogin/autoLogin")
-const {getChatPeers }= require("./chatPeers")
+const {deleteChat }= require("./deleteChat")
+const { undeleteChat } = require('./undeleteChat');
+const { getChatPeers }= require("./chatPeers")
 const cloudinary = require("cloudinary").v2; 
 
 async function getAllUsers() {
@@ -137,6 +139,10 @@ function startServer(io) {
         });
 
 
+        socket.on("deleteChat", async ({ conversationId, userId }) => {
+            await deleteChat({ supabase, socket, conversationId, userId });
+        });
+
 
         socket.on("delete for everyone", async ({ sender,receiver, messageId, audio_url, media_url}) => {
             try {
@@ -240,7 +246,7 @@ function startServer(io) {
         socket.on("username", async ({ username }) => {
 
 
-            const peers = await getChatPeers({ supabase, redisClient, username});
+            const peers = await getChatPeers({ supabase, redisClient, username,io});
             socket.emit("chatPeers", peers);
 
 
@@ -460,7 +466,14 @@ console.log(`Username😡: ${username}`);
 
                     const conversationId = conversation.conversation_id;
 
-                   
+                    // Remove sender from deleted_by if they were deleted
+                    await undeleteChat({ 
+                        supabase, 
+                        conversationId, 
+                        userId: senderId 
+                    });
+
+                
                     supabase
                         .from("messages")
                         .insert({
@@ -685,6 +698,7 @@ socket.on("typing", async (status) => {
 
             if (redisData) {
                 const updatedUser = {
+                    id: redisData.id,
                     username,
                     fName: currentFName,
                     profilePic,
@@ -704,6 +718,7 @@ socket.on("typing", async (status) => {
                             const u = JSON.parse(updatedUsers[user]);
                             return u.socketId
                                 ? {
+                                    id: u.id,
                                     isOnline: true,
                                     username: u.username,
                                     fName: u.fName,

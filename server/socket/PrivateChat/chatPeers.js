@@ -1,4 +1,4 @@
-async function getChatPeers({ supabase, redisClient, username }) {
+async function getChatPeers({ supabase, redisClient, username, io }) {
     try {
         // Step 1: Get user ID from username
         const { data: userData, error: userError } = await supabase
@@ -25,7 +25,7 @@ async function getChatPeers({ supabase, redisClient, username }) {
         // Step 2: Get all conversations involving this user
         const { data: conversations, error: convoError } = await supabase
             .from("conversations")
-            .select("conversation_id, user1_id, user2_id")
+            .select("conversation_id, user1_id, user2_id, deleted_by")
             .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
 
         if (convoError) {
@@ -40,10 +40,22 @@ async function getChatPeers({ supabase, redisClient, username }) {
             return;
         }
 
-        console.log("Found conversations:", conversations.length);
+        // Step 2.5: Filter out conversations where current user has deleted
+        const activeConversations = conversations.filter(convo => {
+            const deletedBy = convo.deleted_by || [];
+            return !deletedBy.includes(userId);
+        });
 
-        // Step 3: Get latest messages for all conversations in one query
-        const conversationIds = conversations.map(c => c.conversation_id);
+        if (activeConversations.length === 0) {
+            console.log("No active conversations found for user:", username);
+            io.emit("chatPeers", []);
+            return;
+        }
+
+        console.log("Found active conversations:", activeConversations.length);
+
+        // Step 3: Get latest messages for all active conversations in one query
+        const conversationIds = activeConversations.map(c => c.conversation_id);
 
         const { data: allMessages, error: messagesError } = await supabase
             .from("messages")
@@ -66,8 +78,8 @@ async function getChatPeers({ supabase, redisClient, username }) {
             });
         }
 
-        // Step 5: Sort conversations by latest message timestamp (most recent first)
-        const sortedConversations = conversations.sort((a, b) => {
+        // Step 5: Sort active conversations by latest message timestamp (most recent first)
+        const sortedConversations = activeConversations.sort((a, b) => {
             const timeA = latestMessageMap[a.conversation_id];
             const timeB = latestMessageMap[b.conversation_id];
 

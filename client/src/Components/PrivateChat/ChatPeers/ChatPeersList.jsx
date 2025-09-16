@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
-import ChatPeersItem from "./ChatPeersItem";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
+import ChatPeersItem from "./ChatPeersItem";
 
 const ChatPeersList = ({
     chatPeers,
@@ -14,10 +14,37 @@ const ChatPeersList = ({
     isTyping,
     isChattingWindowOpen,
 }) => {
-    const { username } = useAuth();
+    const { username, socket} = useAuth();
+    const [localPeers, setLocalPeers] = useState([]);
 
     // Filter out current user but maintain the order from backend (ordered by recent messages)
-    const filteredUsers = chatPeers.filter((u) => u.username !== username);
+    const filteredUsers = localPeers.length > 0 ? localPeers : chatPeers.filter((u) => u.username !== username);
+
+    // Update local peers when chatPeers changes
+    useEffect(() => {
+        setLocalPeers(chatPeers.filter((u) => u.username !== username));
+    }, [chatPeers, username]);
+
+    // Listen for chat deletion events
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleChatDeleted = (data) => {
+            alert("Chat deleted successfully"+data);
+            console.log("Chat deleted successfully",data);
+            // Remove the deleted conversation from local state
+            setLocalPeers(prevPeers => 
+                prevPeers.filter(peer => peer.conversation_id !== data.conversationId)
+            );
+        };
+
+        socket.on('chatDeleted', handleChatDeleted);
+
+        // Cleanup listener on unmount
+        return () => {
+            socket.off('chatDeleted', handleChatDeleted);
+        };
+    }, [socket]);
 
     return (
         <div>

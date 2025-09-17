@@ -1,4 +1,4 @@
-import { Edit3, Loader2, Mic, MoreHorizontal, Trash2 } from 'lucide-react';
+import { ChevronDown, Edit3, Loader2, Mic, MoreHorizontal, Trash2 } from 'lucide-react';
 import { memo, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useMedia } from '../../context/MediaContext';
@@ -14,6 +14,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat, pendingMessages = 
     const chatContainerRef = useRef();
     const [selectedMedia, setSelectedMedia] = useState(null);
     const [editModal, setEditModal] = useState({ isOpen: false, messageId: null, currentText: '' });
+    const [isAtBottom, setIsAtBottom] = useState(true);
 
     const { username } = useAuth();
     const { tempVoiceUrl, tempUrlAudio } = useVoice();
@@ -52,6 +53,25 @@ function ChatMessages({ isChatLoading, chat, socket, setChat, pendingMessages = 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [tempVoiceUrl, uploading]); // scroll when new chat or temp voice arrives
+
+    // Observe bottom sentinel to toggle scroll-to-bottom button visibility
+    useEffect(() => {
+        if (!chatEndRef.current) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsAtBottom(entry.isIntersecting);
+            },
+            {
+                    root: null,
+                    rootMargin: '0px 0px -80px 0px',
+                threshold: 0.1,
+            }
+        );
+
+        observer.observe(chatEndRef.current);
+        return () => observer.disconnect();
+    }, []);
 
     const handleEditMessage = (messageId, currentText) => {
         setEditModal({
@@ -460,7 +480,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat, pendingMessages = 
             </div>
 
             {/* Scroll to bottom button */}
-            {/* { (
+            { !isAtBottom && (
                 <button
                     onClick={scrollToBottom}
                     className="fixed bottom-20 right-4 z-30 bg-green-500 hover:bg-green-600 text-white rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110"
@@ -468,7 +488,7 @@ function ChatMessages({ isChatLoading, chat, socket, setChat, pendingMessages = 
                 >
                     <ChevronDown className="w-5 h-5" />
                 </button>
-            )} */}
+            )}
 
             {selectedMedia && (
                 <MediaModal

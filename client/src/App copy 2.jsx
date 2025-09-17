@@ -60,7 +60,7 @@ export default function ChatApp() {
   const [nameLoaded, setNameLoaded] = useState(false);  // track when name is ready
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile menu toggle
   const { callAccepted, setShowVideo, showVideo, callerFullname, callerUsername, outGoingCall, timerRef, cleanupMedia, setCallReceiverFullname2 // ✔️ correct
-    , setOutGoingCall, callStartRef, rejectCall, isAudioCall, remoteVideoRef2, currentIsVideo, setCurrentIsVideo, localVideoRef2, localVideoRefForOutgoing, callerProfilePic,
+, setOutGoingCall, callStartRef, rejectCall, isAudioCall, remoteVideoRef2, currentIsVideo, setCurrentIsVideo, localVideoRef2, localVideoRefForOutgoing, callerProfilePic,
     setCallTime,
     setIsConnected } = useCall();
   const [selectedReceiverFullname, setSelectedReceiverFullname] = useState("");
@@ -81,11 +81,11 @@ export default function ChatApp() {
   const { blockCaller } = useBlock();
 
   const [page, setPage] = useState("login"); // or "forget-password"
-
+  
   // Add new state
   const [selectedReceiverProfilePic, setSelectedReceiverProfilePic] = useState("");
 
-
+  
   useEffect(() => {
     if (!socket) return;
     setSocket(socket);
@@ -102,7 +102,7 @@ export default function ChatApp() {
 
 
   const performCallCleanup = (callID) => {
-
+    
     rejectCall(); // hide outgoing call component
     blockCaller(callID);
     setShowVideo(false);
@@ -111,8 +111,8 @@ export default function ChatApp() {
     timerRef.current = null;
     callStartRef.current = null;
     setCallTime(0);
-    setOutGoingCall(false);
-    setIsConnected(false);
+    setOutGoingCall(false); 
+setIsConnected(false);
     setCallReceiverFullname2(null);  // ✔️ correct
 
   };
@@ -182,10 +182,10 @@ export default function ChatApp() {
       toast.success(`${acceptedByFullname} accepted your call 🎉`);
       setShowVideo(true); // show video component
       setOutGoingCall(false); // hide outgoing call 
-      // setVideoDisplay(true)
+        // setVideoDisplay(true)
 
 
-
+      
     };
 
     socket.on("call-rejected", handleCallRejected);
@@ -408,7 +408,7 @@ export default function ChatApp() {
     // 🔌 Register listeners
     // socket.on("isLoggedIn", handleLogin);
     socket.on("chat history", handleChatHistory);
-    // socket.on("online users", setOnlineUsers);
+      // socket.on("online users", setOnlineUsers);
 
     // Send username event to server
     sendUsernameEvent();
@@ -506,7 +506,7 @@ export default function ChatApp() {
   useEffect(() => {
     const handleDisconnect = ({ disconnected_username }) => {
       // Show toast notification
-
+    
 
       // Close chat if the disconnected user is the selected receiver
       if (disconnected_username === selectedReceiver) {
@@ -544,7 +544,7 @@ export default function ChatApp() {
       document.removeEventListener('keydown', handleEscKey);
     };
   }, [selectedReceiver]);
-
+  
   // const refreshOnlineUsers = () => {
   //   if (socket) {
   //     socket.emit("username", { username });
@@ -552,7 +552,7 @@ export default function ChatApp() {
   //     socket.connect();
 
   //   }
-
+  
   // };
   const goLogin = () => window.location.href = "/";
 
@@ -587,11 +587,11 @@ export default function ChatApp() {
           {page === "forget-password" && <ForgetPassword goLogin={() => setPage("login")} socket={socket} />}
           {page === "signup" && <SignupForm isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} LoginForm={() => setPage("login")} socket={socket} />}
         </div>
-
+        
       ) : (
 
         <div className="h-full w-full bg-white flex flex-col overflow-hidden">
-          <CallUIPlaceholder socket={socket} username={username} />
+            <CallUIPlaceholder socket={socket} username={username} />
           <CallRingtone />
           {outGoingCall && currentIsVideo && <OutGoingVideoCall performCallCleanup={performCallCleanup} socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia} username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
           {outGoingCall && !currentIsVideo && <OutGoingAudioCall performCallCleanup={performCallCleanup} socket={socket} cleanupMedia={webrtcRef.current.cleanupMedia} username={username} selectedReceiverProfilePic={selectedReceiverProfilePic} calleeFullname={selectedReceiverFullname} />}
@@ -602,23 +602,23 @@ export default function ChatApp() {
           <div className="bg-white border-b p-3 sm:p-4 flex items-center justify-between shrink-0 z-20">
             <div className="flex items-center gap-3">
               {/* Mobile menu button */}
-
-
+          
+              
               <UserProfileUpload nameLoaded={nameLoaded} username={username} socket={socket} />
             </div>
-
+            
             <div className="hidden sm:block">
               <ToggleTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-              <InstallPWAButton />
+                <InstallPWAButton />
             </div>
-
+         
             <LogoutButton logout={logout} />
           </div>
 
           {/* Mobile tabs - only shown on small screens */}
           <div className="sm:hidden bg-white border-b">
             <ToggleTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-            <InstallPWAButton />
+              <InstallPWAButton />
           </div>
 
           <div className="flex-1 relative overflow-hidden">
@@ -633,22 +633,22 @@ export default function ChatApp() {
                 <>
                   <div className="w-full h-full flex">
                     {/* Sidebar - Hidden on mobile when chat is open, except when mobile menu is open */}
-                    <SidebarToggle
-                      chatPeers={chatPeers}
-                      onlineUsers={onlineUsers}
-                      selectedReceiver={selectedReceiver}
-                      setSelectedReceiver={setSelectedReceiver}
-                      setIsChattingWindowOpen={setIsChattingWindowOpen}
-                      setIsChatLoading={setIsChatLoading}
-                      getMessagesHistory={getMessagesHistory}
-                      isTyping={isTyping}
-                      isChattingWindowOpen={isChattingWindowOpen}
-                      isMobileMenuOpen={isMobileMenuOpen}
-                      setIsMobileMenuOpen={setIsMobileMenuOpen}
-                      ChatPeersList={ChatPeersList}
+                      <SidebarToggle
+                        chatPeers={chatPeers}
+                        onlineUsers={onlineUsers}
+                        selectedReceiver={selectedReceiver}
+                        setSelectedReceiver={setSelectedReceiver}
+                        setIsChattingWindowOpen={setIsChattingWindowOpen}
+                        setIsChatLoading={setIsChatLoading}
+                        getMessagesHistory={getMessagesHistory}
+                        isTyping={isTyping}
+                        isChattingWindowOpen={isChattingWindowOpen}
+                        isMobileMenuOpen={isMobileMenuOpen}
+                        setIsMobileMenuOpen={setIsMobileMenuOpen}
+                        ChatPeersList={ChatPeersList}
 
-                      OnlineUserList={OnlineUserList}
-                    />
+                        OnlineUserList={OnlineUserList}
+                      />
 
                     {/* Main Chat Area */}
                     {selectedReceiver && (
@@ -742,15 +742,15 @@ export default function ChatApp() {
 
                           {/* Message Input */}
                           {/* <div > */}
-                          <MessageInput
-                            message={message}
-                            setMessage={setMessage}
-                            sendMessage={sendMessage}
-                            handleTyping={handleTyping}
-                            selectedReceiver={selectedReceiver}
-                            sender={username}
-                            socket={socket}
-                          />
+                            <MessageInput
+                              message={message}
+                              setMessage={setMessage}
+                              sendMessage={sendMessage}
+                              handleTyping={handleTyping}
+                              selectedReceiver={selectedReceiver}
+                              sender={username}
+                              socket={socket}
+                            />
                           {/* </div> */}
                         </div>
                       </main>

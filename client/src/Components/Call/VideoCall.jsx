@@ -35,8 +35,13 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
             const constraints = isVideoCall
                 ? { video: true, audio: true }   
                 : { video: false, audio: true }
-            const stream = await navigator.mediaDevices.getUserMedia(constraints)
-            // if (localVideoRef.current) localVideoRef.current.srcObject = stream
+            // const stream = await navigator.mediaDevices.getUserMedia(constraints)
+            
+            
+            const stream = await navigator.mediaDevices.getDisplayMedia({
+                video: { cursor: "always" },
+                audio: true, // may or may not work depending on browser
+            })
 
             if (localVideoRef2?.current) {
                 localVideoRef2.current.srcObject = stream;
@@ -62,7 +67,10 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
                 video: { facingMode: cameraMode }, 
                 audio: true,
             });
-
+            // const newStream = await navigator.mediaDevices.getDisplayMedia({
+            //     video: { cursor: "always" },
+            //     audio: true, // may or may not work depending on browser
+            // })
             // Update local video preview
             if (localVideoRef2.current) {
                 localVideoRef2.current.srcObject = newStream;

@@ -6,7 +6,6 @@ import { useCall } from '../../context/CallContext';
 import VideoDisplay from "./VideoDisplay";
 import { useBlock } from "../../context/BlockedCallContext";
 import { useProfile } from "../../context/ProfileContext";
-import { useCall } from "../../context/CallContext";
 
 const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
     // const localVideoRef = useRef(null)
@@ -18,38 +17,37 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
     const [pendingOffer, setPendingOffer] = useState(null);
     const { isBlocked } = useBlock();
     const { profilePic } = useProfile();
-    const { cameraMode, toggleCameraMode } = useCall();
 
 
 
     const { username } = useAuth();
     const { setIncomingCall, callAccepted, showVideo, setCallerUsername, setCallerFullname, localVideoRef2, callID, setCallID, remoteVideoRef2, localVideoRefForOutgoing,
-        setIsAudioCall, currentIsVideo, setCurrentIsVideo, setCallerProfilePic, setCallReceiverProfilePic, callReceiverFullname, setCallReceiverFullname2,pc } = useCall();
+        setIsAudioCall, currentIsVideo, setCurrentIsVideo, setCallerProfilePic, setCallReceiverProfilePic, callReceiverFullname, setCallReceiverFullname2, pc, cameraMode, toggleCameraMode } = useCall();
         // make a state for that callReceiverProfilePi
     useImperativeHandle(ref, () => ({
         createOffer,
-        cleanupMedia,
+        // cleanupMedia,
     }));
 
     const startLocalStream = async (isVideoCall = true) => {
         try {
             setIsAudioCall(!isVideoCall);
             const constraints = isVideoCall
-                ? { video: { facingMode: cameraMode }, audio: true }
+                ? { video: true, audio: true }   
                 : { video: false, audio: true }
             const stream = await navigator.mediaDevices.getUserMedia(constraints)
             // if (localVideoRef.current) localVideoRef.current.srcObject = stream
-           
+
             if (localVideoRef2?.current) {
                 localVideoRef2.current.srcObject = stream;
-                
+
             }
-           
+
             if (localVideoRefForOutgoing?.current) {
                 localVideoRefForOutgoing.current.srcObject = stream;
-                
+
             }
-            
+
 
             return stream
         } catch (err) {
@@ -58,12 +56,49 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
             throw err
         }
     }
+    const switchCamera = async () => {
+        try {
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: cameraMode }, 
+                audio: true,
+            });
+
+            // Update local video preview
+            if (localVideoRef2.current) {
+                localVideoRef2.current.srcObject = newStream;
+            }
+            if (localVideoRefForOutgoing.current) {
+                localVideoRefForOutgoing.current.srcObject = newStream;
+            }
+
+            // Replace track in PeerConnection
+            const videoTrack = newStream.getVideoTracks()[0];
+            const senders = pc.current?.getSenders() || [];
+            const videoSender = senders.find(s => s.track && s.track.kind === "video");
+            if (videoSender && videoTrack) {
+                await videoSender.replaceTrack(videoTrack);
+            }
+
+            // Stop old tracks (free camera)
+            if (localVideoRef2.current?.srcObject) {
+                localVideoRef2.current.srcObject.getVideoTracks().forEach(t => {
+                    if (t !== videoTrack) t.stop();
+                });
+            }
+
+            console.log("✅ Camera switched");
+
+        } catch (err) {
+            console.error("❌ Error switching camera:", err);
+        }
+    };
 
     useEffect(() => {
         if (currentIsVideo) {
-            startLocalStream(true, cameraMode); 
+            switchCamera();
         }
     }, [cameraMode]);
+
 
     // const cleanupMedia = () => {
 
@@ -121,19 +156,24 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
             pc.current = new RTCPeerConnection({
                 iceServers: [
                     {
-                        urls: ["stun:bn-turn2.xirsys.com"] 
+                        urls: ["stun:ss-turn1.xirsys.com"],
                     },
                     {
+                        username: "UlsB5adXbjcdyp7hLtFAI3ms4mCkN8axoldDl4kl4DuZ3hMeztsRUlQLwlfNyzhRAAAAAGivK2hzYWxpbWVnMTAw",
+                        credential: "d4c71692-835e-11f0-a502-0242ac140004",
                         urls: [
-                            "turn:bn-turn2.xirsys.com:3478?transport=udp",
-                            "turn:bn-turn2.xirsys.com:3478?transport=tcp"
+                            "turn:ss-turn1.xirsys.com:80?transport=udp",
+                            "turn:ss-turn1.xirsys.com:3478?transport=udp",
+                            "turn:ss-turn1.xirsys.com:80?transport=tcp",
+                            "turn:ss-turn1.xirsys.com:3478?transport=tcp",
+                            "turns:ss-turn1.xirsys.com:443?transport=tcp",
+                            "turns:ss-turn1.xirsys.com:5349?transport=tcp",
                         ],
-                        username: "gkFDOpBmrkdYNBvLEQfqs38nbyf-ClCmuyo59o1H-Qj22fjKTpc7_tsBdAJL5Y3eAAAAAGiePClzYWxpbWtoYW4=",
-                        credential: "d2c6c5b2-7946-11f0-863e-0242ac140004"
-                    }
-                ]
-
+                    },
+                ],
             });
+        
+
 
             pc.current.ontrack = e => {
                 const stream = e.streams[0];

@@ -23,7 +23,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
     const { username } = useAuth();
     const { setIncomingCall, callAccepted, showVideo, setCallerUsername, setCallerFullname, localVideoRef2, callID, setCallID, remoteVideoRef2, localVideoRefForOutgoing,
         setIsAudioCall, currentIsVideo, setCurrentIsVideo, setCallerProfilePic, setCallReceiverProfilePic, callReceiverFullname, setCallReceiverFullname2, pc, cameraMode, toggleCameraMode } = useCall();
-        // make a state for that callReceiverProfilePi
+    // make a state for that callReceiverProfilePi
     useImperativeHandle(ref, () => ({
         createOffer,
         // cleanupMedia,
@@ -33,15 +33,10 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
         try {
             setIsAudioCall(!isVideoCall);
             const constraints = isVideoCall
-                ? { video: true, audio: true }   
+                ? { video: true, audio: true }
                 : { video: false, audio: true }
-            // const stream = await navigator.mediaDevices.getUserMedia(constraints)
-            
-            
-            const stream = await navigator.mediaDevices.getDisplayMedia({
-                video: { cursor: "always" },
-                audio: true, // may or may not work depending on browser
-            })
+            const stream = await navigator.mediaDevices.getUserMedia(constraints)
+            // if (localVideoRef.current) localVideoRef.current.srcObject = stream
 
             if (localVideoRef2?.current) {
                 localVideoRef2.current.srcObject = stream;
@@ -64,13 +59,10 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
     const switchCamera = async () => {
         try {
             const newStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: cameraMode }, 
+                video: { facingMode: cameraMode },
                 audio: true,
             });
-            // const newStream = await navigator.mediaDevices.getDisplayMedia({
-            //     video: { cursor: "always" },
-            //     audio: true, // may or may not work depending on browser
-            // })
+
             // Update local video preview
             if (localVideoRef2.current) {
                 localVideoRef2.current.srcObject = newStream;
@@ -180,7 +172,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
                     },
                 ],
             });
-        
+
 
 
             pc.current.ontrack = e => {
@@ -191,7 +183,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
                 if (remoteVideoRef2.current && remoteVideoRef2.current.srcObject !== stream) {
                     remoteVideoRef2.current.srcObject = stream;
                 }
-             
+
             };
 
         }
@@ -220,7 +212,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
             callID: callId,
             sender: username,          // your current username
             receiver: receiver, // selected receiver username
-            sdp: localSDPString ,
+            sdp: localSDPString,
             isVideoCall,
             profilePic
 
@@ -244,7 +236,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
                 setCallerProfilePic(profilePic)
                 setPendingOffer({ sender, sdp, isVideoCall }); // store temporarily
                 setCurrentIsVideo(isVideoCall);
-              
+
 
             }
         });
@@ -318,7 +310,7 @@ const ManualSDPWebRTC = forwardRef(({ receiver, socket }, ref) => {
 
 
         return () => socket.off("answer-received");
-    }, [socket, callReceiverFullname, setCallReceiverProfilePic, pc,setCallReceiverFullname2]);
+    }, [socket, callReceiverFullname, setCallReceiverProfilePic, pc, setCallReceiverFullname2]);
 
 
 

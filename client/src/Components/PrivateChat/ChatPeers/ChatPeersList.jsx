@@ -18,11 +18,11 @@ const ChatPeersList = ({
     const [localPeers, setLocalPeers] = useState([]);
 
     // Filter out current user but maintain the order from backend (ordered by recent messages)
-    const filteredUsers = localPeers.length > 0 ? localPeers : chatPeers.filter((u) => u.username !== username);
+    const filteredUsers = localPeers.length > 0 ? localPeers : (chatPeers || []).filter((u) => u.username !== username);
 
     // Update local peers when chatPeers changes
     useEffect(() => {
-        setLocalPeers(chatPeers.filter((u) => u.username !== username));
+        setLocalPeers((chatPeers || []).filter((u) => u.username !== username));
     }, [chatPeers, username]);
 
     // Listen for chat deletion events

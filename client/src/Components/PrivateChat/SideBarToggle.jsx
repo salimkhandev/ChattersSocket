@@ -1,5 +1,5 @@
 import { MessageSquare, Users, X } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 const SidebarToggle = ({
@@ -19,8 +19,14 @@ const SidebarToggle = ({
 }) => {
     const [activeView, setActiveView] = useState('chats'); // 'chats' or 'online'
     const { username, setId } = useAuth();
-    const myId = onlineUsers.find((u) => u.username === username);
-    setId(myId?.id); 
+    const myId = (onlineUsers || []).find((u) => u.username === username);
+    
+    // Update user ID in AuthProvider after render
+    useEffect(() => {
+        if (myId?.id) {
+            setId(myId.id);
+        }
+    }, [myId?.id, setId]); 
     return (
         <aside className={`
       ${selectedReceiver && !isMobileMenuOpen ? 'hidden lg:flex' : 'flex'} 
@@ -57,14 +63,14 @@ const SidebarToggle = ({
                                         : 'text-gray-600 hover:text-gray-800'}`}>
                                 <div className="relative">
                                     <Users className="w-4 h-4" />
-                                    {onlineUsers.length-1 > 0 && (
+                                    {(onlineUsers || []).length-1 > 0 && (
                                         <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"></div>
                                     )}
                                 </div>
                                 <span className="hidden sm:inline">Online</span>
-                                {onlineUsers.length-1 > 0 && (
+                                {(onlineUsers || []).length-1 > 0 && (
                                     <span className="bg-green-500 text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] h-5 flex items-center justify-center">
-                                        {onlineUsers.length-1}
+                                        {(onlineUsers || []).length-1}
                                     </span>
                                 )}
                             </button>
@@ -98,15 +104,15 @@ const SidebarToggle = ({
                 </h2>
 
                 {/* Subtitle */}
-                {activeView === "chats" && chatPeers?.length > 0 && (
+                {activeView === "chats" && (chatPeers || []).length > 0 && (
                     <p className="text-sm text-gray-500 mt-1">
-                        {chatPeers.length} conversations
+                        {(chatPeers || []).length} conversations
                     </p>
                 )}
 
-                {activeView !== "chats" && onlineUsers?.length - 1 > 0 && (
+                {activeView !== "chats" && (onlineUsers || []).length - 1 > 0 && (
                     <p className="text-sm text-gray-500 mt-1">
-                        {onlineUsers.length - 1} users online
+                        {(onlineUsers || []).length - 1} users online
                     </p>
                 )}
 
@@ -153,7 +159,7 @@ const SidebarToggle = ({
                     }
         `}>
                     <div className="h-full overflow-y-auto p-3 sm:p-4 lg:p-5 space-y-1 sm:space-y-2">
-                        {onlineUsers.length === 0 ? (
+                        {(onlineUsers || []).length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-6 sm:py-8 text-center px-4">
                                 <div className="relative">
                                     <Users className="w-8 h-8 sm:w-12 sm:h-12 text-gray-300 mb-2 sm:mb-3" />

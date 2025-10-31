@@ -1,7 +1,11 @@
 const { createClient } = require("redis");
 
 const redisClient = createClient({
-    url: "rediss://default:AVNGAAIjcDE2ZjdkYjExYTkwZDM0MDJmODIwY2QyNzcxODFiOTI4NHAxMA@whole-gelding-21318.upstash.io:6379"
+    url: "rediss://default:AXt0AAIncDI0ZDk1M2ViZjA1MTA0OTg5ODdhNWIwYmMwMDI1NThhNXAyMzE2MDQ@whole-ocelot-31604.upstash.io:6379",
+    socket: {
+        tls: true,
+        rejectUnauthorized: false
+    }
 });
 
 redisClient.on("error", (err) => {

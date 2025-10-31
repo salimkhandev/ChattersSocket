@@ -132,8 +132,8 @@ export default function ChatApp() {
     }
 
     // Prefer chatPeers (sorted by recent), fallback to onlineUsers; case-insensitive match
-    const matchFromPeers = chatPeers.find(u => u.username?.toLowerCase() === normalized);
-    const matchFromOnline = onlineUsers.find(u => u.username?.toLowerCase() === normalized);
+    const matchFromPeers = (chatPeers || []).find(u => u.username?.toLowerCase() === normalized);
+    const matchFromOnline = (onlineUsers || []).find(u => u.username?.toLowerCase() === normalized);
     const resolved = matchFromPeers || matchFromOnline;
 
     const displayName = resolved?.fName || selectedReceiver;
@@ -661,7 +661,7 @@ export default function ChatApp() {
                           <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-white">
                             <h1 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
                               <span className="text-indigo-600">
-                                {onlineUsers.find(u => u.username === selectedReceiver)?.fName || selectedReceiverFullname}
+                                {(onlineUsers || []).find(u => u.username === selectedReceiver)?.fName || selectedReceiverFullname}
                               </span>
                             </h1>
 
